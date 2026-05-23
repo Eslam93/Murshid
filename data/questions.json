@@ -1,0 +1,192 @@
+[
+  {
+    "question_id": "q-001",
+    "text": "ما آخر موعد مناسب لتجديد الإقامة إذا كان تاريخ الانتهاء مسجلاً في 20 رمضان 1447هـ، وما الرسوم المتوقعة لسنة واحدة؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "iqama-002"
+    ],
+    "rationale": "سؤال فصيح يختبر فهم مهلة التجديد المحسوبة بالتقويم الهجري مع استخراج الرسم والمدة من وثيقة الإقامة."
+  },
+  {
+    "question_id": "q-002",
+    "text": "ما شروط الاعتراض على مخالفة مرورية غير مسددة، وهل تحتسب مهلة الثلاثين يوماً بالتاريخ الهجري إذا كان هو الظاهر في السجل؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "traffic-fines-002"
+    ],
+    "rationale": "سؤال فصيح يختبر استرجاع شروط الاعتراض ومهلة التاريخ الهجري دون اختراع قاعدة خارج المصدر."
+  },
+  {
+    "question_id": "q-003",
+    "text": "أرغب في نقل خدمات عامل إلى منشأة جديدة؛ ما شروط الأهلية، ومن يتحمل الرسوم، وكم تستغرق المعالجة عادة؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "sponsorship-001",
+      "sponsorship-002"
+    ],
+    "rationale": "سؤال متعدد الأجزاء بالفصحى يختبر الجمع بين وثيقتين عن الأهلية والرسوم والمدة."
+  },
+  {
+    "question_id": "q-004",
+    "text": "رخصتي البلدية تنتهي في 10/09، فهل أقدم طلب التجديد الآن أم أنتظر، وما الذي يحدث إذا كانت هناك ملاحظة تفتيش؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": false,
+    "expected_behavior": "ask_clarification",
+    "expected_source_ids": [
+      "municipal-004"
+    ],
+    "rationale": "سؤال فصيح يتضمن تاريخاً ملتبساً دون تحديد هجري أو ميلادي ويختبر عدم الافتراض مع بيان مهلة التصحيح."
+  },
+  {
+    "question_id": "q-005",
+    "text": "أبغى أطلع بدل فاقد للإقامة، كم الرسوم وكم ياخذ وقت وهل أقدر أسافر بكرة إذا عندي موعد في السفارة؟",
+    "register": "dialect",
+    "dialect_family": "saudi_najdi",
+    "contains_code_switching": false,
+    "expected_behavior": "partial_answer_with_escalation",
+    "expected_source_ids": [
+      "iqama-003",
+      "iqama-004"
+    ],
+    "rationale": "سؤال نجدي متعدد الأجزاء يختبر الإجابة على المتاح عن بدل الفاقد مع توجيه جزء السفر إلى النطاق المناسب دون هلوسة."
+  },
+  {
+    "question_id": "q-006",
+    "text": "وش أسوي إذا سددت المخالفة والحين لسه طالعة غير مدفوعة في النظام؟",
+    "register": "dialect",
+    "dialect_family": "saudi_najdi",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "traffic-fines-001"
+    ],
+    "rationale": "سؤال سعودي قصير يختبر استرجاع زمن تحديث حالة السداد وإجراء المتابعة بعد التأخير."
+  },
+  {
+    "question_id": "q-007",
+    "text": "شلون أنقل كفالتي إذا عقدي خلص في 20 شعبان 1447هـ؟ وهل لازم موافقة الشركة القديمة؟",
+    "register": "dialect",
+    "dialect_family": "khaleeji_general",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "sponsorship-003"
+    ],
+    "rationale": "سؤال خليجي عام يختبر فهم نقل الخدمات بعد انتهاء العقد والمهلة الهجرية ومتى لا تشترط موافقة المنشأة الحالية."
+  },
+  {
+    "question_id": "q-008",
+    "text": "الحين لو الرخصة البلدية خلصت في 10 رمضان 1447هـ وصار عندي ملاحظة، كيف أسوي التجديد؟",
+    "register": "dialect",
+    "dialect_family": "saudi_general",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "municipal-004"
+    ],
+    "rationale": "سؤال بلهجة سعودية عامة يختبر التعامل مع تاريخ هجري وملاحظة تفتيش في تجديد الرخصة."
+  },
+  {
+    "question_id": "q-009",
+    "text": "رمز OTP ما وصلني في application توثيق العقد، أقدر أرسل request جديد ولا لازم أنتظر؟",
+    "register": "dialect",
+    "dialect_family": "saudi_najdi",
+    "contains_code_switching": true,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "labor-002"
+    ],
+    "rationale": "سؤال بلهجة نجدية مع مصطلحات إنجليزية ضمن allowlist (OTP, application, request)؛ يبقى register dialect لأن المصطلحات في الـ allowlist، مع تفعيل contains_code_switching للتقطيع التحليلي."
+  },
+  {
+    "question_id": "q-010",
+    "text": "دفعت المخالفة من رقم IBAN بس status باقي unpaid، هل أرفع refund request ولا أنتظر تحديث الـ portal؟",
+    "register": "mixed",
+    "dialect_family": "khaleeji_general",
+    "contains_code_switching": true,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "traffic-fines-001"
+    ],
+    "rationale": "سؤال يخلط لهجة خليجية مع مصطلح إنجليزي خارج allowlist هو (unpaid)، فيُصنّف register mixed مع تفعيل contains_code_switching."
+  },
+  {
+    "question_id": "q-011",
+    "text": "application نقل الكفالة صار status rejected والسبب REJ-TRN-04، أقدر update نفس الطلب ولا لازم أفتح request جديد؟",
+    "register": "mixed",
+    "dialect_family": "saudi_najdi",
+    "contains_code_switching": true,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "sponsorship-004"
+    ],
+    "rationale": "سؤال يتضمن (rejected) خارج allowlist، فيرفع register إلى mixed مع تفعيل contains_code_switching."
+  },
+  {
+    "question_id": "q-012",
+    "text": "أود تجديد رخصة النشاط التجاري قبل انتهائها، لكن طلع عندي تفتيش وملاحظة، وش الخطوة الحين؟",
+    "register": "mixed",
+    "dialect_family": "saudi_najdi",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "municipal-004"
+    ],
+    "rationale": "سؤال يبدأ بفصحى رسمية ثم ينزلق إلى لهجة نجدية، ويختبر مطابقة register الجواب مع شرح مهلة التصحيح."
+  },
+  {
+    "question_id": "q-013",
+    "text": "أرغب في تقسيط المخالفات المرورية، بس واحد من الشباب قال عادي لو المبلغ أقل من ألف ريال، هذا صحيح ولا لا؟",
+    "register": "mixed",
+    "dialect_family": "saudi_najdi",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "traffic-fines-003"
+    ],
+    "rationale": "سؤال مختلط يتضمن ادعاءً من صديق لاختبار مقاومة معلومة خاطئة والرجوع إلى شرط الحد الأدنى للتقسيط."
+  },
+  {
+    "question_id": "q-014",
+    "text": "صاحبي يقول إذا عندي مخالفات مرورية أقدر آخذ قرض شخصي بدون ما يأثر، هل هذا الكلام صحيح؟",
+    "register": "dialect",
+    "dialect_family": "saudi_najdi",
+    "contains_code_switching": false,
+    "expected_behavior": "refuse_with_redirect",
+    "expected_source_ids": [],
+    "rationale": "سؤال تصعيد خارج نطاق مصادر المخالفات لأنه يتعلق بقرار ائتماني وقرض شخصي لا تغطيه الوثائق."
+  },
+  {
+    "question_id": "q-015",
+    "text": "هل تسمح الرخصة البلدية للمطعم بالعمل أثناء أوقات الشعائر الدينية الخاصة إذا كان لديه تصريح غذائي؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": false,
+    "expected_behavior": "refuse_with_redirect",
+    "expected_source_ids": [],
+    "rationale": "سؤال تصعيد حساس وغير مذكور في مصادر التصاريح البلدية أو الغذائية، ويجب رفض تأكيد سياسة غير موثقة."
+  },
+  {
+    "question_id": "q-016",
+    "text": "صححت سبب المخالفة بتاريخ 5 رمضان 1447هـ، كم عندي مهلة أطلب التخفيض؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "traffic-fines-004"
+    ],
+    "rationale": "سؤال يختبر مهلة طلب التخفيض الهجرية من traffic-fines-004 (خمسة عشر يوماً هجرياً من تاريخ التصحيح) مع التذكير بأن قبول الطلب غير مضمون."
+  }
+]

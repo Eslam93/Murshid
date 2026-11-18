@@ -1,20 +1,166 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "murshid"
-version = "0.1.0"
-description = "Arabic-first RAG for Saudi government-services FAQs"
-requires-python = ">=3.11"
+version = "0.2.0"
+description = "Arabic-first, trust-first retrieval-augmented answering over government-services FAQs, with a synthetic Saudi demo corpus"
 readme = "README.md"
-license = { text = "MIT" }
+requires-python = ">=3.12"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Eslam Hamed" }]
+keywords = ["arabic", "rag", "retrieval", "nlp", "llm", "evaluation", "saudi", "dialect"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Natural Language :: Arabic",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Text Processing :: Linguistic",
+]
+# The core install answers questions with the zero-key providers and the BM25 side of retrieval.
+# Dense retrieval, the paid model SDKs and the web UI are extras, so nobody downloads torch or a
+# 2.3 GB model just to read the code or run the fast tests.
+dependencies = [
+    "httpx>=0.28,<1",
+    "numpy>=2.0",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.7",
+    "python-dotenv>=1.0",
+    "rank-bm25>=0.2.2",
+]
+
+[project.optional-dependencies]
+# Local BGE-M3 embeddings (about 2.3 GB of weights on first use).
+local-embed = [
+    "sentence-transformers>=5.0",
+    "torch>=2.5",
+    "transformers>=4.50",
+]
+# SDKs for the paid model providers. None of them is needed for the zero-key path.
+providers = [
+    "anthropic>=0.100",
+    "google-generativeai>=0.8",
+    "openai>=2.0",
+]
+# The Gradio demo UI.
+ui = ["gradio>=6.0"]
+
+[project.urls]
+Homepage = "https://github.com/Eslam93/Murshid"
+Issues = "https://github.com/Eslam93/Murshid/issues"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.13",
+    "pytest>=8.3",
+    "pytest-asyncio>=0.25",
+    "pytest-cov>=6.0",
+    "pyyaml>=6.0",
+    "ruff>=0.9",
+    "types-pyyaml>=6.0",
+]
+
+[tool.uv]
+default-groups = ["dev"]
+
+# On Linux the default PyPI torch wheel pulls several GB of CUDA libraries; the CPU build is all
+# this project needs. Windows and macOS wheels on PyPI are already CPU builds.
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["murshid*"]
+exclude = ["murshid._toolkit.*.tests", "murshid._toolkit.*.tests.*"]
+
+[tool.setuptools.package-data]
+murshid = ["**/*.json", "**/*.md", "**/*.toml", "**/*.yml", "**/*.template"]
+
+# ---------------------------------------------------------------------------------------------
+# Quality gates: the ToolKit's python_tooling fragment (C68), adapted. check_tooling keeps them
+# from being weakened (tests/test_tooling_gates.py). Vendored ToolKit cores under
+# src/murshid/_toolkit are byte-identical copies, so the formatter and linter skip them.
+# ---------------------------------------------------------------------------------------------
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["src/murshid/_toolkit"]
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "W",  # pycodestyle and pyflakes
+    "I",            # import order
+    "B",            # bugbear
+    "UP",           # pyupgrade
+    "N",            # naming
+    "S",            # bandit: security
+    "A",            # shadowed builtins
+    "C4",           # comprehensions
+    "T20",          # no print() left behind
+    "RUF",          # ruff's own
+    "SIM",          # simplify
+    "TID",          # tidy imports
+]
+ignore = [
+    # The formatter owns line length; what remains is long Arabic prompt text and URLs.
+    "E501",
+    # Arabic text is the point of this project: these rules flag Arabic letters, digits and
+    # punctuation (،, ؛, ٠-٩) as look-alikes of Latin characters.
+    "RUF001", "RUF002", "RUF003",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106", "S107"]
+"scripts/**" = ["T201"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["murshid"]
+
+[tool.ruff.format]
+line-ending = "lf"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+files = ["src/murshid"]
+# Vendored ToolKit cores are checked where Murshid calls them, not re-linted file by file.
+exclude = ['^src/murshid/_toolkit/']
+
+[[tool.mypy.overrides]]
+module = ["murshid._toolkit.*"]
+follow_imports = "silent"
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-addopts = "-ra -q"
+testpaths = ["tests", "src/murshid/_toolkit"]
+# Vendored core tests reuse file names, so each test file is imported by its path.
+addopts = ["--strict-markers", "-ra", "--import-mode=importlib"]
+# Some vendored core tests (C64 fault scripts) are async.
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "real_embedder: needs the real BGE-M3 weights (about 2.3 GB); run with --real-embedder",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["murshid"]
+omit = ["*/murshid/_toolkit/*"]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+skip_covered = true

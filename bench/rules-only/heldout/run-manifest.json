@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "split": "heldout",
+  "mode": "full",
+  "started_at": "2026-11-18T20:43:47Z",
+  "finished_at": "2026-11-18T20:45:19Z",
+  "git_commit": "c77fdb2d6888bad98809a33c05df9b4c49c71ded",
+  "git_dirty": true,
+  "murshid_version": "0.2.0",
+  "python_version": "3.12.13",
+  "providers": [
+    {
+      "name": "extractive",
+      "model_id": "extractive-1"
+    }
+  ],
+  "critic_modes": [
+    "off"
+  ],
+  "judge_model_id": null,
+  "sanity_swap_judge_model_id": null,
+  "enrichment": {
+    "provider": "mock",
+    "model_id": null
+  },
+  "embedder_model_id": "BAAI/bge-m3",
+  "question_ids": "all",
+  "red_team_ids": "all",
+  "data_files": {
+    "data/sources.json": "7bca51302fed8df02fb59b868f1ff059b23c62efed8b42681aab2c62522b4a4a",
+    "data/heldout/questions.json": "09e38848d40a572ffb8392b3c24ff8364afd0963ff56a6337f324664c4ae00a4",
+    "data/heldout/gold_answers.json": "83b68ae357a4433b0fdeacdd5ce5fe091e219a86a6f1b37b292a838f75b31193",
+    "data/heldout/red_team.json": "b997dbf567ce9520623db6f2f9a40203236c013df4344643484c5cfd8612e1e3"
+  },
+  "n_cases": 93,
+  "sanity_swap": null
+}

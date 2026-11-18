@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: "If you use Murshid, please cite it as below."
+type: software
+title: "Murshid: Arabic-first question answering over Saudi government-services FAQs"
+abstract: >-
+  Retrieval-augmented question answering over a synthetic corpus of Saudi
+  government-services FAQs. It answers in the user's register (Modern Standard
+  Arabic, Saudi or Gulf dialect, or mixed), quotes its sources verbatim, and
+  decides by rules when to answer, answer in part and escalate, refuse, or ask
+  for clarification.
+authors:
+  - given-names: Eslam
+    family-names: Hamed
+    website: "https://eslamhamed.com"
+repository-code: "https://github.com/Eslam93/Murshid"
+url: "https://eslamhamed.com"
+license: MIT
+version: 0.2.0
+keywords:
+  - arabic
+  - retrieval-augmented generation
+  - dialect
+  - evaluation
+  - saudi

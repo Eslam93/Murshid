@@ -1,5 +1,7 @@
 # Murshid
 
+Built by **Eslam Hamed**, Technical Lead & AI Solutions Architect. More work: [eslamhamed.com](https://eslamhamed.com).
+
 Arabic-first question answering over a synthetic corpus of Saudi government-services FAQs. Murshid
 answers in the user's own register (Modern Standard Arabic, Saudi or Gulf dialect, or a mix),
 quotes its sources verbatim in MSA, and decides by rules, before any model is called, when to

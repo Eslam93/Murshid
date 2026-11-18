@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "split": "tuned",
+  "mode": "full",
+  "started_at": "2026-05-23T13:56:41",
+  "finished_at": null,
+  "git_commit": null,
+  "git_dirty": null,
+  "murshid_version": "0.1.0",
+  "python_version": null,
+  "providers": [
+    {
+      "name": "mock",
+      "model_id": "mock-1"
+    },
+    {
+      "name": "claude",
+      "model_id": "claude-sonnet-4-6"
+    },
+    {
+      "name": "openai",
+      "model_id": "gpt-5.5-2026-04-23"
+    }
+  ],
+  "critic_modes": [
+    "on",
+    "off"
+  ],
+  "judge_model_id": "gemini-2.5-flash",
+  "sanity_swap_judge_model_id": "claude-opus-4-7",
+  "enrichment": {
+    "provider": "mock",
+    "model_id": null
+  },
+  "embedder_model_id": "BAAI/bge-m3",
+  "question_ids": "all",
+  "red_team_ids": "all",
+  "data_files": null,
+  "n_cases": 156,
+  "sanity_swap": {
+    "primary_judge": "gemini-2.5-flash",
+    "swap_judge": "claude-opus-4-7",
+    "note": "The swap judge re-scores the SAME predicted answer across two judges (primary vs swap). Δ correctness quantifies cross-judge self-preference bias on real predictions. ADR 2 reports |mean Δ| as the bias headline number.",
+    "abs_mean_delta_correctness": 0.0,
+    "per_case": [
+      {
+        "question_id": "q-001",
+        "provider_compared": "openai",
+        "provider_model_id": "gpt-5.5-2026-04-23",
+        "primary_correctness": 2.0,
+        "swap_correctness": 2.0,
+        "delta_correctness": 0.0,
+        "primary_register": 3.0,
+        "swap_register": 2
+      },
+      {
+        "question_id": "q-007",
+        "provider_compared": "openai",
+        "provider_model_id": "gpt-5.5-2026-04-23",
+        "primary_correctness": 3.0,
+        "swap_correctness": 3.0,
+        "delta_correctness": 0.0,
+        "primary_register": 3.0,
+        "swap_register": 3
+      },
+      {
+        "question_id": "q-013",
+        "provider_compared": "openai",
+        "provider_model_id": "gpt-5.5-2026-04-23",
+        "primary_correctness": 2.0,
+        "swap_correctness": 2.0,
+        "delta_correctness": 0.0,
+        "primary_register": 3.0,
+        "swap_register": 3
+      }
+    ]
+  },
+  "note": "Written on 2026-11-18 from bench/results.md as that run printed it on 2026-05-23, before bench runs wrote a manifest. started_at is the local time the page printed; its time zone was not recorded. The commit, the Python version and the data files' hashes were not recorded either. Since then the data files have changed only in the corpus's example web addresses (three passages and one gold citation), which moved to the reserved .example domain."
+}

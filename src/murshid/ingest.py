@@ -1,14 +1,14 @@
 """Ingestion: chunk -> enrich -> embed -> index.
 
-  - Deterministic chunking: FAQ detect by `س:` markers; else paragraph split.
-  - Ordinal numbering: `source_id:chunk-N` (for debugging only — recall and
-    citation matching is content-based, not chunk-id-based).
-  - Chunk metadata enrichment:
-    per-chunk LLM call produces `summary` + `keywords`; both concatenated
-    into BM25-indexed text and the embedder input. `passage_text` stays
-    verbatim so citation accuracy anchors on the source quote.
-  - Embedding via BGE-M3 (sentence-transformers, lazy-loaded).
-  - Index = (numpy ndarray, list[Chunk]).
+- Deterministic chunking: FAQ detect by `س:` markers; else paragraph split.
+- Ordinal numbering: `source_id:chunk-N` (for debugging only — recall and
+  citation matching is content-based, not chunk-id-based).
+- Chunk metadata enrichment:
+  per-chunk LLM call produces `summary` + `keywords`; both concatenated
+  into BM25-indexed text and the embedder input. `passage_text` stays
+  verbatim so citation accuracy anchors on the source quote.
+- Embedding via BGE-M3 (sentence-transformers, lazy-loaded).
+- Index = (numpy ndarray, list[Chunk]).
 """
 
 from __future__ import annotations

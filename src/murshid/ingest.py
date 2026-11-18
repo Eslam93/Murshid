@@ -23,10 +23,10 @@ import numpy as np
 from murshid.normalize import light_normalize
 from murshid.providers.base import LLMProvider
 
-
 # ---------------------------------------------------------------------------
 # Data shapes
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class Chunk:
@@ -159,7 +159,7 @@ def enrich_chunk_metadata(chunk: Chunk, provider: LLMProvider) -> Chunk:
             user=chunk.passage_text,
             max_tokens=300,
         )
-    except Exception:  # noqa: BLE001 — broad: covers all provider SDK failures
+    except Exception:
         chunk.summary = chunk.summary or ""
         chunk.keywords = chunk.keywords or []
         chunk.enrichment_status = "failed_provider"
@@ -199,7 +199,8 @@ def get_embedder(model_name: str = "BAAI/bge-m3"):
     """
     if model_name in _EMBEDDER_CACHE:
         return _EMBEDDER_CACHE[model_name]
-    from sentence_transformers import SentenceTransformer  # noqa: PLC0415
+    from sentence_transformers import SentenceTransformer
+
     model = SentenceTransformer(model_name)
     _EMBEDDER_CACHE[model_name] = model
     return model
@@ -243,6 +244,7 @@ def embed_chunks(chunks: list[Chunk], embedder_model: str = "BAAI/bge-m3") -> np
 # ---------------------------------------------------------------------------
 # End-to-end ingest
 # ---------------------------------------------------------------------------
+
 
 def load_sources(sources_path: Path) -> list[dict]:
     """Read `sources.json` as UTF-8."""

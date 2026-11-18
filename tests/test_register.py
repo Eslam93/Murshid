@@ -11,7 +11,6 @@ import pytest
 
 from murshid.register import detect_register
 
-
 DATA = Path(__file__).parent.parent / "data"
 
 
@@ -24,6 +23,7 @@ def questions() -> list[dict]:
 # ---------------------------------------------------------------------------
 # 3-class register matches the data on every question
 # ---------------------------------------------------------------------------
+
 
 def test_register_three_class_matches_all_questions(questions):
     misses = []
@@ -41,6 +41,7 @@ def test_register_three_class_matches_all_questions(questions):
 # contains_code_switching boolean matches the data on every question
 # ---------------------------------------------------------------------------
 
+
 def test_contains_code_switching_matches_all_questions(questions):
     misses = []
     for q in questions:
@@ -56,6 +57,7 @@ def test_contains_code_switching_matches_all_questions(questions):
 # ---------------------------------------------------------------------------
 # Allowlist behavior — the ADR 3 catch
 # ---------------------------------------------------------------------------
+
 
 def test_allowlisted_english_keeps_register_dialect():
     """q-009 has OTP / application / request (all allowlisted) + dialect markers."""
@@ -96,6 +98,7 @@ def test_msa_with_allowlisted_english_still_msa():
 # of common non-Saudi Arabic dialects. The system prompt's "answer in same
 # register" rule does the right thing once register is correctly detected as
 # `dialect`. Family detection is rough on purpose (NADI ceiling F1 ≈ 50).
+
 
 def test_egyptian_dialect_detected():
     """`إزاي`, `مش`, `اللي`, `ليه`, `كده`, `ايه` are Egyptian markers."""

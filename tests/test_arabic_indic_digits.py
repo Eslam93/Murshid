@@ -20,10 +20,10 @@ from murshid.normalize import (
     to_arabic_indic_digits,
 )
 
-
 # ---------------------------------------------------------------------------
 # fold_arabic_indic_digits — unit contract
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.parametrize(
     "arabic_indic,western",
@@ -100,6 +100,7 @@ def test_fold_is_idempotent():
 # to_arabic_indic_digits — inverse direction
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.parametrize(
     "western,arabic_indic",
     [
@@ -130,6 +131,7 @@ def test_to_arabic_indic_round_trip():
 # ---------------------------------------------------------------------------
 # Interaction with light_normalize
 # ---------------------------------------------------------------------------
+
 
 def test_light_normalize_does_NOT_fold_digits():
     """The kickoff §0.2 documented 4-step normalization (NFKC + tatweel +

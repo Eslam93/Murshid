@@ -25,10 +25,12 @@ from dataclasses import dataclass
 
 @dataclass
 class RegisterResult:
-    register: str               # "MSA" | "dialect" | "mixed"
-    confidence: float           # 0-1
+    register: str  # "MSA" | "dialect" | "mixed"
+    confidence: float  # 0-1
     contains_code_switching: bool
-    dialect_family: str = ""    # "saudi_najdi" | "saudi_hijazi" | "khaleeji_general" | "saudi_general" | "MSA"
+    dialect_family: str = (
+        ""  # "saudi_najdi" | "saudi_hijazi" | "khaleeji_general" | "saudi_general" | "MSA"
+    )
 
 
 # Strong dialect markers — single occurrence is decisive.
@@ -38,18 +40,51 @@ class RegisterResult:
 # purpose (NADI 2024 winning F1 was 50.57 — fine-grained ID is out of reach).
 STRONG_DIALECT_MARKERS: set[str] = {
     # Saudi / Khaleeji / Hijazi (baseline)
-    "وش", "شلون", "أبغى", "ابغى", "ابغا", "وايد", "إيش", "ايش",
-    "شو", "شفت", "لسه", "مو", "شلونك",
+    "وش",
+    "شلون",
+    "أبغى",
+    "ابغى",
+    "ابغا",
+    "وايد",
+    "إيش",
+    "ايش",
+    "شو",
+    "شفت",
+    "لسه",
+    "مو",
+    "شلونك",
     # Egyptian (Phase 6 — for review-robustness, not deep coverage)
-    "إزاي", "ازاي", "مش", "اللي", "ليه", "كده", "ايه",
+    "إزاي",
+    "ازاي",
+    "مش",
+    "اللي",
+    "ليه",
+    "كده",
+    "ايه",
     # Levantine (Phase 6 — same rationale)
-    "هيك", "ليش", "كيفك", "مالو",
+    "هيك",
+    "ليش",
+    "كيفك",
+    "مالو",
 }
 
 # Medium dialect markers — colloquial-leaning but more ambiguous.
 MEDIUM_DIALECT_MARKERS: set[str] = {
-    "الحين", "بس", "ولا", "أقدر", "اقدر", "تقدر", "أسوي", "اسوي", "تسوي",
-    "ياخذ", "خلص", "يخلص", "ابي", "صاحبي", "السالفة",
+    "الحين",
+    "بس",
+    "ولا",
+    "أقدر",
+    "اقدر",
+    "تقدر",
+    "أسوي",
+    "اسوي",
+    "تسوي",
+    "ياخذ",
+    "خلص",
+    "يخلص",
+    "ابي",
+    "صاحبي",
+    "السالفة",
 }
 
 # Family-specific markers.
@@ -67,14 +102,32 @@ LEVANTINE_MARKERS: set[str] = {"هيك", "ليش", "كيفك", "مالو"}
 # Pattern observed in data: q-012 ("أود تجديد رخصة... وش الخطوة الحين"),
 # q-013 ("أرغب في تقسيط... بس واحد من الشباب").
 MSA_FORMAL_MARKERS: set[str] = {
-    "أود", "أرغب", "يتعين", "ينبغي", "يجدر", "بصدد", "لاسيما",
+    "أود",
+    "أرغب",
+    "يتعين",
+    "ينبغي",
+    "يجدر",
+    "بصدد",
+    "لاسيما",
 }
 
 # Domain-token allowlist (§0.4, ADR 3 — intentionally conservative).
 # `unpaid` and `rejected` are deliberately EXCLUDED — see ADR 3.
 DOMAIN_ALLOWLIST: set[str] = {
-    "iqama", "OTP", "KYC", "IBAN", "Absher", "Muqeem", "Tawakkalna",
-    "visa", "refund", "portal", "application", "status", "request", "update",
+    "iqama",
+    "OTP",
+    "KYC",
+    "IBAN",
+    "Absher",
+    "Muqeem",
+    "Tawakkalna",
+    "visa",
+    "refund",
+    "portal",
+    "application",
+    "status",
+    "request",
+    "update",
 }
 DOMAIN_ALLOWLIST_LOWER: set[str] = {t.lower() for t in DOMAIN_ALLOWLIST}
 

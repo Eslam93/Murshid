@@ -33,20 +33,19 @@ from murshid.providers.base import LLMProvider  # noqa: E402
 from murshid.providers.mock import MockProvider  # noqa: E402
 from murshid.retrieve import build_bm25_index  # noqa: E402
 
-
 # Model -> (provider kind, model_id). Display name = model ID for clarity.
 # Defaults per kickoff §0.5 verified-current table; Gemini 2.5 Flash added
 # because it's the bench's actual judge model (separate quota from Pro).
 MODELS: dict[str, tuple[str, str | None]] = {
-    "mock":                          ("mock",   None),
-    "claude-sonnet-4-6":             ("claude", "claude-sonnet-4-6"),
-    "claude-opus-4-7":               ("claude", "claude-opus-4-7"),
-    "claude-haiku-4-5-20251001":     ("claude", "claude-haiku-4-5-20251001"),
-    "gpt-5.5-2026-04-23":            ("openai", "gpt-5.5-2026-04-23"),
-    "gpt-5.4-mini-2026-03-17":       ("openai", "gpt-5.4-mini-2026-03-17"),
-    "gemini-3.1-pro-preview":        ("gemini", "gemini-3.1-pro-preview"),
-    "gemini-3-flash-preview":        ("gemini", "gemini-3-flash-preview"),
-    "gemini-2.5-flash":              ("gemini", "gemini-2.5-flash"),
+    "mock": ("mock", None),
+    "claude-sonnet-4-6": ("claude", "claude-sonnet-4-6"),
+    "claude-opus-4-7": ("claude", "claude-opus-4-7"),
+    "claude-haiku-4-5-20251001": ("claude", "claude-haiku-4-5-20251001"),
+    "gpt-5.5-2026-04-23": ("openai", "gpt-5.5-2026-04-23"),
+    "gpt-5.4-mini-2026-03-17": ("openai", "gpt-5.4-mini-2026-03-17"),
+    "gemini-3.1-pro-preview": ("gemini", "gemini-3.1-pro-preview"),
+    "gemini-3-flash-preview": ("gemini", "gemini-3-flash-preview"),
+    "gemini-2.5-flash": ("gemini", "gemini-2.5-flash"),
 }
 _provider_cache: dict[str, LLMProvider] = {}
 
@@ -62,15 +61,19 @@ def _build_provider(model_name: str) -> LLMProvider:
         p: LLMProvider = MockProvider()
     else:
         from dotenv import load_dotenv
+
         load_dotenv()
         if kind == "claude":
             from murshid.providers.claude import ClaudeProvider
+
             p = ClaudeProvider(model_id=model_id)
         elif kind == "openai":
             from murshid.providers.openai import OpenAIProvider
+
             p = OpenAIProvider(model_id=model_id)
         elif kind == "gemini":
             from murshid.providers.gemini import GeminiProvider
+
             p = GeminiProvider(model_id=model_id)
         else:
             raise ValueError(f"Unknown kind: {kind}")
@@ -99,8 +102,11 @@ def ask(
         return "", f"Provider init failed: {type(e).__name__}: {e}", ""
     try:
         ans = answer_question(
-            query.strip(), INDEX, provider,
-            bm25_index=BM25, top_k=5,
+            query.strip(),
+            INDEX,
+            provider,
+            bm25_index=BM25,
+            top_k=5,
             critic_enabled=critic_enabled,
             support_gate_enabled=support_gate_enabled,
         )
@@ -121,11 +127,14 @@ def ask(
     if ans.refusal_reason:
         trace_parts.append(f"refusal_reason: {ans.refusal_reason}")
     trace = "\n".join(trace_parts)
-    citations = "\n\n".join(
-        f"[{i+1}] {c.chunk_id}  ({c.service_title})  score={c.score:.3f}\n"
-        f"{c.passage_text[:300]}{'...' if len(c.passage_text) > 300 else ''}"
-        for i, c in enumerate(ans.citations)
-    ) or "(no citations — short-circuited before retrieval)"
+    citations = (
+        "\n\n".join(
+            f"[{i + 1}] {c.chunk_id}  ({c.service_title})  score={c.score:.3f}\n"
+            f"{c.passage_text[:300]}{'...' if len(c.passage_text) > 300 else ''}"
+            for i, c in enumerate(ans.citations)
+        )
+        or "(no citations — short-circuited before retrieval)"
+    )
     return trace, ans.answer_text, citations
 
 

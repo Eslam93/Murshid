@@ -23,16 +23,15 @@ import re
 import statistics
 from dataclasses import asdict, dataclass, field, fields
 from pathlib import Path
-from typing import Optional
 
 from murshid.normalize import light_normalize
 from murshid.pipeline import Answer
 from murshid.providers.base import LLMProvider
 
-
 # ---------------------------------------------------------------------------
 # Data shapes
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class CaseResult:
@@ -56,20 +55,20 @@ class CaseResult:
     recall_at_5: float = 0.0
 
     # Citation accuracy
-    citation_method: str = "n/a"        # "rule" | "judge" | "n/a"
-    citation_accuracy: float = 0.0      # 0..1 (rule) or 0..3 (judge, normalized)
+    citation_method: str = "n/a"  # "rule" | "judge" | "n/a"
+    citation_accuracy: float = 0.0  # 0..1 (rule) or 0..3 (judge, normalized)
 
     # Correctness + register (structured judge)
     has_gold: bool = False
     matched_facts: list[str] = field(default_factory=list)
     missing_facts: list[str] = field(default_factory=list)
     irrelevant_facts: list[str] = field(default_factory=list)
-    correctness_score: Optional[float] = None
-    register_match_score: Optional[float] = None
+    correctness_score: float | None = None
+    register_match_score: float | None = None
 
     # Faithfulness
     unsupported_claims: list[str] = field(default_factory=list)
-    faithfulness_score: Optional[float] = None
+    faithfulness_score: float | None = None
 
     # Predicted-answer storage (Phase 4 sanity-swap polish): preserve the
     # exact predicted text + register so the swap judge re-scores the SAME
@@ -81,15 +80,15 @@ class CaseResult:
     # refusals into harness failures vs. real groundedness catches. The pipeline
     # already stores these on the `Answer`; we copy them through so the bench
     # can break down `behavior=refuse_with_redirect` counts by cause.
-    critic_valid: bool = True          # False when critic itself errored
-    critic_grounded: bool = True        # False when critic flagged ungrounded
+    critic_valid: bool = True  # False when critic itself errored
+    critic_grounded: bool = True  # False when critic flagged ungrounded
     critic_register_match: bool = True  # False when critic flagged register slip
     critic_issues: list[str] = field(default_factory=list)
 
     # Refusal-tone (Phase 4): judge-scored 0-3 cultural-tone metric for any
     # non-answer behavior. §0.7 explicitly grades how the system refuses, not
     # just whether it refused.
-    refusal_tone_score: Optional[float] = None
+    refusal_tone_score: float | None = None
     refusal_tone_notes: str = ""
     judge_refusal_tone_error: str = ""
 
@@ -98,8 +97,8 @@ class CaseResult:
     is_red_team: bool = False
     red_team_category: str = ""
     evaluation_notes: str = ""
-    red_team_rubric_pass: Optional[bool] = None
-    red_team_rubric_score: Optional[float] = None
+    red_team_rubric_pass: bool | None = None
+    red_team_rubric_score: float | None = None
     red_team_rationale: str = ""
     judge_red_team_error: str = ""
 
@@ -213,6 +212,7 @@ rubric_pass = true يعني rubric_score ≥ 2.
 # Rule-based metric helpers
 # ---------------------------------------------------------------------------
 
+
 def _norm_for_match(text: str) -> str:
     """Light-normalize + collapse whitespace for content-substring matching."""
     return re.sub(r"\s+", " ", light_normalize(text)).strip()
@@ -262,6 +262,7 @@ def compute_citation_accuracy_rule(
 # Judge calls (structured JSON output)
 # ---------------------------------------------------------------------------
 
+
 def _extract_json(text: str) -> dict:
     """Robustly extract the first JSON object from a judge response."""
     # Try direct parse first.
@@ -310,7 +311,7 @@ def judge_correctness(
         return _extract_json(resp.text), ""
     except (json.JSONDecodeError, ValueError, KeyError, TypeError) as e:
         return {}, f"judge_correctness_parse_error: {type(e).__name__}: {str(e)[:160]}"
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         return {}, f"judge_correctness_provider_error: {type(e).__name__}: {str(e)[:160]}"
 
 
@@ -326,9 +327,9 @@ def judge_faithfulness(
     Phase 3 follow-up: max_tokens 600 → 4000 (same thinking-mode reason as
     `judge_correctness`).
     """
-    context = "\n\n".join(
-        f"[{i}] {p}" for i, p in enumerate(retrieved_passages, 1)
-    ) or "(لا توجد مقاطع)"
+    context = (
+        "\n\n".join(f"[{i}] {p}" for i, p in enumerate(retrieved_passages, 1)) or "(لا توجد مقاطع)"
+    )
     user_block = (
         f"السؤال:\n{question}\n\n"
         f"المقاطع المسترجعة:\n{context}\n\n"
@@ -345,7 +346,7 @@ def judge_faithfulness(
         return _extract_json(resp.text), ""
     except (json.JSONDecodeError, ValueError, KeyError, TypeError) as e:
         return {}, f"judge_faithfulness_parse_error: {type(e).__name__}: {str(e)[:160]}"
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         return {}, f"judge_faithfulness_provider_error: {type(e).__name__}: {str(e)[:160]}"
 
 
@@ -379,7 +380,7 @@ def judge_refusal_tone(
         return _extract_json(resp.text), ""
     except (json.JSONDecodeError, ValueError, KeyError, TypeError) as e:
         return {}, f"judge_refusal_tone_parse_error: {type(e).__name__}: {str(e)[:160]}"
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         return {}, f"judge_refusal_tone_provider_error: {type(e).__name__}: {str(e)[:160]}"
 
 
@@ -414,7 +415,7 @@ def judge_red_team(
         return _extract_json(resp.text), ""
     except (json.JSONDecodeError, ValueError, KeyError, TypeError) as e:
         return {}, f"judge_red_team_parse_error: {type(e).__name__}: {str(e)[:160]}"
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         return {}, f"judge_red_team_provider_error: {type(e).__name__}: {str(e)[:160]}"
 
 
@@ -422,11 +423,12 @@ def judge_red_team(
 # Top-level case evaluator
 # ---------------------------------------------------------------------------
 
+
 def evaluate_case(
     *,
     question: dict,
     answer: Answer,
-    gold: Optional[dict],
+    gold: dict | None,
     judge: LLMProvider,
     provider_name: str,
     provider_model_id: str,
@@ -471,7 +473,9 @@ def evaluate_case(
 
         if gold_quoted:
             result.citation_method = "rule"
-            result.citation_accuracy = compute_citation_accuracy_rule(answer.answer_text, gold_quoted)
+            result.citation_accuracy = compute_citation_accuracy_rule(
+                answer.answer_text, gold_quoted
+            )
         else:
             # Refusal-style gold (q-014 / q-015) with no citations — N/A.
             result.citation_method = "n/a"
@@ -514,7 +518,9 @@ def evaluate_case(
         if faith_err:
             result.judge_faithfulness_error = faith_err
         else:
-            result.unsupported_claims = [str(x) for x in faith_payload.get("unsupported_claims", [])]
+            result.unsupported_claims = [
+                str(x) for x in faith_payload.get("unsupported_claims", [])
+            ]
             try:
                 result.faithfulness_score = float(faith_payload.get("faithfulness_score"))
             except (TypeError, ValueError):
@@ -665,11 +671,12 @@ def evaluate_red_team_case(
 # Aggregation helpers
 # ---------------------------------------------------------------------------
 
-def _safe_mean(values: list[float]) -> Optional[float]:
+
+def _safe_mean(values: list[float]) -> float | None:
     return statistics.mean(values) if values else None
 
 
-def _safe_median(values: list[float]) -> Optional[float]:
+def _safe_median(values: list[float]) -> float | None:
     return statistics.median(values) if values else None
 
 
@@ -684,34 +691,34 @@ class AggregateMetrics:
     n_with_gold: int
 
     behavior_match_rate: float
-    recall_at_5_mean: Optional[float]
-    citation_accuracy_mean: Optional[float]
-    correctness_mean: Optional[float]
-    register_match_mean: Optional[float]
-    faithfulness_mean: Optional[float]
+    recall_at_5_mean: float | None
+    citation_accuracy_mean: float | None
+    correctness_mean: float | None
+    register_match_mean: float | None
+    faithfulness_mean: float | None
 
     # Fact-count breakdowns (the structured-output diagnostic per ADR 2)
-    avg_matched_facts: Optional[float]
-    avg_missing_facts: Optional[float]
-    avg_irrelevant_facts: Optional[float]
+    avg_matched_facts: float | None
+    avg_missing_facts: float | None
+    avg_irrelevant_facts: float | None
 
     # Phase 4 additions
-    refusal_tone_mean: Optional[float]
+    refusal_tone_mean: float | None
     n_with_refusal_tone: int
-    red_team_rubric_mean: Optional[float]
-    red_team_rubric_pass_rate: Optional[float]
+    red_team_rubric_mean: float | None
+    red_team_rubric_pass_rate: float | None
     n_red_team: int
 
     # Reviewer fix #3 — critic refusal-cause breakdown. Splits the umbrella
     # `behavior=refuse_with_redirect` count by WHY the critic gate fired so
     # the bench distinguishes harness failures (critic itself crashed) from
     # real groundedness catches. Only meaningful when critic_mode == "on".
-    n_critic_invalid_refuses: int        # critic itself errored
-    n_grounded_false_refuses: int        # critic OK but answer ungrounded
-    n_register_only_logs: int            # answer shipped, register mismatch logged
+    n_critic_invalid_refuses: int  # critic itself errored
+    n_grounded_false_refuses: int  # critic OK but answer ungrounded
+    n_register_only_logs: int  # answer shipped, register mismatch logged
 
     total_cost_usd: float
-    latency_p50_s: Optional[float]
+    latency_p50_s: float | None
     judge_correctness_errors: int
     judge_faithfulness_errors: int
     judge_refusal_tone_errors: int
@@ -759,18 +766,34 @@ def load_cases(path: Path) -> list[CaseResult]:
 
 def _empty_aggregate() -> AggregateMetrics:
     return AggregateMetrics(
-        provider_name="", provider_model_id="", critic_mode="",
-        n_cases=0, n_with_gold=0, behavior_match_rate=0.0,
-        recall_at_5_mean=None, citation_accuracy_mean=None,
-        correctness_mean=None, register_match_mean=None,
+        provider_name="",
+        provider_model_id="",
+        critic_mode="",
+        n_cases=0,
+        n_with_gold=0,
+        behavior_match_rate=0.0,
+        recall_at_5_mean=None,
+        citation_accuracy_mean=None,
+        correctness_mean=None,
+        register_match_mean=None,
         faithfulness_mean=None,
-        avg_matched_facts=None, avg_missing_facts=None, avg_irrelevant_facts=None,
-        refusal_tone_mean=None, n_with_refusal_tone=0,
-        red_team_rubric_mean=None, red_team_rubric_pass_rate=None, n_red_team=0,
-        n_critic_invalid_refuses=0, n_grounded_false_refuses=0, n_register_only_logs=0,
-        total_cost_usd=0.0, latency_p50_s=None,
-        judge_correctness_errors=0, judge_faithfulness_errors=0,
-        judge_refusal_tone_errors=0, judge_red_team_errors=0,
+        avg_matched_facts=None,
+        avg_missing_facts=None,
+        avg_irrelevant_facts=None,
+        refusal_tone_mean=None,
+        n_with_refusal_tone=0,
+        red_team_rubric_mean=None,
+        red_team_rubric_pass_rate=None,
+        n_red_team=0,
+        n_critic_invalid_refuses=0,
+        n_grounded_false_refuses=0,
+        n_register_only_logs=0,
+        total_cost_usd=0.0,
+        latency_p50_s=None,
+        judge_correctness_errors=0,
+        judge_faithfulness_errors=0,
+        judge_refusal_tone_errors=0,
+        judge_red_team_errors=0,
         answer_errors=0,
     )
 
@@ -850,7 +873,8 @@ def aggregate(cases: list[CaseResult]) -> AggregateMetrics:
         red_team_rubric_mean=_safe_mean([c.red_team_rubric_score for c in red_team_scored]),
         red_team_rubric_pass_rate=(
             sum(1 for c in red_team_with_pass if c.red_team_rubric_pass) / len(red_team_with_pass)
-            if red_team_with_pass else None
+            if red_team_with_pass
+            else None
         ),
         n_red_team=len(red_team),
         # Reviewer fix #3 — critic refusal-cause counters.
@@ -858,17 +882,18 @@ def aggregate(cases: list[CaseResult]) -> AggregateMetrics:
         # (valid=True, grounded=True) so they don't match either critic-bucket.
         # Off-mode skips the critic so all three counts naturally land at 0.
         n_critic_invalid_refuses=sum(
-            1 for c in cases
-            if c.behavior_taken == "refuse_with_redirect" and not c.critic_valid
+            1 for c in cases if c.behavior_taken == "refuse_with_redirect" and not c.critic_valid
         ),
         n_grounded_false_refuses=sum(
-            1 for c in cases
+            1
+            for c in cases
             if c.behavior_taken == "refuse_with_redirect"
             and c.critic_valid
             and not c.critic_grounded
         ),
         n_register_only_logs=sum(
-            1 for c in cases
+            1
+            for c in cases
             if c.behavior_taken == "answer"
             and c.critic_valid
             and c.critic_grounded

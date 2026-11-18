@@ -27,13 +27,13 @@ from murshid.hijri import (
     has_hijri_date,
 )
 
-
 DATA = Path(__file__).parent.parent / "data"
 
 
 # ---------------------------------------------------------------------------
 # extract_hijri_dates — core behavior
 # ---------------------------------------------------------------------------
+
 
 def test_extract_single_date_with_year_and_marker():
     result = extract_hijri_dates("إذا انتهت الرخصة في 10 رمضان 1447هـ، فينصح بالتجديد")
@@ -119,6 +119,7 @@ def test_extract_ignores_gregorian_dates():
 # Month-name spelling variants
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.parametrize(
     "variant,expected_canonical,expected_index",
     [
@@ -158,6 +159,7 @@ def test_canonicalize_unknown_variant_raises():
 # has_hijri_date predicate
 # ---------------------------------------------------------------------------
 
+
 def test_has_hijri_date_true():
     assert has_hijri_date("ينتهي العقد في 20 شعبان 1447هـ") is True
 
@@ -171,33 +173,61 @@ def test_has_hijri_date_false():
 # HijriDate dataclass validation
 # ---------------------------------------------------------------------------
 
+
 def test_hijri_date_validates_day_range():
     with pytest.raises(ValueError, match="day out of range"):
-        HijriDate(day=0, month_name="رمضان", month_index=9, year=1447, has_marker=True, raw_text="0 رمضان 1447هـ")
+        HijriDate(
+            day=0,
+            month_name="رمضان",
+            month_index=9,
+            year=1447,
+            has_marker=True,
+            raw_text="0 رمضان 1447هـ",
+        )
     with pytest.raises(ValueError, match="day out of range"):
-        HijriDate(day=31, month_name="رمضان", month_index=9, year=1447, has_marker=True, raw_text="31 رمضان 1447هـ")
+        HijriDate(
+            day=31,
+            month_name="رمضان",
+            month_index=9,
+            year=1447,
+            has_marker=True,
+            raw_text="31 رمضان 1447هـ",
+        )
 
 
 def test_hijri_date_validates_month_index_range():
     with pytest.raises(ValueError, match="month_index out of range"):
-        HijriDate(day=5, month_name="رمضان", month_index=13, year=1447, has_marker=True, raw_text="x")
+        HijriDate(
+            day=5, month_name="رمضان", month_index=13, year=1447, has_marker=True, raw_text="x"
+        )
 
 
 def test_hijri_date_validates_year_range():
     with pytest.raises(ValueError, match="year out of plausible range"):
-        HijriDate(day=5, month_name="رمضان", month_index=9, year=99999, has_marker=True, raw_text="x")
+        HijriDate(
+            day=5, month_name="رمضان", month_index=9, year=99999, has_marker=True, raw_text="x"
+        )
 
 
 def test_hijri_date_year_none_is_allowed():
     """Dates without an explicit year are valid (q-016 deadline-arithmetic style)."""
-    d = HijriDate(day=5, month_name="رمضان", month_index=9, year=None, has_marker=False, raw_text="5 رمضان")
+    d = HijriDate(
+        day=5, month_name="رمضان", month_index=9, year=None, has_marker=False, raw_text="5 رمضان"
+    )
     assert d.year is None
 
 
 def test_hijri_date_is_frozen():
     """Frozen so callers can use HijriDate as a dict key / set member when
     grouping dates across passages."""
-    d = HijriDate(day=5, month_name="رمضان", month_index=9, year=1447, has_marker=True, raw_text="5 رمضان 1447هـ")
+    d = HijriDate(
+        day=5,
+        month_name="رمضان",
+        month_index=9,
+        year=1447,
+        has_marker=True,
+        raw_text="5 رمضان 1447هـ",
+    )
     with pytest.raises(Exception):  # FrozenInstanceError; subclass of AttributeError
         d.day = 6  # type: ignore[misc]
 
@@ -205,6 +235,7 @@ def test_hijri_date_is_frozen():
 # ---------------------------------------------------------------------------
 # Integration: scan the real data
 # ---------------------------------------------------------------------------
+
 
 def _all_text_from(path: Path) -> str:
     """Concatenate all string values in a JSON file into one searchable blob."""

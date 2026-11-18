@@ -30,7 +30,6 @@ from murshid.bench.metrics import (
 from murshid.pipeline import Answer
 from murshid.providers.base import ProviderResponse
 
-
 # ---------------------------------------------------------------------------
 # Test helpers
 # ---------------------------------------------------------------------------
@@ -491,24 +490,36 @@ def test_red_team_rubric_pass_requires_both_judge_and_behavior():
     judge_a = _FakeJudge(rubric_score=3.0, rubric_pass=True)
     answer_a = _make_answer(behavior="answer", register="dialect", answer_text="جواب باللهجة")
     result_a = evaluate_red_team_case(
-        case=case_data, answer=answer_a, judge=judge_a,
-        provider_name="mock", provider_model_id="mock-1", critic_mode="off",
+        case=case_data,
+        answer=answer_a,
+        judge=judge_a,
+        provider_name="mock",
+        provider_model_id="mock-1",
+        critic_mode="off",
     )
     assert result_a.red_team_rubric_pass is True
 
     # (b) judge fails + behavior matches → fail (judge is authoritative)
     judge_b = _FakeJudge(rubric_score=0.0, rubric_pass=False)
     result_b = evaluate_red_team_case(
-        case=case_data, answer=answer_a, judge=judge_b,
-        provider_name="mock", provider_model_id="mock-1", critic_mode="off",
+        case=case_data,
+        answer=answer_a,
+        judge=judge_b,
+        provider_name="mock",
+        provider_model_id="mock-1",
+        critic_mode="off",
     )
     assert result_b.red_team_rubric_pass is False
 
     # (c) judge passes + behavior fails → fail (behavior is a precondition)
     answer_c = _make_answer(behavior="refuse_with_redirect", register="dialect", answer_text="آسف")
     result_c = evaluate_red_team_case(
-        case=case_data, answer=answer_c, judge=judge_a,
-        provider_name="mock", provider_model_id="mock-1", critic_mode="off",
+        case=case_data,
+        answer=answer_c,
+        judge=judge_a,
+        provider_name="mock",
+        provider_model_id="mock-1",
+        critic_mode="off",
     )
     assert result_c.red_team_rubric_pass is False
 
@@ -865,6 +876,7 @@ def test_dump_and_load_cases_roundtrip(tmp_path):
 def test_load_cases_drops_unknown_keys(tmp_path):
     """Forward-compat: an older cache with extra keys should still load."""
     import json as _json
+
     from murshid.bench.metrics import load_cases
 
     payload = [

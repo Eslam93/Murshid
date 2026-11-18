@@ -29,7 +29,6 @@ import argparse
 import json
 import sys
 import time
-from dataclasses import asdict
 from pathlib import Path
 
 # Allow `python -m murshid.bench` from the repo root.
@@ -39,7 +38,8 @@ if str(ROOT / "src") not in sys.path:
 
 # Load .env before importing provider classes that read env at construct time.
 try:
-    from dotenv import load_dotenv  # noqa: PLC0415
+    from dotenv import load_dotenv
+
     load_dotenv(ROOT / ".env", override=True)
 except ImportError:
     pass
@@ -62,7 +62,6 @@ from murshid.providers.gemini import GeminiProvider  # noqa: E402
 from murshid.providers.mock import MockProvider  # noqa: E402
 from murshid.providers.openai import OpenAIProvider  # noqa: E402
 from murshid.retrieve import build_bm25_index  # noqa: E402
-
 
 BENCH_DIR = ROOT / "bench"
 DATA_DIR = ROOT / "data"
@@ -113,7 +112,7 @@ def select_judge() -> LLMProvider | None:
       1. Gemini at the configured judge model
       2. Claude Opus 4.7 (self-preference bias must be flagged in ADR 2)
     """
-    import os  # noqa: PLC0415
+    import os
 
     judge_model = os.environ.get("BENCH_JUDGE_MODEL", "gemini-2.5-flash").strip()
     g = GeminiProvider(model_id=judge_model)
@@ -132,6 +131,7 @@ def select_judge() -> LLMProvider | None:
 # Logging helpers
 # ---------------------------------------------------------------------------
 
+
 def _now_iso() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%S")
 
@@ -142,7 +142,9 @@ def _append_jsonl(path: Path, record: dict) -> None:
         f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 
-def _log_cost(provider: LLMProvider, question_id: str, kind: str, response_like: dict, cost_usd: float) -> None:
+def _log_cost(
+    provider: LLMProvider, question_id: str, kind: str, response_like: dict, cost_usd: float
+) -> None:
     _append_jsonl(
         COST_LOG_PATH,
         {
@@ -207,6 +209,7 @@ def _log_refusal(
 # One-cell evaluation
 # ---------------------------------------------------------------------------
 
+
 def _run_one(
     *,
     provider: LLMProvider,
@@ -228,7 +231,7 @@ def _run_one(
             top_k=5,
             critic_enabled=critic_enabled,
         )
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         # Provider failure → record and continue.
         return CaseResult(
             question_id=question["question_id"],
@@ -246,7 +249,8 @@ def _run_one(
     if provider.name != "mock":
         # Approximate from token counts on the Answer (latency_s, input/output_tokens
         # are populated). Build a synthetic ProviderResponse-like dict for cost calc.
-        from murshid.providers.base import ProviderResponse  # noqa: PLC0415
+        from murshid.providers.base import ProviderResponse
+
         fake_resp = ProviderResponse(
             text=answer.answer_text,
             input_tokens=answer.input_tokens,
@@ -280,10 +284,16 @@ def _run_one(
         class _NoJudge:
             name = "no_judge"
             model_id = "n/a"
+
             def generate(self, system, user, max_tokens=1024, timeout=30.0):  # type: ignore[override]
                 raise RuntimeError("no judge configured")
-            def is_available(self) -> bool: return False
-            def cost_estimate_usd(self, response) -> float: return 0.0
+
+            def is_available(self) -> bool:
+                return False
+
+            def cost_estimate_usd(self, response) -> float:
+                return 0.0
+
         judge_to_use: LLMProvider = _NoJudge()
     else:
         judge_to_use = judge
@@ -322,7 +332,7 @@ def _run_one_red_team(
             top_k=5,
             critic_enabled=critic_enabled,
         )
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         result = CaseResult(
             question_id=case_id,
             provider_name=provider.name,
@@ -341,7 +351,8 @@ def _run_one_red_team(
     # Cost log.
     answer_cost = 0.0
     if provider.name != "mock":
-        from murshid.providers.base import ProviderResponse  # noqa: PLC0415
+        from murshid.providers.base import ProviderResponse
+
         fake_resp = ProviderResponse(
             text=answer.answer_text,
             input_tokens=answer.input_tokens,
@@ -368,13 +379,20 @@ def _run_one_red_team(
     )
 
     if judge is None:
+
         class _NoJudge:
             name = "no_judge"
             model_id = "n/a"
+
             def generate(self, system, user, max_tokens=1024, timeout=30.0):  # type: ignore[override]
                 raise RuntimeError("no judge configured")
-            def is_available(self) -> bool: return False
-            def cost_estimate_usd(self, response) -> float: return 0.0
+
+            def is_available(self) -> bool:
+                return False
+
+            def cost_estimate_usd(self, response) -> float:
+                return 0.0
+
         judge_to_use: LLMProvider = _NoJudge()
     else:
         judge_to_use = judge
@@ -454,17 +472,21 @@ def run_judge_sanity_swap(
     for qid in SANITY_SWAP_CASE_IDS:
         primary = _pick_swap_candidate(cases, qid)
         if primary is None:
-            deltas.append({
-                "question_id": qid,
-                "skipped": True,
-                "reason": "no stored prediction with primary correctness score",
-            })
+            deltas.append(
+                {
+                    "question_id": qid,
+                    "skipped": True,
+                    "reason": "no stored prediction with primary correctness score",
+                }
+            )
             continue
 
         q = questions_by_id.get(qid)
         gold = golds_by_id.get(qid)
         if q is None or gold is None:
-            deltas.append({"question_id": qid, "skipped": True, "reason": "missing question or gold"})
+            deltas.append(
+                {"question_id": qid, "skipped": True, "reason": "missing question or gold"}
+            )
             continue
 
         payload, err = judge_correctness(
@@ -476,7 +498,9 @@ def run_judge_sanity_swap(
             predicted_register=primary.predicted_register or gold.get("expected_register", "MSA"),
         )
         if err:
-            deltas.append({"question_id": qid, "error": err, "provider_compared": primary.provider_name})
+            deltas.append(
+                {"question_id": qid, "error": err, "provider_compared": primary.provider_name}
+            )
             continue
 
         primary_corr = primary.correctness_score or 0.0
@@ -488,16 +512,18 @@ def run_judge_sanity_swap(
 
         delta_corr = (swap_corr_f - primary_corr) if swap_corr_f is not None else None
 
-        deltas.append({
-            "question_id": qid,
-            "provider_compared": primary.provider_name,
-            "provider_model_id": primary.provider_model_id,
-            "primary_correctness": primary.correctness_score,
-            "swap_correctness": swap_corr_f,
-            "delta_correctness": delta_corr,
-            "primary_register": primary.register_match_score,
-            "swap_register": payload.get("register_match_score"),
-        })
+        deltas.append(
+            {
+                "question_id": qid,
+                "provider_compared": primary.provider_name,
+                "provider_model_id": primary.provider_model_id,
+                "primary_correctness": primary.correctness_score,
+                "swap_correctness": swap_corr_f,
+                "delta_correctness": delta_corr,
+                "primary_register": primary.register_match_score,
+                "swap_register": payload.get("register_match_score"),
+            }
+        )
 
     # Compute the absolute-mean bias if we have enough data.
     valid_deltas = [
@@ -505,10 +531,7 @@ def run_judge_sanity_swap(
         for d in deltas
         if isinstance(d.get("delta_correctness"), (int, float))
     ]
-    abs_mean = (
-        sum(abs(d) for d in valid_deltas) / len(valid_deltas)
-        if valid_deltas else None
-    )
+    abs_mean = sum(abs(d) for d in valid_deltas) / len(valid_deltas) if valid_deltas else None
 
     return {
         "primary_judge": primary_judge.model_id,
@@ -527,6 +550,7 @@ def run_judge_sanity_swap(
 # ---------------------------------------------------------------------------
 # Markdown rendering
 # ---------------------------------------------------------------------------
+
 
 def _fmt(value, n: int = 3) -> str:
     if value is None:
@@ -554,12 +578,14 @@ def render_results_md(
     lines.append("")
     lines.append("## Configuration")
     lines.append("")
-    lines.append(f"- Providers: {', '.join(f'{p.name} ({p.model_id})' for p in providers) or '(none)'}")
+    lines.append(
+        f"- Providers: {', '.join(f'{p.name} ({p.model_id})' for p in providers) or '(none)'}"
+    )
     lines.append(f"- Judge: {judge.model_id if judge else '(none — judge-scored metrics SKIPPED)'}")
     lines.append("- Critic modes: off, on (two passes per provider)")
     lines.append("- Standard set: 16 questions (11 with gold), Red-team: 10 cases (Phase 4)")
-    lines.append(f"- Cost log: `bench/cost-log.jsonl`")
-    lines.append(f"- Refusal log: `bench/refusal-log.jsonl`")
+    lines.append("- Cost log: `bench/cost-log.jsonl`")
+    lines.append("- Refusal log: `bench/refusal-log.jsonl`")
     lines.append("")
     if mode == "red_team":
         lines.append("## Mode: red-team-only re-run")
@@ -609,7 +635,9 @@ def render_results_md(
         # Fact-count breakdown
         lines.append("## Fact-count breakdown (correctness diagnostic per ADR 2)")
         lines.append("")
-        lines.append("| Provider | Critic | Avg matched facts | Avg missing facts | Avg irrelevant (hallucinated) facts |")
+        lines.append(
+            "| Provider | Critic | Avg matched facts | Avg missing facts | Avg irrelevant (hallucinated) facts |"
+        )
         lines.append("| --- | --- | ---:| ---:| ---:|")
         for a in aggregates_standard:
             lines.append(
@@ -633,9 +661,15 @@ def render_results_md(
             "Splits the `refuse_with_redirect` count for critic=on rows by WHY the gate fired:"
         )
         lines.append("")
-        lines.append("- **Critic invalid:** critic itself errored (harness fragility, NOT a real safety catch).")
-        lines.append("- **Grounded=false:** critic returned a real verdict that the answer was ungrounded.")
-        lines.append("- **Register-only logs:** answer shipped, register slip logged on the Answer envelope (not a refusal).")
+        lines.append(
+            "- **Critic invalid:** critic itself errored (harness fragility, NOT a real safety catch)."
+        )
+        lines.append(
+            "- **Grounded=false:** critic returned a real verdict that the answer was ungrounded."
+        )
+        lines.append(
+            "- **Register-only logs:** answer shipped, register slip logged on the Answer envelope (not a refusal)."
+        )
         lines.append("")
         lines.append(
             "| Provider | Scope | Critic | Refuses (critic invalid) | Refuses (grounded=false) | Logged (register-only) |"
@@ -652,7 +686,9 @@ def render_results_md(
     # Errors (standard)
     lines.append("## Errors")
     lines.append("")
-    lines.append("| Provider | Critic | Answer | Judge corr | Judge faith | Judge tone | Judge red-team |")
+    lines.append(
+        "| Provider | Critic | Answer | Judge corr | Judge faith | Judge tone | Judge red-team |"
+    )
     lines.append("| --- | --- | ---:| ---:| ---:| ---:| ---:|")
     all_aggs = aggregates_standard + aggregates_red_team
     for a in all_aggs:
@@ -673,9 +709,7 @@ def render_results_md(
         lines.append(
             "| Provider | Critic | n | Behavior | Recall@expected | Rubric pass | Rubric mean | Refusal tone |"
         )
-        lines.append(
-            "| --- | --- | ---:| ---:| ---:| ---:| ---:| ---:|"
-        )
+        lines.append("| --- | --- | ---:| ---:| ---:| ---:| ---:| ---:|")
         for a in aggregates_red_team:
             lines.append(
                 f"| {a.provider_name} ({a.provider_model_id}) | {a.critic_mode} | {a.n_cases} | "
@@ -705,7 +739,9 @@ def render_results_md(
         lines.append("")
         lines.append(f"> {sanity_swap['note']}")
         lines.append("")
-        lines.append("| Question | Provider compared | Primary correctness | Swap correctness | Δ correctness | Primary register | Swap register |")
+        lines.append(
+            "| Question | Provider compared | Primary correctness | Swap correctness | Δ correctness | Primary register | Swap register |"
+        )
         lines.append("| --- | --- | ---:| ---:| ---:| ---:| ---:|")
         for d in sanity_swap["per_case"]:
             if d.get("skipped") or d.get("error"):
@@ -732,11 +768,13 @@ def render_results_md(
         lines.append("")
         real = [a for a in aggregates_standard if a.provider_name != "mock"]
         if real:
+
             def score(a: AggregateMetrics) -> float:
                 corr = a.correctness_mean or 0
                 faith = a.faithfulness_mean or 0
                 irr = a.avg_irrelevant_facts or 0
                 return a.behavior_match_rate * 3 + corr + faith - irr
+
             best = max(real, key=score)
             lines.append(
                 f"Provisional production default: **{best.provider_name} ({best.provider_model_id})** "
@@ -749,9 +787,13 @@ def render_results_md(
                 f"(see Answer-cost-column footnote above for what's included vs not)."
             )
         else:
-            lines.append("Only the mock provider ran. No verdict — see provider-availability notes above.")
+            lines.append(
+                "Only the mock provider ran. No verdict — see provider-availability notes above."
+            )
         lines.append("")
-        lines.append("Statistical caveat (ADR 2): correctness / faithfulness aggregates use n ≤ 11 gold answers per provider × critic_mode. Red-team uses n=10 cases. Treat differences ≤ 0.3 as directional, not significant.")
+        lines.append(
+            "Statistical caveat (ADR 2): correctness / faithfulness aggregates use n ≤ 11 gold answers per provider × critic_mode. Red-team uses n=10 cases. Treat differences ≤ 0.3 as directional, not significant."
+        )
         lines.append("")
 
     # ====================================================================
@@ -760,10 +802,14 @@ def render_results_md(
     if per_case_standard:
         lines.append("## Per-case results — standard")
         lines.append("")
-        lines.append("| Q-ID | Provider | Critic | Behavior (expected → taken) | Recall@5 | Correctness | Register | Faithfulness | Cite acc | Refusal tone | Cost ($) | Latency (s) |")
+        lines.append(
+            "| Q-ID | Provider | Critic | Behavior (expected → taken) | Recall@5 | Correctness | Register | Faithfulness | Cite acc | Refusal tone | Cost ($) | Latency (s) |"
+        )
         lines.append("| --- | --- | --- | --- | ---:| ---:| ---:| ---:| ---:| ---:| ---:| ---:|")
         for c in per_case_standard:
-            beh = f"{c.expected_behavior} → {c.behavior_taken}" + (" ✓" if c.behavior_match else " ✗")
+            beh = f"{c.expected_behavior} → {c.behavior_taken}" + (
+                " ✓" if c.behavior_match else " ✗"
+            )
             lines.append(
                 f"| {c.question_id} | {c.provider_name} | {c.critic_mode} | {beh} | "
                 f"{_fmt(c.recall_at_5)} | {_fmt(c.correctness_score, 1)} | {_fmt(c.register_match_score, 1)} | "
@@ -776,10 +822,14 @@ def render_results_md(
     if per_case_red_team:
         lines.append("## Per-case results — red-team")
         lines.append("")
-        lines.append("| Case | Category | Provider | Critic | Behavior (expected → taken) | Recall | Rubric pass | Rubric score | Refusal tone | Cost ($) | Latency (s) |")
+        lines.append(
+            "| Case | Category | Provider | Critic | Behavior (expected → taken) | Recall | Rubric pass | Rubric score | Refusal tone | Cost ($) | Latency (s) |"
+        )
         lines.append("| --- | --- | --- | --- | --- | ---:| :---:| ---:| ---:| ---:| ---:|")
         for c in per_case_red_team:
-            beh = f"{c.expected_behavior} → {c.behavior_taken}" + (" ✓" if c.behavior_match else " ✗")
+            beh = f"{c.expected_behavior} → {c.behavior_taken}" + (
+                " ✓" if c.behavior_match else " ✗"
+            )
             rp = "—"
             if c.red_team_rubric_pass is True:
                 rp = "✓"
@@ -797,9 +847,7 @@ def render_results_md(
     # Errors detail — surface answer_error exception class/message inline
     # so reviewers don't have to open case-cache.json to diagnose.
     # ====================================================================
-    errored_cases = [
-        c for c in (per_case_standard + per_case_red_team) if c.answer_error
-    ]
+    errored_cases = [c for c in (per_case_standard + per_case_red_team) if c.answer_error]
     if errored_cases:
         lines.append("## Errors detail")
         lines.append("")
@@ -814,9 +862,7 @@ def render_results_md(
             err = c.answer_error.replace("|", "\\|").replace("\n", " ")
             if len(err) > 160:
                 err = err[:157] + "..."
-            lines.append(
-                f"| {c.question_id} | {c.provider_name} | {c.critic_mode} | `{err}` |"
-            )
+            lines.append(f"| {c.question_id} | {c.provider_name} | {c.critic_mode} | `{err}` |")
         lines.append("")
     return "\n".join(lines)
 
@@ -824,6 +870,7 @@ def render_results_md(
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Murshid mini-bench (§0.6)")
@@ -877,8 +924,7 @@ def main(argv: list[str] | None = None) -> int:
         "--red-team-ids",
         default="",
         help=(
-            "Comma-separated red-team case IDs to filter the red-team set. "
-            "Empty = all 10 cases."
+            "Comma-separated red-team case IDs to filter the red-team set. Empty = all 10 cases."
         ),
     )
     args = parser.parse_args(argv)
@@ -913,14 +959,17 @@ def main(argv: list[str] | None = None) -> int:
         class _StubProvider:
             def __init__(self, name: str, model_id: str) -> None:
                 self.name, self.model_id = name, model_id
+
         provider_pairs = sorted({(c.provider_name, c.provider_model_id) for c in cached})
         stub_providers = [_StubProvider(n, m) for n, m in provider_pairs]
 
         # Mode is inferred from the cache contents.
         inferred_mode = (
-            "red_team" if cached_red_team and not cached_standard else
-            "standard" if cached_standard and not cached_red_team else
-            "full"
+            "red_team"
+            if cached_red_team and not cached_standard
+            else "standard"
+            if cached_standard and not cached_red_team
+            else "full"
         )
         # If standard has only the sanity-swap pre-loop count, treat as red_team mode.
         if cached_red_team and len(cached_standard) <= 3:
@@ -929,8 +978,8 @@ def main(argv: list[str] | None = None) -> int:
         md = render_results_md(
             providers=stub_providers,  # type: ignore[arg-type]
             judge=None,  # judge model name isn't preserved in cache; the existing
-                          # results.md "Configuration" line is overwritten by the
-                          # render — accept the loss for render-only re-runs.
+            # results.md "Configuration" line is overwritten by the
+            # render — accept the loss for render-only re-runs.
             aggregates_standard=re_aggs_std if inferred_mode != "red_team" else [],
             aggregates_red_team=re_aggs_rt,
             sanity_swap=None,
@@ -1042,8 +1091,7 @@ def main(argv: list[str] | None = None) -> int:
                 break
         if preferred is not None:
             swap_questions = [
-                questions_by_id[qid] for qid in SANITY_SWAP_CASE_IDS
-                if qid in questions_by_id
+                questions_by_id[qid] for qid in SANITY_SWAP_CASE_IDS if qid in questions_by_id
             ]
             n_swap = len(swap_questions)
             for i, q in enumerate(swap_questions, 1):
@@ -1063,7 +1111,9 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 standard_cases.append(case)
         else:
-            print("[bench] no preferred provider available for sanity-swap pre-loop; sanity-swap will skip")
+            print(
+                "[bench] no preferred provider available for sanity-swap pre-loop; sanity-swap will skip"
+            )
 
     # ---------------------------------------------------------------
     # Red-team loop
@@ -1103,7 +1153,8 @@ def main(argv: list[str] | None = None) -> int:
         for provider in providers:
             for critic_mode in critic_modes:
                 std_subset = [
-                    c for c in standard_cases
+                    c
+                    for c in standard_cases
                     if c.provider_name == provider.name and c.critic_mode == critic_mode
                 ]
                 aggregates_standard.append(aggregate(std_subset))
@@ -1111,7 +1162,8 @@ def main(argv: list[str] | None = None) -> int:
         for provider in providers:
             for critic_mode in critic_modes:
                 rt_subset = [
-                    c for c in red_team_cases
+                    c
+                    for c in red_team_cases
                     if c.provider_name == provider.name and c.critic_mode == critic_mode
                 ]
                 aggregates_red_team.append(aggregate(rt_subset))

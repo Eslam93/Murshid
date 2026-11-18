@@ -14,7 +14,6 @@ load_dotenv(ROOT / ".env", override=True)
 from murshid.bench.metrics import CORRECTNESS_JUDGE_PROMPT_AR, _extract_json  # noqa: E402
 from murshid.providers.gemini import GeminiProvider  # noqa: E402
 
-
 prov = GeminiProvider(model_id="gemini-2.5-flash")
 
 user_block = """السؤال:
@@ -52,9 +51,9 @@ try:
         payload = _extract_json(resp.text or "")
         out.append("PARSED OK:")
         out.append(json.dumps(payload, ensure_ascii=False, indent=2))
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         out.append(f"PARSE ERROR: {type(e).__name__}: {e}")
-except Exception as e:  # noqa: BLE001
+except Exception as e:
     out.append(f"GENERATE ERROR: {type(e).__name__}: {e}")
 
 Path(ROOT / "judge_debug.txt").write_text("\n".join(out), encoding="utf-8")

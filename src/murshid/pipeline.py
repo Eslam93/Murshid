@@ -42,7 +42,6 @@ from murshid.retrieve import BM25Index, RetrievalResult, retrieve
 from murshid.rewrite import rewrite_to_msa
 from murshid.router import route_query
 
-
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -70,9 +69,17 @@ CALENDAR_TERMS: set[str] = {"هجري", "الهجري", "هـ", "ميلادي", 
 # specific data and was correctly flagged as too narrow for a general claim.
 PARTIAL_ESCALATION_TERMS: set[str] = {
     # travel / visa / embassy (Arabic-language)
-    "أسافر", "اسافر", "السفر", "تأشيرة", "تاشيرة", "السفارة",
+    "أسافر",
+    "اسافر",
+    "السفر",
+    "تأشيرة",
+    "تاشيرة",
+    "السفارة",
     # time-pressure markers — "tomorrow" / "imminent"
-    "بكرة", "بكره", "باكر", "الغد",
+    "بكرة",
+    "بكره",
+    "باكر",
+    "الغد",
 }
 
 # Regex for short numeric dates like 10/09 (NOT 10/09/2025). Two flavors:
@@ -80,9 +87,7 @@ PARTIAL_ESCALATION_TERMS: set[str] = {
 # matters because a reviewer probing the system with Arabic-Indic numerals
 # could otherwise bypass the ambiguity-detection path (Phase 6 hardening item).
 _SHORT_NUMERIC_DATE_WESTERN = re.compile(r"(?<!\d)\d{1,2}/\d{1,2}(?!/\d)")
-_SHORT_NUMERIC_DATE_ARABIC = re.compile(
-    r"(?<![٠-٩])[٠-٩]{1,2}/[٠-٩]{1,2}(?![٠-٩])"
-)
+_SHORT_NUMERIC_DATE_ARABIC = re.compile(r"(?<![٠-٩])[٠-٩]{1,2}/[٠-٩]{1,2}(?![٠-٩])")
 
 # ----------------------------------------------------------------------------
 # Pre-generation support gate (R2 2.3 heavier variant; Phase 8 closeout)
@@ -112,10 +117,10 @@ _SHORT_NUMERIC_DATE_ARABIC = re.compile(
 # Deliberately narrower than `قال لي` (he said to me, first-person account)
 # which appears in rt-009 (authority bait, expected `answer`).
 _HEARSAY_PATTERNS = [
-    re.compile(r"سمعت\s+أن"),       # I heard that
-    re.compile(r"سمعت\s+ان"),       # I heard that (without hamza)
-    re.compile(r"قيل\s+لي"),         # it was said to me
-    re.compile(r"قالوا\s+لي"),       # they said to me
+    re.compile(r"سمعت\s+أن"),  # I heard that
+    re.compile(r"سمعت\s+ان"),  # I heard that (without hamza)
+    re.compile(r"قيل\s+لي"),  # it was said to me
+    re.compile(r"قالوا\s+لي"),  # they said to me
 ]
 
 # Auto-action markers — claims of automatic policy effects (deletion,
@@ -133,7 +138,7 @@ _AUTO_ACTION_PATTERNS = [
 # rt-001: "إعفاء خاص من رسوم تجديد الإقامة لمن تجاوز عمره ستين سنة".
 _SPECIAL_EXEMPTION_PATTERNS = [
     re.compile(r"إعفاء\s+خاص"),
-    re.compile(r"اعفاء\s+خاص"),       # without hamzated alef
+    re.compile(r"اعفاء\s+خاص"),  # without hamzated alef
     re.compile(r"استثناء\s+خاص"),
 ]
 
@@ -155,14 +160,28 @@ def _detect_policy_bait_pattern(query: str) -> str:
 # Demographic markers — phrases that target a specific population subset whose
 # special treatment the question is asking about (e.g., elderly, widows).
 _DEMOGRAPHIC_MARKERS = [
-    "كبار السن", "كبير السن", "المسنين", "ستين", "ستون", "سبعين",
-    "أرامل", "الأرامل", "المعاقين", "ذوي الإعاقة",
-    "منشأة صغيرة", "منشآت صغيرة",
+    "كبار السن",
+    "كبير السن",
+    "المسنين",
+    "ستين",
+    "ستون",
+    "سبعين",
+    "أرامل",
+    "الأرامل",
+    "المعاقين",
+    "ذوي الإعاقة",
+    "منشأة صغيرة",
+    "منشآت صغيرة",
 ]
 
 # Auto-action verbs as standalone specific claim tokens.
 _AUTO_ACTION_VERBS = {
-    "تنحذف", "يحذف", "يلغى", "تلغى", "يسقط", "تسقط",
+    "تنحذف",
+    "يحذف",
+    "يلغى",
+    "تلغى",
+    "يسقط",
+    "تسقط",
 }
 
 # Time-threshold pattern (X أشهر, X سنة, X يوم, etc.) — captures the full unit
@@ -207,7 +226,7 @@ def _extract_bait_specific_terms(query: str) -> set[str]:
 
 def _assess_specific_support(
     query: str,
-    citations: list["RetrievalResult"],
+    citations: list[RetrievalResult],
 ) -> tuple[bool, str, str]:
     """Pre-generation support gate.
 
@@ -246,14 +265,17 @@ def _assess_specific_support(
     if not missing:
         return True, bait, f"all_specific_terms_matched: {sorted(matched)}"
 
-    return False, bait, (
-        f"partial_or_no_specific_support: matched={sorted(matched)}, missing={sorted(missing)}"
+    return (
+        False,
+        bait,
+        (f"partial_or_no_specific_support: matched={sorted(matched)}, missing={sorted(missing)}"),
     )
 
 
 # ---------------------------------------------------------------------------
 # Answer envelope
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class Answer:
@@ -279,13 +301,15 @@ class Answer:
     routing_confidence: float
     # Register (Round 2 2.2: split into question vs answer registers)
     question_register: str  # detected on the query — was previously named `register`
-    answer_register: str    # detected on the generated answer_text post-generation
+    answer_register: str  # detected on the generated answer_text post-generation
     dialect_family: str
     contains_code_switching: bool
     # Rewrite
     rewritten_query: str
     # Behavior decision the pipeline took (4-state vocabulary §0.6 / data contract)
-    behavior_taken: str  # answer | refuse_with_redirect | ask_clarification | partial_answer_with_escalation
+    behavior_taken: (
+        str  # answer | refuse_with_redirect | ask_clarification | partial_answer_with_escalation
+    )
     refusal_reason: str
     # Critic
     critic_register_match: bool
@@ -307,6 +331,7 @@ class Answer:
 # Behavior-classification helpers
 # ---------------------------------------------------------------------------
 
+
 def _has_ambiguous_date(query: str) -> bool:
     """True iff the query carries a short / partial date but no calendar specifier.
 
@@ -318,8 +343,7 @@ def _has_ambiguous_date(query: str) -> bool:
     user has disambiguated the calendar themselves).
     """
     has_short_numeric_date = bool(
-        _SHORT_NUMERIC_DATE_WESTERN.search(query)
-        or _SHORT_NUMERIC_DATE_ARABIC.search(query)
+        _SHORT_NUMERIC_DATE_WESTERN.search(query) or _SHORT_NUMERIC_DATE_ARABIC.search(query)
     )
     has_month_only = "الشهر الخامس" in query
     has_calendar_marker = any(term in query for term in CALENDAR_TERMS)
@@ -342,6 +366,7 @@ def _needs_partial_escalation(query: str, routing_category: str) -> bool:
 # ---------------------------------------------------------------------------
 # User-prompt assembly
 # ---------------------------------------------------------------------------
+
 
 def build_user_prompt(
     query: str,
@@ -460,6 +485,7 @@ def _build_short_circuit_answer(
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------
+
 
 def answer_question(
     query: str,
@@ -624,7 +650,8 @@ def answer_question(
     if critic_enabled:
         critic = critique_answer(query, response.text, citations, provider)
     else:
-        from murshid.critic import CriticResult  # noqa: PLC0415
+        from murshid.critic import CriticResult
+
         critic = CriticResult(
             register_match=True,
             grounded=True,

@@ -15,8 +15,9 @@ from __future__ import annotations
 
 import logging
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Callable, Protocol, TypeVar, runtime_checkable
+from typing import Protocol, TypeVar, runtime_checkable
 
 _log = logging.getLogger("murshid.providers")
 
@@ -79,33 +80,47 @@ class LLMProvider(Protocol):
 # propagate immediately. The MRO walk in `_is_transient` would otherwise treat
 # them as transient because they inherit from `APIError`. Use the explicit
 # non-transient blocklist below to short-circuit before the transient check.
-_TRANSIENT_ERROR_NAMES = frozenset({
-    # Anthropic + OpenAI share these names — and they're concrete, not bases.
-    "APIConnectionError", "APITimeoutError", "RateLimitError",
-    "InternalServerError",
-    # Google google.api_core.exceptions
-    "ResourceExhausted", "ServiceUnavailable", "DeadlineExceeded",
-    "GatewayTimeout", "TooManyRequests",
-    # stdlib
-    "ConnectionError", "TimeoutError",
-    "ConnectionResetError", "ConnectionRefusedError",
-    "ConnectionAbortedError", "BrokenPipeError",
-    # urllib3 + requests transient class names (defensive)
-    "ReadTimeoutError", "ConnectionTimeoutError", "ProtocolError",
-})
+_TRANSIENT_ERROR_NAMES = frozenset(
+    {
+        # Anthropic + OpenAI share these names — and they're concrete, not bases.
+        "APIConnectionError",
+        "APITimeoutError",
+        "RateLimitError",
+        "InternalServerError",
+        # Google google.api_core.exceptions
+        "ResourceExhausted",
+        "ServiceUnavailable",
+        "DeadlineExceeded",
+        "GatewayTimeout",
+        "TooManyRequests",
+        # stdlib
+        "ConnectionError",
+        "TimeoutError",
+        "ConnectionResetError",
+        "ConnectionRefusedError",
+        "ConnectionAbortedError",
+        "BrokenPipeError",
+        # urllib3 + requests transient class names (defensive)
+        "ReadTimeoutError",
+        "ConnectionTimeoutError",
+        "ProtocolError",
+    }
+)
 
 # Class names that MUST NOT be retried — checked before the transient set so
 # `BadRequestError(APIError)` etc. don't slip through the MRO walk just because
 # their base class is `APIError`.
-_NON_TRANSIENT_ERROR_NAMES = frozenset({
-    "AuthenticationError",
-    "BadRequestError",
-    "InvalidRequestError",   # legacy OpenAI name
-    "NotFoundError",
-    "PermissionDeniedError",
-    "UnprocessableEntityError",
-    "ConflictError",
-})
+_NON_TRANSIENT_ERROR_NAMES = frozenset(
+    {
+        "AuthenticationError",
+        "BadRequestError",
+        "InvalidRequestError",  # legacy OpenAI name
+        "NotFoundError",
+        "PermissionDeniedError",
+        "UnprocessableEntityError",
+        "ConflictError",
+    }
+)
 
 
 def _is_transient(exc: BaseException) -> bool:
@@ -147,12 +162,15 @@ def retry_call(
     for attempt in range(max_retries + 1):
         try:
             return fn(*args, **kwargs)
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             if attempt < max_retries and _is_transient(e):
-                wait = backoff_base * (2 ** attempt)
+                wait = backoff_base * (2**attempt)
                 _log.warning(
                     "provider transient error %s on attempt %d/%d; retrying in %.1fs",
-                    type(e).__name__, attempt + 1, max_retries + 1, wait,
+                    type(e).__name__,
+                    attempt + 1,
+                    max_retries + 1,
+                    wait,
                 )
                 time.sleep(wait)
                 last_exc = e

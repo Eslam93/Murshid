@@ -10,10 +10,9 @@ import pytest
 
 from murshid.prompts import SYSTEM_PROMPT_AR, SYSTEM_PROMPT_SHORT_AR
 
-
 SCOPE_RULE_MARKERS = [
-    "أجب فقط على ما",   # "answer only what" — the core rule
-    "لم يسأل",          # "did not ask" — the constraint
+    "أجب فقط على ما",  # "answer only what" — the core rule
+    "لم يسأل",  # "did not ask" — the constraint
 ]
 
 

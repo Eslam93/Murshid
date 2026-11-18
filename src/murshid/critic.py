@@ -67,10 +67,10 @@ CRITIC_PROMPT_AR = """[ROLE: critic]
 
 
 def _format_user_prompt(query: str, answer: str, citations: list[RetrievalResult]) -> str:
-    context = "\n\n".join(
-        f"[{i}] {c.chunk_id}: {c.passage_text}"
-        for i, c in enumerate(citations, 1)
-    ) or "(لا توجد مصادر مسترجعة)"
+    context = (
+        "\n\n".join(f"[{i}] {c.chunk_id}: {c.passage_text}" for i, c in enumerate(citations, 1))
+        or "(لا توجد مصادر مسترجعة)"
+    )
     return (
         f"السؤال:\n{query}\n\n"
         f"الإجابة المقترحة:\n{answer}\n\n"
@@ -133,7 +133,7 @@ def critique_answer(
             user=_format_user_prompt(query, answer, citations),
             max_tokens=4000,
         )
-    except Exception as exc:  # noqa: BLE001 — provider errors, network, rate-limit, timeout
+    except Exception as exc:
         return CriticResult(
             register_match=False,
             grounded=False,

@@ -13,7 +13,6 @@ from __future__ import annotations
 
 from murshid.providers.base import LLMProvider
 
-
 REWRITE_PROMPT_AR = """[ROLE: rewrite]
 أنت مساعد لإعادة صياغة الأسئلة إلى العربية الفصحى.
 أعد صياغة سؤال المستخدم إلى الفصحى مع الحفاظ على:
@@ -43,5 +42,5 @@ def rewrite_to_msa(query: str, provider: LLMProvider, max_tokens: int = 256) -> 
         if rewritten.startswith('"') and rewritten.endswith('"'):
             rewritten = rewritten[1:-1]
         return rewritten
-    except Exception:  # noqa: BLE001 — non-fatal; identity-rewrite fallback
+    except Exception:
         return query

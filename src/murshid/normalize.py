@@ -18,7 +18,6 @@ import os
 import re
 import unicodedata
 
-
 # Combining marks: harakat range + dagger alef + extended marks.
 _ARABIC_DIACRITICS = re.compile(r"[ً-ٰٟۖ-ۭ]")
 
@@ -29,10 +28,10 @@ _TATWEEL = re.compile(r"ـ+")
 _HAMZATED_ALEF = re.compile(r"[أإآ]")
 
 # Aggressive-mode operations (config-gated, not default).
-_ALEF_MAKSURA = re.compile(r"ى")   # ى
-_TA_MARBUTA = re.compile(r"ة")     # ة
-_HAMZA_ON_YA = re.compile(r"ئ")    # ئ
-_HAMZA_ON_WAW = re.compile(r"ؤ")   # ؤ
+_ALEF_MAKSURA = re.compile(r"ى")  # ى
+_TA_MARBUTA = re.compile(r"ة")  # ة
+_HAMZA_ON_YA = re.compile(r"ئ")  # ئ
+_HAMZA_ON_WAW = re.compile(r"ؤ")  # ؤ
 _STANDALONE_HAMZA = re.compile(r"ء")  # ء
 
 # Arabic-Indic digit translation tables (Phase 8 creative add-on).
@@ -43,16 +42,44 @@ _STANDALONE_HAMZA = re.compile(r"ء")  # ء
 # so we need an explicit mapping. Kept SEPARATE from `light_normalize` to
 # preserve the kickoff §0.2 spec — digit folding is wired in at the retrieval
 # layer (`retrieve.py` BM25 indexing + query) as an additive pass.
-_ARABIC_INDIC_TO_WESTERN = str.maketrans({
-    "٠": "0", "١": "1", "٢": "2", "٣": "3", "٤": "4",
-    "٥": "5", "٦": "6", "٧": "7", "٨": "8", "٩": "9",
-    "۰": "0", "۱": "1", "۲": "2", "۳": "3", "۴": "4",
-    "۵": "5", "۶": "6", "۷": "7", "۸": "8", "۹": "9",
-})
-_WESTERN_TO_ARABIC_INDIC = str.maketrans({
-    "0": "٠", "1": "١", "2": "٢", "3": "٣", "4": "٤",
-    "5": "٥", "6": "٦", "7": "٧", "8": "٨", "9": "٩",
-})
+_ARABIC_INDIC_TO_WESTERN = str.maketrans(
+    {
+        "٠": "0",
+        "١": "1",
+        "٢": "2",
+        "٣": "3",
+        "٤": "4",
+        "٥": "5",
+        "٦": "6",
+        "٧": "7",
+        "٨": "8",
+        "٩": "9",
+        "۰": "0",
+        "۱": "1",
+        "۲": "2",
+        "۳": "3",
+        "۴": "4",
+        "۵": "5",
+        "۶": "6",
+        "۷": "7",
+        "۸": "8",
+        "۹": "9",
+    }
+)
+_WESTERN_TO_ARABIC_INDIC = str.maketrans(
+    {
+        "0": "٠",
+        "1": "١",
+        "2": "٢",
+        "3": "٣",
+        "4": "٤",
+        "5": "٥",
+        "6": "٦",
+        "7": "٧",
+        "8": "٨",
+        "9": "٩",
+    }
+)
 
 
 def light_normalize(text: str) -> str:
@@ -87,11 +114,11 @@ def aggressive_normalize(text: str) -> str:
     is opt-in, not default.
     """
     text = light_normalize(text)
-    text = _ALEF_MAKSURA.sub("ي", text)        # ى -> ي
-    text = _TA_MARBUTA.sub("ه", text)          # ة -> ه
-    text = _HAMZA_ON_YA.sub("ي", text)         # ئ -> ي
-    text = _HAMZA_ON_WAW.sub("و", text)        # ؤ -> و
-    text = _STANDALONE_HAMZA.sub("", text)          # ء -> ""
+    text = _ALEF_MAKSURA.sub("ي", text)  # ى -> ي
+    text = _TA_MARBUTA.sub("ه", text)  # ة -> ه
+    text = _HAMZA_ON_YA.sub("ي", text)  # ئ -> ي
+    text = _HAMZA_ON_WAW.sub("و", text)  # ؤ -> و
+    text = _STANDALONE_HAMZA.sub("", text)  # ء -> ""
     return text
 
 

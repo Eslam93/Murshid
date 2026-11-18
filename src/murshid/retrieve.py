@@ -54,11 +54,12 @@ class RetrievalResult:
 # BM25 helper — wrapped so retrieve() can take None for dense-only
 # ---------------------------------------------------------------------------
 
+
 class BM25Index:
     """Light wrapper around rank_bm25 for parity with the dense index."""
 
     def __init__(self, chunks: list[Chunk]):
-        from rank_bm25 import BM25Okapi  # noqa: PLC0415
+        from rank_bm25 import BM25Okapi
 
         self._tokens_per_chunk: list[list[str]] = [
             _bm25_normalize(c.embedding_input or c.passage_text).split() for c in chunks
@@ -105,6 +106,7 @@ def _rrf_from_scores(scores: np.ndarray) -> np.ndarray:
 # retrieve — multi-view + hybrid + filter
 # ---------------------------------------------------------------------------
 
+
 def retrieve(
     query: str,
     index: Index,
@@ -139,8 +141,7 @@ def retrieve(
     # 1. Filter candidate set by service_category.
     if service_category:
         candidate_indices = [
-            i for i, c in enumerate(index.chunks)
-            if c.service_category == service_category
+            i for i, c in enumerate(index.chunks) if c.service_category == service_category
         ]
     else:
         candidate_indices = list(range(len(index.chunks)))

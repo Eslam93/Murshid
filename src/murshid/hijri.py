@@ -36,7 +36,6 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-
 # ---------------------------------------------------------------------------
 # Hijri month vocabulary
 # ---------------------------------------------------------------------------
@@ -46,18 +45,18 @@ from dataclasses import dataclass
 # what we recognize in input text. Variant lists include the canonical form
 # itself for completeness.
 _HIJRI_MONTHS: list[tuple[str, list[str]]] = [
-    ("محرم",            ["محرم", "محرّم"]),
-    ("صفر",             ["صفر"]),
-    ("ربيع الأول",      ["ربيع الأول", "ربيع الاول", "ربيع أول"]),
-    ("ربيع الآخر",      ["ربيع الآخر", "ربيع الاخر", "ربيع الثاني", "ربيع آخر"]),
-    ("جمادى الأولى",    ["جمادى الأولى", "جمادى الاولى", "جمادى أولى", "جمادى الاولا"]),
-    ("جمادى الآخرة",    ["جمادى الآخرة", "جمادى الاخرة", "جمادى الثانية", "جمادى آخرة"]),
-    ("رجب",             ["رجب"]),
-    ("شعبان",           ["شعبان"]),
-    ("رمضان",           ["رمضان", "رمضآن"]),
-    ("شوال",            ["شوال", "شوّال"]),
-    ("ذو القعدة",       ["ذو القعدة", "ذي القعدة", "ذو القعده", "ذي القعده"]),
-    ("ذو الحجة",        ["ذو الحجة", "ذي الحجة", "ذو الحجه", "ذي الحجه"]),
+    ("محرم", ["محرم", "محرّم"]),
+    ("صفر", ["صفر"]),
+    ("ربيع الأول", ["ربيع الأول", "ربيع الاول", "ربيع أول"]),
+    ("ربيع الآخر", ["ربيع الآخر", "ربيع الاخر", "ربيع الثاني", "ربيع آخر"]),
+    ("جمادى الأولى", ["جمادى الأولى", "جمادى الاولى", "جمادى أولى", "جمادى الاولا"]),
+    ("جمادى الآخرة", ["جمادى الآخرة", "جمادى الاخرة", "جمادى الثانية", "جمادى آخرة"]),
+    ("رجب", ["رجب"]),
+    ("شعبان", ["شعبان"]),
+    ("رمضان", ["رمضان", "رمضآن"]),
+    ("شوال", ["شوال", "شوّال"]),
+    ("ذو القعدة", ["ذو القعدة", "ذي القعدة", "ذو القعده", "ذي القعده"]),
+    ("ذو الحجة", ["ذو الحجة", "ذي الحجة", "ذو الحجه", "ذي الحجه"]),
 ]
 
 # Lookup: variant → (canonical, index). Built once at import time.
@@ -97,6 +96,7 @@ _HIJRI_DATE_RE = re.compile(
 # Structured result
 # ---------------------------------------------------------------------------
 
+
 @dataclass(frozen=True)
 class HijriDate:
     """A detected Hijri date.
@@ -106,11 +106,11 @@ class HijriDate:
     """
 
     day: int
-    month_name: str       # canonical spelling, from `_HIJRI_MONTHS`
-    month_index: int      # 1 (محرم) .. 12 (ذو الحجة)
-    year: int | None      # None if the source text omitted the year
-    has_marker: bool      # True iff `هـ` (or normalized `ه` post-tatweel) was present
-    raw_text: str         # the exact substring that matched — for verbatim citation
+    month_name: str  # canonical spelling, from `_HIJRI_MONTHS`
+    month_index: int  # 1 (محرم) .. 12 (ذو الحجة)
+    year: int | None  # None if the source text omitted the year
+    has_marker: bool  # True iff `هـ` (or normalized `ه` post-tatweel) was present
+    raw_text: str  # the exact substring that matched — for verbatim citation
 
     def __post_init__(self) -> None:
         # Trust but validate — the regex should enforce these, but a frozen dataclass
@@ -126,6 +126,7 @@ class HijriDate:
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
 
 def extract_hijri_dates(text: str) -> list[HijriDate]:
     """Find all Hijri date mentions in `text`.
@@ -183,7 +184,7 @@ def canonicalize_month_name(text: str) -> str:
 
 __all__ = [
     "HijriDate",
+    "canonicalize_month_name",
     "extract_hijri_dates",
     "has_hijri_date",
-    "canonicalize_month_name",
 ]

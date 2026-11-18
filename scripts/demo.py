@@ -38,7 +38,6 @@ from murshid.providers.base import LLMProvider  # noqa: E402
 from murshid.providers.mock import MockProvider  # noqa: E402
 from murshid.retrieve import build_bm25_index  # noqa: E402
 
-
 PROVIDER_CHOICES = ("mock", "claude", "openai", "gemini")
 
 
@@ -48,15 +47,19 @@ def _build_provider(name: str) -> LLMProvider:
         return MockProvider()
     # Lazy import + .env load so mock-mode doesn't need the SDK / dotenv.
     from dotenv import load_dotenv
+
     load_dotenv()
     if name == "claude":
         from murshid.providers.claude import ClaudeProvider
+
         return ClaudeProvider()
     if name == "openai":
         from murshid.providers.openai import OpenAIProvider
+
         return OpenAIProvider()
     if name == "gemini":
         from murshid.providers.gemini import GeminiProvider
+
         return GeminiProvider()
     raise ValueError(f"Unknown provider: {name}. Choices: {PROVIDER_CHOICES}")
 
@@ -74,8 +77,7 @@ DEMO_QUESTIONS = [
     {
         "label": "Khaleeji dialect in-corpus — q-007",
         "text": (
-            "شلون أنقل كفالتي إذا عقدي خلص في 20 شعبان 1447هـ؟ "
-            "وهل لازم موافقة الشركة القديمة؟"
+            "شلون أنقل كفالتي إذا عقدي خلص في 20 شعبان 1447هـ؟ وهل لازم موافقة الشركة القديمة؟"
         ),
         "expected_behavior": "answer",
         "expected_category": "sponsorship_transfer",
@@ -83,8 +85,7 @@ DEMO_QUESTIONS = [
     {
         "label": "Out-of-corpus (escalate) — q-014",
         "text": (
-            "صاحبي يقول إذا عندي مخالفات مرورية أقدر آخذ قرض شخصي "
-            "بدون ما يأثر، هل هذا الكلام صحيح؟"
+            "صاحبي يقول إذا عندي مخالفات مرورية أقدر آخذ قرض شخصي بدون ما يأثر، هل هذا الكلام صحيح؟"
         ),
         "expected_behavior": "refuse_with_redirect",
         "expected_category": "out_of_scope",
@@ -116,10 +117,7 @@ def render_question_block(idx: int, q: dict, answer: Answer) -> str:
         lines.append(f"  rewrite      → {answer.rewritten_query}")
     else:
         lines.append("  rewrite      → (identity / not invoked)")
-    lines.append(
-        f"  behavior     → {answer.behavior_taken}  "
-        f"[expected={q['expected_behavior']}]"
-    )
+    lines.append(f"  behavior     → {answer.behavior_taken}  [expected={q['expected_behavior']}]")
     if answer.refusal_reason:
         lines.append(f"  refusal_reason → {answer.refusal_reason}")
     lines.append(
@@ -184,12 +182,14 @@ def main(argv: list[str]) -> int:
     single_query = args.query.strip() if args.query and args.query.strip() else None
     questions: list[dict]
     if single_query:
-        questions = [{
-            "label": "Ad-hoc query (CLI)",
-            "text": single_query,
-            "expected_behavior": "(not set)",
-            "expected_category": "(not set)",
-        }]
+        questions = [
+            {
+                "label": "Ad-hoc query (CLI)",
+                "text": single_query,
+                "expected_behavior": "(not set)",
+                "expected_category": "(not set)",
+            }
+        ]
     else:
         questions = list(DEMO_QUESTIONS)
 

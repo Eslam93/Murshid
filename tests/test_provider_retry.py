@@ -16,7 +16,6 @@ import pytest
 
 from murshid.providers.base import retry_call
 
-
 # ---------------------------------------------------------------------------
 # Synthetic exceptions whose class names match the transient allowlist
 # ---------------------------------------------------------------------------
@@ -251,6 +250,7 @@ def test_retry_call_transient_subclassing_api_error_still_retried(monkeypatch):
 
 def test_retry_call_invalid_request_error_legacy_openai_name_not_retried(monkeypatch):
     """Legacy OpenAI name `InvalidRequestError` is in the blocklist."""
+
     class InvalidRequestError(APIError):
         pass
 

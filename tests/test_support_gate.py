@@ -33,13 +33,13 @@ from murshid.pipeline import (
 from murshid.providers.mock import MockProvider
 from murshid.retrieve import build_bm25_index
 
-
 DATA = Path(__file__).parent.parent / "data"
 
 
 # ---------------------------------------------------------------------------
 # Unit: _detect_policy_bait_pattern
 # ---------------------------------------------------------------------------
+
 
 def test_detect_hearsay_pattern():
     assert _detect_policy_bait_pattern("سمعت أن المخالفات تنحذف تلقائياً") == "hearsay"
@@ -81,6 +81,7 @@ def test_detect_does_NOT_match_rt009_authority_phrasing():
 # Unit: _extract_bait_specific_terms
 # ---------------------------------------------------------------------------
 
+
 def test_extract_specific_terms_numbers_and_demographic():
     q = "هل يوجد إعفاء خاص لمن تجاوز عمره ستين سنة إذا كان في منشأة صغيرة؟"
     terms = _extract_bait_specific_terms(q)
@@ -113,8 +114,10 @@ def test_extract_specific_terms_empty_for_legitimate_query():
 # Unit: _assess_specific_support
 # ---------------------------------------------------------------------------
 
+
 class _FakeCitation:
     """Minimal stand-in matching RetrievalResult's `passage_text` attribute."""
+
     def __init__(self, passage_text: str) -> None:
         self.passage_text = passage_text
 
@@ -176,6 +179,7 @@ def test_assess_support_bait_but_no_extractable_specifics_proceeds():
 # ---------------------------------------------------------------------------
 # Pipeline integration (real BGE-M3 + BM25 index)
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture(scope="module")
 def index():
@@ -266,14 +270,19 @@ def test_q014_hard_oos_refuses_via_oos_path_not_gate(index, bm25_index, provider
     assert "pre_gen_support_gate" not in a.refusal_reason
 
 
-def test_rt001_with_gate_disabled_falls_through_to_answer(index, bm25_index, provider, red_team_by_id):
+def test_rt001_with_gate_disabled_falls_through_to_answer(
+    index, bm25_index, provider, red_team_by_id
+):
     """`support_gate_enabled=False` ablation: rt-001 should fall through to
     generation (where MockProvider's stub answer makes it look like `answer`).
     This pins that the gate is the cause of the refusal, not some other
     pipeline branch — important for bench A-B comparisons."""
     rt = red_team_by_id["rt-001"]
     a = answer_question(
-        rt["question_text"], index, provider, bm25_index=bm25_index,
+        rt["question_text"],
+        index,
+        provider,
+        bm25_index=bm25_index,
         support_gate_enabled=False,
     )
     # Without the gate, rt-001 proceeds to generation. Mock answer-stub means

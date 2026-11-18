@@ -5,7 +5,6 @@ canonical version here with the §0.8 rules expressed explicitly and a few-shot
 exemplar pair for register matching.
 """
 
-
 SYSTEM_PROMPT_AR = """أنت مساعد لإجابة أسئلة المواطنين السعوديين عن الخدمات الحكومية.
 
 قواعد الإجابة الأساسية:

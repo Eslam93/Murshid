@@ -14,7 +14,6 @@ import pytest
 
 from murshid.router import route_query
 
-
 DATA = Path(__file__).parent.parent / "data"
 
 
@@ -38,6 +37,7 @@ def source_category(sources) -> dict[str, str]:
 # ---------------------------------------------------------------------------
 # Every question routes to a category consistent with its expected_source_ids
 # ---------------------------------------------------------------------------
+
 
 def test_router_classifies_all_questions(questions, source_category):
     misses = []
@@ -65,6 +65,7 @@ def test_router_classifies_all_questions(questions, source_category):
 # Out-of-scope triggers
 # ---------------------------------------------------------------------------
 
+
 def test_finance_credit_routes_out_of_scope():
     """q-014: 'قرض شخصي' triggers finance-out-of-scope."""
     text = "صاحبي يقول إذا عندي مخالفات مرورية أقدر آخذ قرض شخصي بدون ما يأثر، هل هذا الكلام صحيح؟"
@@ -90,6 +91,7 @@ def test_medical_routes_out_of_scope():
 # ---------------------------------------------------------------------------
 # Strong category routing
 # ---------------------------------------------------------------------------
+
 
 def test_iqama_renewal_routes_to_iqama():
     text = "ما آخر موعد مناسب لتجديد الإقامة؟"
@@ -132,6 +134,7 @@ def test_labor_office_otp_routes_correctly():
 # which falsely routed every government-issuance question to out_of_scope.
 # The fix: drop `صدر` from raw triggers, require `(ألم|وجع) صدر` bigram for
 # medical detection. These tests pin the fix.
+
 
 def test_sadar_qarar_routes_to_traffic_fines_not_oos():
     """`صدر القرار` is "the decision was issued" — common in traffic-fines flow."""
@@ -179,6 +182,7 @@ def test_waja_sadar_also_routes_to_oos():
 # Soft-vs-hard OOS confidence distinction (Round-1 §3.3 guard)
 # ---------------------------------------------------------------------------
 
+
 def test_hard_oos_returns_high_confidence():
     """Trigger-fired OOS is HARD: confidence ≥ 0.9. Pipeline refuses on this."""
     text = "صاحبي يقول إذا عندي مخالفات مرورية أقدر آخذ قرض شخصي بدون ما يأثر؟"
@@ -197,8 +201,7 @@ def test_soft_oos_returns_low_confidence():
     result = route_query(text)
     assert result.category == "out_of_scope"
     assert result.confidence < 0.7, (
-        "soft OOS must distinguish from hard OOS via a lower confidence; "
-        f"got {result.confidence}"
+        f"soft OOS must distinguish from hard OOS via a lower confidence; got {result.confidence}"
     )
 
 
@@ -210,6 +213,7 @@ def test_soft_oos_returns_low_confidence():
 # These tests pin the synonym expansions that catch the most common ones:
 # `غرامة` (synonym for `مخالفة`), `بطاقة إقامة` / `كرت الإقامة` (colloquial
 # names for the residency card), `إذن العمل` (alt name for `رخصة عمل`).
+
 
 def test_ghuramah_synonym_routes_to_traffic_fines():
     """`غرامة` is the most common synonym for `مخالفة` — must route to traffic_fines."""

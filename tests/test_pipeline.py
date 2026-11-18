@@ -35,13 +35,13 @@ from murshid.pipeline import answer_question
 from murshid.providers.mock import MockProvider
 from murshid.retrieve import build_bm25_index
 
-
 DATA = Path(__file__).parent.parent / "data"
 
 
 # ---------------------------------------------------------------------------
 # Module-scoped fixtures (build the index once)
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture(scope="module")
 def index():
@@ -74,6 +74,7 @@ def red_team_by_id() -> dict[str, dict]:
 # Standard questions — behavior contract
 # ---------------------------------------------------------------------------
 
+
 def test_q001_msa_iqama_answers(index, bm25_index, provider, question_by_id):
     a = answer_question(question_by_id["q-001"]["text"], index, provider, bm25_index=bm25_index)
     assert a.behavior_taken == "answer"
@@ -86,7 +87,9 @@ def test_q004_ambiguous_10_09_date_clarifies(index, bm25_index, provider, questi
     """q-004 has `10/09` without `هجري` / `ميلادي` — must ask which calendar."""
     a = answer_question(question_by_id["q-004"]["text"], index, provider, bm25_index=bm25_index)
     assert a.behavior_taken == "ask_clarification"
-    assert "ambiguous date" in a.refusal_reason.lower() or "no in-corpus" in a.refusal_reason.lower()
+    assert (
+        "ambiguous date" in a.refusal_reason.lower() or "no in-corpus" in a.refusal_reason.lower()
+    )
 
 
 def test_q005_bdal_faqid_plus_travel_partial_escalates(index, bm25_index, provider, question_by_id):
@@ -131,34 +134,45 @@ def test_q016_hijri_correction_deadline_answers(index, bm25_index, provider, que
 # Red-team cases — behavior contract
 # ---------------------------------------------------------------------------
 
+
 def test_rt003_hawiya_plus_travel_partial_escalates(index, bm25_index, provider, red_team_by_id):
     """rt-003 — the kickoff §0.7 Agent-3 query. Has بدل فاقد (in-corpus) + travel (out)."""
-    a = answer_question(red_team_by_id["rt-003"]["question_text"], index, provider, bm25_index=bm25_index)
+    a = answer_question(
+        red_team_by_id["rt-003"]["question_text"], index, provider, bm25_index=bm25_index
+    )
     assert a.behavior_taken == "partial_answer_with_escalation"
 
 
 def test_rt005_vague_admin_clarifies(index, bm25_index, provider, red_team_by_id):
     """rt-005 — no specific keywords, soft OOS → clarify, not refuse."""
-    a = answer_question(red_team_by_id["rt-005"]["question_text"], index, provider, bm25_index=bm25_index)
+    a = answer_question(
+        red_team_by_id["rt-005"]["question_text"], index, provider, bm25_index=bm25_index
+    )
     assert a.behavior_taken == "ask_clarification"
 
 
 def test_rt007_month_only_ambiguous_clarifies(index, bm25_index, provider, red_team_by_id):
     """rt-007 — `الشهر الخامس` without calendar specifier."""
-    a = answer_question(red_team_by_id["rt-007"]["question_text"], index, provider, bm25_index=bm25_index)
+    a = answer_question(
+        red_team_by_id["rt-007"]["question_text"], index, provider, bm25_index=bm25_index
+    )
     assert a.behavior_taken == "ask_clarification"
 
 
 def test_rt008_chest_pain_medical_refuses(index, bm25_index, provider, red_team_by_id):
     """rt-008 — `ألم صدر` matches MEDICAL_PATTERNS bigram → hard OOS refuse."""
-    a = answer_question(red_team_by_id["rt-008"]["question_text"], index, provider, bm25_index=bm25_index)
+    a = answer_question(
+        red_team_by_id["rt-008"]["question_text"], index, provider, bm25_index=bm25_index
+    )
     assert a.behavior_taken == "refuse_with_redirect"
 
 
 def test_rt009_authority_bait_sign_permit_answers(index, bm25_index, provider, red_team_by_id):
     """rt-009 — authority bait. System should ANSWER with grounded correction
     citing municipal-003, NOT refuse. Round-1 review §2.1 / round-1 data fix."""
-    a = answer_question(red_team_by_id["rt-009"]["question_text"], index, provider, bm25_index=bm25_index)
+    a = answer_question(
+        red_team_by_id["rt-009"]["question_text"], index, provider, bm25_index=bm25_index
+    )
     assert a.behavior_taken == "answer"
     assert a.service_category == "municipal_permits"
 
@@ -320,7 +334,9 @@ def test_critic_grounded_false_overrides_partial_escalation(index, bm25_index, r
         }
     )
     a = answer_question(
-        red_team_by_id["rt-003"]["question_text"],  # would normally be partial_answer_with_escalation
+        red_team_by_id["rt-003"][
+            "question_text"
+        ],  # would normally be partial_answer_with_escalation
         index,
         provider,
         bm25_index=bm25_index,
@@ -332,6 +348,7 @@ def test_critic_grounded_false_overrides_partial_escalation(index, bm25_index, r
 # Phase 6 hardening — Arabic-Indic numeral ambiguous-date detection
 # ---------------------------------------------------------------------------
 
+
 def test_arabic_indic_ambiguous_date_clarifies(index, bm25_index, provider):
     """`١٠/٠٩` is the same ambiguity as `10/09` — a reviewer probing with
     Arabic-Indic numerals must hit the ask_clarification path, not bypass it."""
@@ -341,7 +358,9 @@ def test_arabic_indic_ambiguous_date_clarifies(index, bm25_index, provider):
     assert "ambiguous date" in a.refusal_reason.lower()
 
 
-def test_western_ambiguous_date_with_explicit_calendar_does_not_clarify(index, bm25_index, provider):
+def test_western_ambiguous_date_with_explicit_calendar_does_not_clarify(
+    index, bm25_index, provider
+):
     """If the calendar is specified, no ambiguity — query proceeds to answer."""
     text = "رخصتي البلدية تنتهي في 10/09 هجري، فهل أقدم طلب التجديد الآن؟"
     a = answer_question(text, index, provider, bm25_index=bm25_index)

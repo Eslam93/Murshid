@@ -17,7 +17,6 @@ from murshid.ingest import (
 )
 from murshid.providers.mock import MockProvider
 
-
 DATA_DIR = Path(__file__).parent.parent / "data"
 
 
@@ -37,6 +36,7 @@ def _get_source(sources, source_id):
 # Format detection
 # ---------------------------------------------------------------------------
 
+
 def test_iqama_002_is_prose(sources):
     src = _get_source(sources, "iqama-002")
     assert not is_faq_format(src["content"]), "iqama-002 is continuous prose"
@@ -55,6 +55,7 @@ def test_municipal_004_is_prose(sources):
 # ---------------------------------------------------------------------------
 # Pinned chunking
 # ---------------------------------------------------------------------------
+
 
 def test_chunk_iqama_002_paragraph_count(sources):
     src = _get_source(sources, "iqama-002")
@@ -83,6 +84,7 @@ def test_chunk_municipal_004_paragraph_split(sources):
 # ---------------------------------------------------------------------------
 # Chunk shape — full citation contract
 # ---------------------------------------------------------------------------
+
 
 def test_chunk_carries_full_citation_metadata(sources):
     src = _get_source(sources, "iqama-002")
@@ -123,6 +125,7 @@ def test_chunk_ids_are_ordinal_and_unique(sources):
 # Enrichment populates summary + keywords (Phase 1 task 9 contract)
 # ---------------------------------------------------------------------------
 
+
 def test_enrichment_populates_fields_for_all_chunks(sources):
     """Every chunk gets summary + keywords after enrichment (best-effort).
 
@@ -134,7 +137,9 @@ def test_enrichment_populates_fields_for_all_chunks(sources):
         enriched = enrich_all_chunks(chunks, MockProvider())
         for c in enriched:
             assert c.summary, f"chunk {c.chunk_id} has empty summary after MockProvider enrichment"
-            assert c.keywords, f"chunk {c.chunk_id} has empty keywords after MockProvider enrichment"
+            assert c.keywords, (
+                f"chunk {c.chunk_id} has empty keywords after MockProvider enrichment"
+            )
 
 
 def test_enrichment_does_not_mutate_passage_text(sources):

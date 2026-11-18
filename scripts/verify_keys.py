@@ -24,7 +24,6 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-
 ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT / ".env", override=True)
 
@@ -55,13 +54,14 @@ def _short(s: str, n: int = 240) -> str:
 # Anthropic Claude
 # ---------------------------------------------------------------------------
 
+
 def verify_anthropic(model_id: str | None = None) -> tuple[bool, str]:
     key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
     model = (model_id or os.environ.get("ANTHROPIC_MODEL_ID", "claude-sonnet-4-6")).strip()
     if not key:
         return False, "no ANTHROPIC_API_KEY set"
     try:
-        import anthropic  # noqa: PLC0415
+        import anthropic
 
         client = anthropic.Anthropic(api_key=key)
         resp = client.messages.create(
@@ -74,7 +74,7 @@ def verify_anthropic(model_id: str | None = None) -> tuple[bool, str]:
             f"model={model} | reply={text!r} | "
             f"tokens_in={resp.usage.input_tokens} tokens_out={resp.usage.output_tokens}"
         )
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         return False, f"{type(e).__name__}: {_sanitize(_short(str(e)))}"
 
 
@@ -82,13 +82,14 @@ def verify_anthropic(model_id: str | None = None) -> tuple[bool, str]:
 # OpenAI
 # ---------------------------------------------------------------------------
 
+
 def verify_openai(model_id: str | None = None) -> tuple[bool, str]:
     key = os.environ.get("OPENAI_API_KEY", "").strip()
     model = (model_id or os.environ.get("OPENAI_MODEL_ID", "gpt-5.5-2026-04-23")).strip()
     if not key:
         return False, "no OPENAI_API_KEY set"
     try:
-        from openai import OpenAI  # noqa: PLC0415
+        from openai import OpenAI
 
         client = OpenAI(api_key=key)
         # GPT-5.x uses `max_completion_tokens` (new responses-API convention).
@@ -104,7 +105,7 @@ def verify_openai(model_id: str | None = None) -> tuple[bool, str]:
             f"model={model} | reply={text!r} | "
             f"tokens_in={usage.prompt_tokens} tokens_out={usage.completion_tokens}"
         )
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         return False, f"{type(e).__name__}: {_sanitize(_short(str(e)))}"
 
 
@@ -112,9 +113,10 @@ def verify_openai(model_id: str | None = None) -> tuple[bool, str]:
 # Google Gemini
 # ---------------------------------------------------------------------------
 
+
 def _try_gemini_model(key: str, model: str) -> tuple[bool, str]:
     """One ping against a specific Gemini model."""
-    import google.generativeai as genai  # noqa: PLC0415
+    import google.generativeai as genai
 
     genai.configure(api_key=key)
     gmodel = genai.GenerativeModel(model)
@@ -136,7 +138,9 @@ def verify_gemini(model_id: str | None = None) -> tuple[bool, str]:
     """Ping a Gemini model. When model_id is None, use the configured default
     and fall back to Flash if Pro is gated. When model_id is explicit, ping
     only that model and report whatever the API returns."""
-    key = os.environ.get("GEMINI_API_KEY", "").strip() or os.environ.get("GOOGLE_API_KEY", "").strip()
+    key = (
+        os.environ.get("GEMINI_API_KEY", "").strip() or os.environ.get("GOOGLE_API_KEY", "").strip()
+    )
     if not key:
         return False, "no GEMINI_API_KEY set"
 
@@ -144,14 +148,14 @@ def verify_gemini(model_id: str | None = None) -> tuple[bool, str]:
         # Explicit model: no fallback. Report exactly what this model does.
         try:
             return _try_gemini_model(key, model_id)
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             return False, f"{type(e).__name__}: {_sanitize(_short(str(e)))}"
 
     model = os.environ.get("GEMINI_MODEL_ID", "gemini-3.1-pro-preview").strip()
     # First try the configured (Pro by default) model.
     try:
         return _try_gemini_model(key, model)
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         primary_err = f"{type(e).__name__}: {_sanitize(_short(str(e)))}"
 
     # Fallback: Flash variants commonly available on free tier.
@@ -159,7 +163,7 @@ def verify_gemini(model_id: str | None = None) -> tuple[bool, str]:
         try:
             ok, msg = _try_gemini_model(key, fallback_model)
             return True, f"{msg}  [PRIMARY {model} FAILED: {primary_err}]"
-        except Exception:  # noqa: BLE001
+        except Exception:
             continue
 
     return False, primary_err
@@ -210,8 +214,11 @@ def verify_all_models() -> list[tuple[str, str, bool, str]]:
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Verify API keys + (optionally) model availability.")
+    parser = argparse.ArgumentParser(
+        description="Verify API keys + (optionally) model availability."
+    )
     parser.add_argument(
         "--all-models",
         action="store_true",

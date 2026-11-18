@@ -19,16 +19,15 @@ import time
 
 from murshid.providers.base import ProviderResponse, retry_call
 
-
 # Approximate USD per 1M tokens. Gemini Pro / Flash pricing per Google AI
 # pricing docs (estimates as of 2026-05-22; verify on the AI Studio pricing
 # page before relying on these for accounting).
 _GEMINI_PRICING: dict[str, tuple[float, float]] = {
-    "gemini-3.1-pro-preview":   (2.50, 10.00),
-    "gemini-3-flash-preview":   (0.30,  2.50),
-    "gemini-2.5-pro":           (1.25,  5.00),
-    "gemini-2.5-flash":         (0.075, 0.30),
-    "gemini-2.5-flash-lite":    (0.05,  0.20),
+    "gemini-3.1-pro-preview": (2.50, 10.00),
+    "gemini-3-flash-preview": (0.30, 2.50),
+    "gemini-2.5-pro": (1.25, 5.00),
+    "gemini-2.5-flash": (0.075, 0.30),
+    "gemini-2.5-flash-lite": (0.05, 0.20),
 }
 _GEMINI_PRICING_FALLBACK = (2.50, 10.00)
 
@@ -38,26 +37,25 @@ class GeminiProvider:
 
     def __init__(self, model_id: str | None = None, api_key: str | None = None):
         self.model_id = (
-            model_id
-            or os.environ.get("GEMINI_MODEL_ID", "gemini-3.1-pro-preview")
+            model_id or os.environ.get("GEMINI_MODEL_ID", "gemini-3.1-pro-preview")
         ).strip()
         self._api_key = (
-            api_key
-            or os.environ.get("GEMINI_API_KEY", "")
-            or os.environ.get("GOOGLE_API_KEY", "")
+            api_key or os.environ.get("GEMINI_API_KEY", "") or os.environ.get("GOOGLE_API_KEY", "")
         ).strip()
 
     def is_available(self) -> bool:
         if not self._api_key:
             return False
         try:
-            import google.generativeai  # noqa: F401, PLC0415
+            import google.generativeai  # noqa: F401
+
             return True
         except ImportError:
             return False
 
     def _configure(self) -> None:
-        import google.generativeai as genai  # noqa: PLC0415
+        import google.generativeai as genai
+
         genai.configure(api_key=self._api_key)
 
     def generate(
@@ -67,7 +65,7 @@ class GeminiProvider:
         max_tokens: int = 1024,
         timeout: float = 30.0,
     ) -> ProviderResponse:
-        import google.generativeai as genai  # noqa: PLC0415
+        import google.generativeai as genai
 
         self._configure()
         # Gemini system instructions are model-level config, not message-level.
@@ -106,4 +104,6 @@ class GeminiProvider:
 
     def cost_estimate_usd(self, response: ProviderResponse) -> float:
         in_per_mtok, out_per_mtok = _GEMINI_PRICING.get(self.model_id, _GEMINI_PRICING_FALLBACK)
-        return (response.input_tokens * in_per_mtok + response.output_tokens * out_per_mtok) / 1_000_000
+        return (
+            response.input_tokens * in_per_mtok + response.output_tokens * out_per_mtok
+        ) / 1_000_000

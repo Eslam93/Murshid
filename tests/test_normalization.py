@@ -6,10 +6,10 @@ These are the regression tests for the §0.2 design call.
 
 from murshid.normalize import aggressive_normalize, light_normalize
 
-
 # ---------------------------------------------------------------------------
 # Light normalization — applied operations
 # ---------------------------------------------------------------------------
+
 
 def test_tatweel_removed():
     assert light_normalize("الـــعربيـــة") == "العربية"
@@ -34,6 +34,7 @@ def test_nfkc_idempotent_on_already_clean_text():
 # ---------------------------------------------------------------------------
 # The Arabic-depth catch — do NOT collapse these by default
 # ---------------------------------------------------------------------------
+
 
 def test_alef_maksura_preserved():
     # ى (alef-maksura) is distinct from ي in MSA proper nouns (موسى, عيسى).
@@ -68,6 +69,7 @@ def test_hamza_on_waw_preserved():
 # Aggressive normalization — only when explicitly invoked
 # ---------------------------------------------------------------------------
 
+
 def test_aggressive_collapses_alef_maksura():
     assert aggressive_normalize("موسى") == "موسي"
 
@@ -91,6 +93,7 @@ def test_aggressive_removes_standalone_hamza():
 # ---------------------------------------------------------------------------
 # End-to-end: real-corpus shapes
 # ---------------------------------------------------------------------------
+
 
 def test_government_phrase_preserves_meaningful_chars():
     sample = "تجديد الإقامة قبل انتهاء الصلاحية"

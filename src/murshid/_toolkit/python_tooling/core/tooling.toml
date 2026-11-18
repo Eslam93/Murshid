@@ -1,0 +1,61 @@
+# The Python gates, to paste into a project's pyproject.toml. check_tooling.py keeps them from
+# being weakened later. Change the package names in known-first-party, files and source.
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "W",  # pycodestyle and pyflakes
+    "I",            # import order
+    "B",            # bugbear
+    "UP",           # pyupgrade
+    "N",            # naming
+    "S",            # bandit: security
+    "A",            # shadowed builtins
+    "C4",           # comprehensions
+    "T20",          # no print() left behind
+    "RUF",          # ruff's own
+    "SIM",          # simplify
+    "TID",          # tidy imports
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["S101", "S105", "S106", "S107"]
+
+[tool.ruff.format]
+line-ending = "lf"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+# Every toolkit core's async tests run under these three: auto mode, and one event loop for the
+# whole run, which the database cores' session-wide fixtures need.
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+# Several cores reuse a test file name and some test folders are packages, so pytest imports each
+# test file by its path, with the project root on the import path.
+pythonpath = ["."]
+addopts = ["--strict-markers", "-ra", "--import-mode=importlib"]
+# A test folder with an __init__.py under a folder without one would be named `tests.test_lift`
+# in every core, and one run over two cores would run the first core's file twice and the second
+# not at all, still green. Counting the namespace folders names it `toolkit.<core>.tests.test_lift`.
+consider_namespace_packages = true
+# The database tests carry this marker; with --strict-markers, a lift without it stops collecting.
+markers = [
+    "integration: needs PostgreSQL; fails instead of skipping when REQUIRE_DB=1",
+]
+
+[tool.coverage.run]
+branch = true
+# SQLAlchemy's async layer switches greenlets; without this, lines after an await go unmeasured.
+concurrency = ["greenlet", "thread"]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true

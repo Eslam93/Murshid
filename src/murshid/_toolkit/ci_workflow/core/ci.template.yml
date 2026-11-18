@@ -1,0 +1,94 @@
+name: CI
+
+# Safe in public: no job needs a secret, the token can only read, and pull requests run on the
+# pull_request event only, never pull_request_target, so a stranger's pull request never runs with
+# this repository's secrets. No path filters: every change runs every check.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    name: Lint, types, tests with their database, web build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: myapp
+          POSTGRES_PASSWORD: ci-only-throwaway # a disposable database that lives for one job
+          POSTGRES_DB: myapp_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U myapp -d myapp_test"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      TEST_DATABASE_URL: postgresql+asyncpg://myapp:ci-only-throwaway@127.0.0.1:5432/myapp_test
+      REQUIRE_DB: "1" # a missing database fails the tests instead of skipping them
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.8.17"
+          enable-cache: true
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: uv sync --frozen
+      - run: pnpm install --frozen-lockfile
+      - run: uv run --frozen ruff check .
+      - run: uv run --frozen ruff format --check .
+      - run: uv run --frozen mypy
+      - run: uv run --frozen pytest --cov
+      - run: pnpm exec eslint . --max-warnings 0
+      - run: pnpm exec tsc --noEmit
+      - run: pnpm exec vitest run
+      - run: pnpm exec vite build
+
+  image:
+    name: The image migrates, starts, and serves the API and the web app
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: myapp
+          POSTGRES_PASSWORD: ci-only-throwaway
+          POSTGRES_DB: myapp
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U myapp -d myapp"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      DATABASE_URL: postgresql+asyncpg://myapp:ci-only-throwaway@127.0.0.1:5432/myapp
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t myapp:ci .
+      - name: A session secret for this run only, masked in the log
+        run: |
+          secret="$(python3 -c 'import secrets; print(secrets.token_hex(32))')"
+          echo "::add-mask::$secret"
+          echo "SESSION_SECRET=$secret" >> "$GITHUB_ENV"
+      - name: Migrate, start, and check both halves on one origin
+        run: |
+          docker run --rm --network host -e DATABASE_URL -e SESSION_SECRET myapp:ci alembic upgrade head
+          docker run -d --name app --network host -e DATABASE_URL -e SESSION_SECRET myapp:ci
+          for _ in $(seq 1 30); do curl -fsS -o /dev/null http://127.0.0.1:8000/api/health/ready && break; sleep 1; done
+          curl -fsS http://127.0.0.1:8000/api/health/ready
+          curl -fsS http://127.0.0.1:8000/ | grep -q '<div id="root">'
+      - if: failure()
+        run: docker logs app

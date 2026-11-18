@@ -125,6 +125,8 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101", "S105", "S106", "S107"]
 "scripts/**" = ["T201"]
+# Developer tools run git on the developer's own checkout.
+"tools/**" = ["S603", "S607", "T201"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["murshid"]

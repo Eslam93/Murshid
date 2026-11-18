@@ -46,7 +46,7 @@ local-embed = [
 # SDKs for the paid model providers. None of them is needed for the zero-key path.
 providers = [
     "anthropic>=0.100",
-    "google-generativeai>=0.8",
+    "google-genai>=2.34,<3",
     "openai>=2.0",
 ]
 # The Gradio demo UI.
@@ -152,12 +152,6 @@ follow_imports = "silent"
 [[tool.mypy.overrides]]
 module = ["rank_bm25"]
 ignore_missing_imports = true
-
-# google-generativeai documents `genai.configure` and `genai.GenerativeModel` as its API, but its
-# __init__ imports them without __all__, so strict mode's no_implicit_reexport hides them.
-[[tool.mypy.overrides]]
-module = ["google.generativeai"]
-implicit_reexport = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "src/murshid/_toolkit"]

@@ -1,14 +1,10 @@
-"""LLMProvider protocol + ProviderResponse (§0.5).
+"""LLMProvider protocol, ProviderResponse, and the one retry layer every paid provider uses.
 
-Common interface across the 5 providers (Mock, Claude, OpenAI, Gemini,
-FalconArabic). Phase 1 only requires Mock; the others are stubs until
-Phase 3+.
-
-Phase 4 reviewer fix #6: `retry_call` adds 2-retry exponential backoff on
-known-transient API/network errors (APIConnectionError, RateLimitError,
-ResourceExhausted, etc.) so transient SDK errors don't bleed into
-behavior-match failures in the bench. Non-transient errors propagate
-immediately.
+`retry_call` retries known-transient API and network errors (connection drops, timeouts, rate
+limits, 5xx) twice with exponential backoff, so a transient vendor error does not turn into a
+behavior-match failure in the bench. Non-transient errors propagate immediately. It is the only
+retry layer: the paid providers build their SDK clients with the SDK's own retries switched off,
+so retries never nest.
 """
 
 from __future__ import annotations
@@ -17,9 +13,18 @@ import logging
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Literal, Protocol, runtime_checkable
 
 _log = logging.getLogger("murshid.providers")
+
+# Why the model stopped, the same five words for every vendor. A provider keeps the vendor's own
+# value in `ProviderResponse.raw["finish_reason"]`.
+#   stop            the model finished (a natural end or a stop sequence)
+#   length          the output budget ran out: the text is truncated
+#   content_filter  the vendor's safety system stopped or blocked the output
+#   tool            the model stopped to call a tool, or a tool call went wrong
+#   other           anything else, including no reason at all
+FinishReason = Literal["stop", "length", "content_filter", "tool", "other"]
 
 
 @dataclass
@@ -30,25 +35,22 @@ class ProviderResponse:
     input_tokens: int
     output_tokens: int
     latency_s: float
-    finish_reason: str = "stop"
-    # Free-form provider metadata (response id, served model, ...); its keys vary by vendor.
+    finish_reason: FinishReason = "stop"
+    # Free-form provider metadata (response id, served model, the vendor's raw finish reason,
+    # ...); its keys vary by provider.
     raw: dict[str, Any] = field(default_factory=dict)
 
 
 @runtime_checkable
 class LLMProvider(Protocol):
-    """5-provider abstraction (§0.5).
+    """What the pipeline, the critic and the bench need from a model provider.
 
     Each implementation:
-      - exposes `name` and `model_id` constants (model_id overridable via env var)
-      - implements `generate(system, user, max_tokens, timeout)` -> ProviderResponse
-      - implements `is_available()` to fail fast on missing API key / model
-      - implements `cost_estimate_usd(response)` for the bench cost-log
-
-    The `timeout` keyword is enforced at the SDK call site in each concrete
-    provider (Phase 3 work). MockProvider ignores it. Retry policy is the
-    bench runner's responsibility; this interface only exposes single-call
-    timeout per §7 of the kickoff.
+      - exposes `name` (the provider kind) and `model_id`
+      - implements `generate(system, user, max_tokens, timeout)` -> ProviderResponse, with
+        `timeout` enforced per call at the SDK call site (the zero-key providers ignore it)
+      - implements `is_available()`: False when a key or the SDK is missing
+      - implements `cost_estimate_usd(response)` for the bench cost log
     """
 
     name: str
@@ -68,32 +70,41 @@ class LLMProvider(Protocol):
 
 
 # ---------------------------------------------------------------------------
-# Retry helper (reviewer fix #6)
+# Retry helper
 # ---------------------------------------------------------------------------
 
-# Class names of API/network errors worth retrying across Anthropic / OpenAI /
-# Google Gen AI plus stdlib network errors. We match on class NAME rather than
-# importing each SDK's exception class so this module stays SDK-agnostic.
+# Class names of API/network errors worth retrying across Anthropic, OpenAI and Google Gen AI,
+# httpx and the standard library. We match on class NAME rather than importing each SDK's
+# exception class so this module stays SDK-agnostic.
 #
-# Round 2 fix (2.1): `APIError` is NO LONGER in the transient set. Both
-# anthropic and openai SDKs subclass `APIError` for `BadRequestError`,
-# `AuthenticationError`, etc. — non-transient client errors that should
-# propagate immediately. The MRO walk in `_is_transient` would otherwise treat
-# them as transient because they inherit from `APIError`. Use the explicit
-# non-transient blocklist below to short-circuit before the transient check.
+# `APIError` is NOT in the transient set: both anthropic and openai subclass `APIError` for
+# `BadRequestError`, `AuthenticationError`, etc. — non-transient client errors that should
+# propagate immediately. The non-transient blocklist below is checked first.
 _TRANSIENT_ERROR_NAMES = frozenset(
     {
-        # Anthropic + OpenAI share these names — and they're concrete, not bases.
+        # Anthropic + OpenAI share these names — and they're concrete, not bases. Anthropic's
+        # OverloadedError (529), ServiceUnavailableError (503), GatewayTimeoutError and
+        # DeadlineExceededError (504) subclass InternalServerError, so the MRO walk finds them.
         "APIConnectionError",
         "APITimeoutError",
         "RateLimitError",
         "InternalServerError",
-        # Google google.api_core.exceptions
+        # Anthropic: 408 Request Timeout.
+        "RequestTimeoutError",
+        # Google Gen AI (google-genai): every 5xx. Its 4xx class is decided by status code below.
+        "ServerError",
+        # Google API core (the SDK before google-genai), kept for anything still raising them.
         "ResourceExhausted",
         "ServiceUnavailable",
         "DeadlineExceeded",
         "GatewayTimeout",
         "TooManyRequests",
+        # httpx: google-genai lets the transport's own errors through unwrapped. TimeoutException
+        # covers the connect, read, write and pool timeouts; NetworkError covers ConnectError,
+        # ReadError, WriteError and CloseError.
+        "TimeoutException",
+        "NetworkError",
+        "RemoteProtocolError",
         # stdlib
         "ConnectionError",
         "TimeoutError",
@@ -120,8 +131,18 @@ _NON_TRANSIENT_ERROR_NAMES = frozenset(
         "PermissionDeniedError",
         "UnprocessableEntityError",
         "ConflictError",
+        # Anthropic: a 429 for a spend limit, which waiting does not lift (it subclasses
+        # RateLimitError), and a 501, which no retry turns into an implemented endpoint (it
+        # subclasses InternalServerError).
+        "EnforcedSpendLimitReachedError",
+        "HTTPNotImplementedError",
     }
 )
+
+# google-genai raises one `ClientError` for every 4xx; only the status code on it (`code`) tells
+# a rate limit (429) or a request timeout (408) from a bad request or a bad key.
+_STATUS_DECIDED_ERROR_NAMES = frozenset({"ClientError"})
+_TRANSIENT_STATUS_CODES = frozenset({408, 429})
 
 
 def _is_transient(exc: BaseException) -> bool:
@@ -133,10 +154,14 @@ def _is_transient(exc: BaseException) -> bool:
     checked FIRST so `BadRequestError(APIError)` doesn't get retried just
     because it inherits from `APIError`.
     """
-    mro = type(exc).__mro__
-    if any(klass.__name__ in _NON_TRANSIENT_ERROR_NAMES for klass in mro):
+    names = {klass.__name__ for klass in type(exc).__mro__}
+    if names & _NON_TRANSIENT_ERROR_NAMES:
         return False
-    return any(klass.__name__ in _TRANSIENT_ERROR_NAMES for klass in mro)
+    if names & _TRANSIENT_ERROR_NAMES:
+        return True
+    return bool(names & _STATUS_DECIDED_ERROR_NAMES) and (
+        getattr(exc, "code", None) in _TRANSIENT_STATUS_CODES
+    )
 
 
 def retry_call[T](

@@ -115,23 +115,19 @@ def verify_openai(model_id: str | None = None) -> tuple[bool, str]:
 
 
 def _try_gemini_model(key: str, model: str) -> tuple[bool, str]:
-    """One ping against a specific Gemini model."""
-    import google.generativeai as genai
+    """One ping against a specific Gemini model, through the provider class the pipeline uses."""
+    from murshid.providers.gemini import GeminiProvider
 
-    genai.configure(api_key=key)
-    gmodel = genai.GenerativeModel(model)
-    resp = gmodel.generate_content(
-        "Reply with just the word OK.",
-        generation_config={"max_output_tokens": 20, "temperature": 0.0},
+    resp = GeminiProvider(model, api_key=key).generate(
+        system="You are a connectivity check.",
+        user="Reply with just the word OK.",
+        max_tokens=20,
+        timeout=30.0,
     )
-    text = (resp.text or "").strip()
-    usage = getattr(resp, "usage_metadata", None)
-    token_str = (
-        f"tokens_in={usage.prompt_token_count} tokens_out={usage.candidates_token_count}"
-        if usage
-        else "tokens=n/a"
+    return True, (
+        f"model={model} | reply={resp.text.strip()!r} | finish={resp.finish_reason} | "
+        f"tokens_in={resp.input_tokens} tokens_out={resp.output_tokens}"
     )
-    return True, f"model={model} | reply={text!r} | {token_str}"
 
 
 def verify_gemini(model_id: str | None = None) -> tuple[bool, str]:

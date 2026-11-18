@@ -264,3 +264,106 @@ def test_retry_call_invalid_request_error_legacy_openai_name_not_retried(monkeyp
     with pytest.raises(InvalidRequestError):
         retry_call(fn, max_retries=3)
     assert calls["n"] == 1
+
+
+# ---------------------------------------------------------------------------
+# The class names of the current SDKs: google-genai, anthropic 2.x, httpx.
+# Synthetic stand-ins here; tests/test_provider_contracts.py raises the real classes from a
+# scripted transport.
+# ---------------------------------------------------------------------------
+
+
+class GenAIAPIError(Exception):
+    """Stand-in for google.genai.errors.APIError: carries the HTTP status as `code`."""
+
+    def __init__(self, code: int) -> None:
+        super().__init__(f"{code} scripted")
+        self.code = code
+
+
+class ClientError(GenAIAPIError):
+    """Mirrors google.genai.errors.ClientError: one class for every 4xx."""
+
+
+class ServerError(GenAIAPIError):
+    """Mirrors google.genai.errors.ServerError: one class for every 5xx."""
+
+
+class InternalServerError(APIError):
+    """Mirrors anthropic.InternalServerError, the base of its 5xx classes."""
+
+
+class HTTPNotImplementedError(InternalServerError):
+    """Mirrors anthropic.HTTPNotImplementedError (501)."""
+
+
+class EnforcedSpendLimitReachedError(RateLimitError):
+    """Mirrors anthropic.EnforcedSpendLimitReachedError (a 429 that waiting does not lift)."""
+
+
+class RequestTimeoutError(APIError):
+    """Mirrors anthropic.RequestTimeoutError (408)."""
+
+
+class TimeoutException(Exception):  # noqa: N818 - retry_call matches this exact httpx class name
+    """Mirrors httpx.TimeoutException, which google-genai lets through unwrapped."""
+
+
+class ReadTimeout(TimeoutException):
+    pass
+
+
+class NetworkError(Exception):
+    """Mirrors httpx.NetworkError."""
+
+
+class ConnectError(NetworkError):
+    pass
+
+
+def _calls_until(exc: BaseException, monkeypatch: pytest.MonkeyPatch) -> int:
+    """How many calls retry_call makes when every call raises `exc` (max_retries=2)."""
+    monkeypatch.setattr(time, "sleep", lambda _: None)
+    calls = {"n": 0}
+
+    def fn() -> None:
+        calls["n"] += 1
+        raise exc
+
+    with pytest.raises(type(exc)):
+        retry_call(fn, max_retries=2)
+    return calls["n"]
+
+
+@pytest.mark.parametrize(
+    "exc",
+    [
+        ServerError(503),
+        ClientError(429),  # google-genai's rate limit: a ClientError whose code is 429
+        ClientError(408),
+        RequestTimeoutError("408"),
+        ReadTimeout("read timed out"),
+        ConnectError("connection refused"),
+    ],
+)
+def test_retry_call_retries_the_current_sdks_transient_errors(
+    exc: BaseException, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    assert _calls_until(exc, monkeypatch) == 3
+
+
+@pytest.mark.parametrize(
+    "exc",
+    [
+        ClientError(400),
+        ClientError(401),
+        ClientError(403),
+        ClientError(404),
+        EnforcedSpendLimitReachedError("spend limit"),
+        HTTPNotImplementedError("501"),
+    ],
+)
+def test_retry_call_never_retries_the_current_sdks_client_errors(
+    exc: BaseException, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    assert _calls_until(exc, monkeypatch) == 1

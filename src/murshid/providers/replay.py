@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """ReplayProvider: real recorded model answers to the bench questions, with no key and no call.
 
 The bench's case cache (`MURSHID_REPLAY_FILE`, by default `bench/case-cache.json`) holds every

@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """The one provider registry: kinds, default model ids, prices, and how each kind is built.
 
 Every place that picks a provider (the demo, the UI, the bench and its judges, the key check, the

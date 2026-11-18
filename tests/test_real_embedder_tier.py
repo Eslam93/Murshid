@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """The --real-embedder tier in the root conftest.py.
 
 A test marked `real_embedder` is skipped, with a reason that names the option, unless pytest gets

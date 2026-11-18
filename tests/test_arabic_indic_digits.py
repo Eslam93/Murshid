@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """Tests for Arabic-Indic digit normalization.
 
 Two layers:

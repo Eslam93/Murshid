@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """Tests for src/murshid/ingest.py.
 
 Pins the chunker on iqama-002 (prose), iqama-003 (FAQ), and municipal-004

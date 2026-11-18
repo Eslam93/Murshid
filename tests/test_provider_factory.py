@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """The provider registry (`murshid.providers.factory`) and the bench's use of it.
 
 Pins: one registry entry per kind; building every kind with the settings' model ids; a paid kind

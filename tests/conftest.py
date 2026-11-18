@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """Test-wide guards and fixtures for Murshid's own tests.
 
 No test reads the developer's `.env` or a real API key: every test runs with the settings file

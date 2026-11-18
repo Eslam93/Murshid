@@ -1,0 +1,48 @@
+version = 1
+SPDX-PackageName = "Murshid"
+SPDX-PackageSupplier = "Eslam Hamed"
+SPDX-PackageDownloadLocation = "https://github.com/Eslam93/Murshid"
+
+# Eslam Hamed's files that take no licence header: documentation, configuration, CI and the
+# lockfile. His Python files carry the header themselves.
+[[annotations]]
+path = [
+    "README.md",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "CODE_OF_CONDUCT.md",
+    "SECURITY.md",
+    "CITATION.cff",
+    "docs/**",
+    "data/README.md",
+    "data/heldout/README.md",
+    "bench/archive/README.md",
+    ".github/**",
+    "pyproject.toml",
+    "uv.lock",
+    ".python-version",
+    ".gitignore",
+    ".gitattributes",
+    ".env.example",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Eslam Hamed"
+SPDX-License-Identifier = "MIT"
+
+# His Python files carry the same notice in their header. reuse guesses a file's encoding from
+# its first 2048 bytes, and when that slice ends inside an Arabic character it treats the file as
+# binary and skips the header (src/murshid/critic.py did). Listing the files here keeps them
+# covered whatever their bytes. The vendored cores under src/murshid/_toolkit are not listed.
+[[annotations]]
+path = [
+    "conftest.py",
+    "src/murshid/*.py",
+    "src/murshid/bench/*.py",
+    "src/murshid/providers/*.py",
+    "tests/*.py",
+    "scripts/*.py",
+    "tools/*.py",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Eslam Hamed"
+SPDX-License-Identifier = "MIT"

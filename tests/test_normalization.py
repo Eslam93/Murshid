@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """Tests for src/murshid/normalize.py.
 
 The CRITICAL tests pin the default-light behavior: do NOT collapse ى, ة, hamza.

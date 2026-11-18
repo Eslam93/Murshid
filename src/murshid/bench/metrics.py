@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """Bench metrics: 7 metrics per case + structured judge output.
 
 The metrics:

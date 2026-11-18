@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """Murshid's typed settings (`murshid.settings`), built on the vendored C02 core.
 
 Pins: the defaults (model ids from the registry); reading the environment and a `.env` file, the

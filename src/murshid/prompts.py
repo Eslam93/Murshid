@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """System prompts + few-shot exemplars.
 
 The answer rules, stated explicitly: answer in the user's register, quote the sources verbatim

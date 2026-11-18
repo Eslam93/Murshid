@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """The 3-question demo.
 
 Runs the 3-question demo or a single ad-hoc question through the full pipeline

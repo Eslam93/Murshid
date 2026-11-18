@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """The bench runner on the provider registry and the settings.
 
 Pins: providers built through the registry, with unknown and unavailable ones skipped and why;

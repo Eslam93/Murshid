@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """Minimal Gradio UI for Murshid.
 
 Install:  uv sync --extra ui --extra local-embed   (add --extra providers for the paid models)

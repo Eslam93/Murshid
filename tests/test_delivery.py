@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """Delivery checks: the CI workflows.
 
 The vendored C71 check keeps CI safe to run on a stranger's pull request. These tests add what
@@ -31,6 +35,8 @@ GATE_COMMANDS = [
     "uv run pytest --cov",
 ]
 REAL_EMBEDDER_TESTS = "uv run pytest --real-embedder -m real_embedder"
+# Every file states its copyright and licence; the version and the extra are pinned.
+REUSE_LINT = 'uvx --from "reuse[charset-normalizer]==6.3.0" reuse lint'
 # No workflow needs a provider key: the paid providers are tested with fakes.
 KEY_NAME = re.compile(r"\w*API_KEY\b|\bHF_TOKEN\b|\bHUGGING_FACE_HUB_TOKEN\b")
 
@@ -111,6 +117,11 @@ def test_the_fast_tests_also_run_on_windows() -> None:
     windows = [job for job in jobs if job["runs-on"] == "windows-latest"]
     assert len(windows) == 1
     assert _runs(windows[0]) == ["uv sync --frozen --extra providers", "uv run pytest"]
+
+
+def test_ci_lints_copyright_and_licensing_with_reuse() -> None:
+    jobs = _workflow(ROOT / ".github" / "workflows" / "ci.yml")["jobs"]
+    assert _runs(jobs["licensing"]) == [REUSE_LINT]
 
 
 def test_the_real_embedder_tests_run_weekly_and_by_hand_only() -> None:

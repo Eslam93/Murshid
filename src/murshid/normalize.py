@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """Light Arabic normalization (ADR 3 in docs/ARCHITECTURE.md).
 
 Tokenizer-aligned for BGE-M3 (light by default). Preserves ى, ة, hamza —

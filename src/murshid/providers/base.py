@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """LLMProvider protocol, ProviderResponse, and the one retry layer every paid provider uses.
 
 `retry_call` retries known-transient API and network errors (connection drops, timeouts, rate

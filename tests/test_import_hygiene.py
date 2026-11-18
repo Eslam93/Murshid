@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """Importing Murshid imports no vendor SDK.
 
 The paid providers' SDKs (anthropic, openai, google-genai) are an optional extra, and each is

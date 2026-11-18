@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """Register detector (ADR 3 in docs/ARCHITECTURE.md).
 
 Three-class output: `MSA | dialect | mixed`. `contains_code_switching` is a

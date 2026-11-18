@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """The zero-key providers that show real content: ExtractiveProvider and ReplayProvider.
 
 Pins:

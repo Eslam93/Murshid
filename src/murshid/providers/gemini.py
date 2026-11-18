@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """GeminiProvider: the Gemini Developer API through the `google-genai` SDK.
 
 The model id and API key come from the provider registry (`murshid.providers.factory`), which

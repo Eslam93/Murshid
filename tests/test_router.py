@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """Tests for src/murshid/router.py.
 
 Pins the service-category classifier against every question in

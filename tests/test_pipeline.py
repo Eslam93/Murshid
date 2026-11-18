@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """Tests for src/murshid/pipeline.py — behavior-contract coverage.
 
 Pins the 4-state `expected_behavior` vocabulary across the question and

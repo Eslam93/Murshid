@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """LLM provider abstraction.
 
 Zero-key providers: Extractive (the default: quotes the retrieved passages), Replay (recorded

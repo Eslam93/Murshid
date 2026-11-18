@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """Service-category query classifier (routing before retrieval).
 
 Categories: `iqama | traffic_fines | sponsorship_transfer | municipal_permits |

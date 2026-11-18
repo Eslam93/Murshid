@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """Tests for src/murshid/hijri.py (Hijri date detection).
 
 Pins the contract surfaced in the docstring:

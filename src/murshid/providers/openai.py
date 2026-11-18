@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """OpenAIProvider: OpenAI's Chat Completions API.
 
 The model id and API key come from the provider registry (`murshid.providers.factory`), which

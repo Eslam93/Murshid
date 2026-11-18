@@ -37,14 +37,25 @@ Hugging Face cache the first time they are needed.
 
 ## Quality gates
 
-A pull request is ready when all four pass:
+A pull request is ready when all five pass:
 
 ```bash
 uv run ruff check .
 uv run ruff format --check .
 uv run mypy
 uv run pytest
+uvx --from "reuse[charset-normalizer]==6.3.0" reuse lint
 ```
+
+The last one checks that every file states its copyright and licence, by the
+[REUSE](https://reuse.software/) convention. A new Python file starts with an SPDX header naming
+its author; `reuse annotate` writes it:
+
+```bash
+uvx --from "reuse[charset-normalizer]==6.3.0" reuse annotate --copyright "<your name>" --year 2026 --license MIT <file>
+```
+
+Files that take no comment are listed in `REUSE.toml`.
 
 mypy runs in strict mode over `src/murshid`. New code is fully typed and tested. Use
 `# noqa: <code>` or `# type: ignore[<code>]` only where a fix would be wrong, with the reason on

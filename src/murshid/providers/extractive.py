@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """ExtractiveProvider: answers by quoting the retrieved passages verbatim, and nothing else.
 
 The zero-key default. It needs no key and no network, it is deterministic, and its answer is the

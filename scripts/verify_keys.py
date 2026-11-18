@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """Verify configured API keys with one minimal call per paid provider.
 
 Reads the settings (`.env` or the environment), builds each paid provider through the registry

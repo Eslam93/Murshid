@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """Murshid's settings: one typed object, read from the environment and `.env`, checked at start.
 
 Built on the vendored C02 core (`murshid._toolkit.fail_fast_settings`): a missing or malformed

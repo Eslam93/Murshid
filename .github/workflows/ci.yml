@@ -47,6 +47,18 @@ jobs:
       # dependency was changed in pyproject.toml without running uv lock.
       - run: uv lock --check
 
+  licensing:
+    name: Every file states its copyright and licence (REUSE)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.19"
+      # reuse guesses encodings with charset-normalizer, the same way on every platform.
+      - run: uvx --from "reuse[charset-normalizer]==6.3.0" reuse lint
+
   windows:
     name: Fast tests on Windows
     runs-on: windows-latest

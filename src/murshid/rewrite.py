@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """Dialect → MSA query rewriter (the third retrieval view).
 
 Calls an LLM via the provider layer. Preserves:

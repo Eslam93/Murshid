@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """Critic post-check: a model's verdict on register match and groundedness, failing closed.
 
 Verifies register match + groundedness before returning the answer. The critic is meant as a

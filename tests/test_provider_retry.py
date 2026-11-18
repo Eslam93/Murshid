@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """Provider retry helper.
 
 Pins the contract of `murshid.providers.base.retry_call`:

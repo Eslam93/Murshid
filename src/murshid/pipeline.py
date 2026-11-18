@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """End-to-end pipeline: route, detect register, retrieve, gate, generate, critique.
 
 Flow:

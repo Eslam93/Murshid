@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """MockProvider — canned responses for zero-key pipeline tests.
 
 Routes by the `[ROLE: ...]` sentinel each role prompt carries (`prompt_role`). Recognised roles:

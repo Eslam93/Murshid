@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """Copy ToolKit cores into src/murshid/_toolkit at one ToolKit commit, and write the manifest.
 
     uv run python tools/vendor_toolkit.py --toolkit ../ToolKit --commit 74b6ff1

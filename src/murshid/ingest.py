@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """Ingestion: chunk -> enrich -> embed -> index.
 
 - Deterministic chunking: FAQ detect by `س:` markers; else paragraph split.

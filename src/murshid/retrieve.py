@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """Retrieval: multi-view hybrid search over the chunk index.
 
 Multi-view: every query produces three views (raw + light-normalized +

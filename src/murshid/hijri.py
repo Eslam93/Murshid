@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """Hijri date detection: find Hijri dates in Arabic text, with canonical month names.
 
 Detects Hijri date mentions in Arabic text — day + month name + (optional) year +

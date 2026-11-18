@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """Root conftest: the `--real-embedder` test tier.
 
 Tests marked `real_embedder` build a real BGE-M3 index (about 2.3 GB of weights, loaded on CPU).

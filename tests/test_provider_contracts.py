@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """Contract tests for the paid providers: the real SDK classes over a fake HTTP transport.
 
 Each provider builds the real SDK client (anthropic, openai, google-genai) and hands it a fake

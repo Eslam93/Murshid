@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """Tests for bench/metrics.py: the judges, case scoring and aggregation.
 
 Pins these contracts:

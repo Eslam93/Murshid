@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """Bench runner — entry point for `python -m murshid.bench`.
 
 Runs the full pipeline against each available provider over the gold answers

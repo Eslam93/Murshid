@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """Entry point for `python -m murshid.bench`."""
 
 from murshid.bench.runner import main

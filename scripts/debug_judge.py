@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """Quick debug: one live judge call, to see exactly what the bench judge returns.
 
 The judge is `BENCH_JUDGE_MODEL` (Gemini Flash by default), built through the provider registry

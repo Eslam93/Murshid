@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """pyproject.toml keeps every Python quality gate.
 
 The vendored C68 check refuses a configuration that has lost a gate: ruff without the security,

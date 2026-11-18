@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Eslam Hamed
+#
+# SPDX-License-Identifier: MIT
+
 """The vendored ToolKit cores are exactly what tools/vendor_toolkit.py copied.
 
 A core is changed in the ToolKit and re-vendored, never edited here: this test fails on any

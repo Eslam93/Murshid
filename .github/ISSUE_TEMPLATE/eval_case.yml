@@ -1,0 +1,78 @@
+name: Eval case
+description: Propose a question for the evaluation set, with its expected behavior and sources.
+title: "[Eval case]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Each case is one question with the behavior the system should show. data/README.md
+        describes every field. Keep the case synthetic: no real personal data, and no real fees,
+        rules or reference numbers.
+  - type: dropdown
+    id: set
+    attributes:
+      label: Set
+      description: A user question goes in questions.json; an adversarial case goes in red_team.json.
+      options:
+        - questions.json (user question)
+        - red_team.json (adversarial case)
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: Question text
+      description: The question exactly as a user would type it, in Arabic.
+    validations:
+      required: true
+  - type: dropdown
+    id: register
+    attributes:
+      label: Register
+      options:
+        - MSA
+        - dialect
+        - mixed
+    validations:
+      required: true
+  - type: input
+    id: dialect-family
+    attributes:
+      label: Dialect family
+      description: For a dialect or mixed question, for example saudi_najdi, saudi_hijazi, khaleeji_general or saudi_general.
+  - type: dropdown
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+      options:
+        - answer
+        - partial_answer_with_escalation
+        - refuse_with_redirect
+        - ask_clarification
+    validations:
+      required: true
+  - type: input
+    id: sources
+    attributes:
+      label: Expected source IDs
+      description: Source IDs from data/sources.json, comma-separated. Leave empty if the corpus should not answer the question.
+      placeholder: iqama-002, iqama-003
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Why this behavior?
+      description: What the case tests, and what a wrong answer would look like.
+    validations:
+      required: true
+  - type: textarea
+    id: gold
+    attributes:
+      label: Gold answer and quoted passages (optional)
+      description: A reference answer in the question's register, and the passages it rests on, copied verbatim from the sources.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you open this issue
+      options:
+        - label: The case contains no real personal data and no real fees, rules or reference numbers.
+          required: true

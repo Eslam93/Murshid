@@ -1,0 +1,29 @@
+name: Feature request
+description: Suggest a change or a new capability.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Who runs into it, and when?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What do you propose?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+  - type: textarea
+    id: trust
+    attributes:
+      label: Effect on trust and cost
+      description: >-
+        Could the change make an answer invent policy, leak data or cost more per question?
+        How would the bench or the tests show that it does not?

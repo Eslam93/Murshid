@@ -10,9 +10,15 @@ Gradio UI). Both the full and short system prompts must carry the rule so
 the discipline survives the SYSTEM_PROMPT_SHORT_AR fallback path.
 """
 
+import json
+import re
+from pathlib import Path
+
 import pytest
 
 from murshid.prompts import SYSTEM_PROMPT_AR, SYSTEM_PROMPT_SHORT_AR
+
+DATA = Path(__file__).resolve().parents[1] / "data"
 
 SCOPE_RULE_MARKERS = [
     "أجب فقط على ما",  # "answer only what" — the core rule
@@ -38,3 +44,17 @@ def test_full_prompt_lists_non_required_categories() -> None:
         assert category in SYSTEM_PROMPT_AR, (
             f"Scope-rule category {category!r} missing from SYSTEM_PROMPT_AR"
         )
+
+
+def test_the_examples_quote_nothing_from_the_corpus() -> None:
+    """The few-shot examples show the answer's form only. Their quotes come from no source in the
+    corpus and they carry no fee, so the prompt hands the model no answer to a scored question.
+    The examples it replaced quoted the fees that q-001 and q-005 ask about."""
+    sources = json.loads((DATA / "sources.json").read_text(encoding="utf-8"))
+    corpus = "\n".join(source["content"] for source in sources)
+    examples = SYSTEM_PROMPT_AR.split("مثالان توضيحيان", 1)[1]
+    quotes = re.findall(r'"([^"]+)"', examples)
+    assert len(quotes) == 2
+    for quote in quotes:
+        assert quote not in corpus
+    assert "SAR" not in examples

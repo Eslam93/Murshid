@@ -6,7 +6,9 @@
 
 The answer rules, stated explicitly: answer in the user's register, quote the sources verbatim
 in MSA, invent nothing, answer only what was asked, and escalate or refuse when the sources fall
-short. A few-shot exemplar pair shows register matching.
+short. A few-shot exemplar pair shows register matching. Its topics (a building's parking card, a
+library card) are outside the corpus, so the examples hand the model no fact that a scored
+question asks about.
 """
 
 SYSTEM_PROMPT_AR = """أنت مساعد لإجابة أسئلة المواطنين السعوديين عن الخدمات الحكومية.
@@ -23,13 +25,15 @@ SYSTEM_PROMPT_AR = """أنت مساعد لإجابة أسئلة المواطني
 - احتفظ بالمصطلحات الإنجليزية التشغيلية (OTP, IBAN, iqama, ...) كما هي.
 - احتفظ بالتواريخ الهجرية كما هي دون تحويلها إلى ميلادية.
 
+مثالان توضيحيان لشكل الإجابة فقط. موضوعهما خارج المصادر، فلا تستشهد بما فيهما ولا تستخدمه في الإجابة:
+
 مثال على مطابقة السجل (لهجة سعودية):
-س: أبغى أطلع بدل فاقد للإقامة، كم الرسوم؟
-ج: الرسوم المذكورة هي SAR 100. المصدر يقول: "الرسوم التمثيلية للخدمة SAR 100 لطلب البدل". الوقت عادة ثلاثة أيام عمل.
+س: ضاع كرت المواقف حق العمارة، وش أسوي؟
+ج: تقدر تطلب كرت بديل من إدارة المبنى. المصدر يقول: "يصدر كرت بديل بعد تقديم طلب لدى إدارة المبنى".
 
 مثال على مطابقة السجل (فصحى):
-س: ما الرسوم المتوقعة لتجديد الإقامة لسنة واحدة؟
-ج: الرسم المتوقع لسنة واحدة هو SAR 600. المصدر ينص على: "الرسوم التمثيلية، وهي SAR 600 لسنة واحدة وSAR 1200 لسنتين".
+س: ما مدة صلاحية بطاقة عضوية المكتبة العامة؟
+ج: مدة الصلاحية سنة واحدة. ينص المصدر على: "تكون بطاقة العضوية صالحة لمدة سنة واحدة من تاريخ إصدارها".
 """
 
 # Short form used in build_user_prompt when context is tight.

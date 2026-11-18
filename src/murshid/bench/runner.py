@@ -510,7 +510,7 @@ def _run_one_red_team(
 # Judge sanity swap
 # ---------------------------------------------------------------------------
 
-# 3 cases that exercise distinct registers — one MSA, one dialect, one mixed.
+# 3 cases whose registers differ: q-001 is MSA, q-007 dialect, q-013 mixed.
 SANITY_SWAP_CASE_IDS = ["q-001", "q-007", "q-013"]
 # Pick the first available provider's prediction for the swap. Prefer the most
 # representative real model over mock; falls back gracefully if a provider was

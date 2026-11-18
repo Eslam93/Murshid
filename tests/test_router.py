@@ -134,7 +134,7 @@ def test_labor_office_otp_routes_correctly():
 # ---------------------------------------------------------------------------
 #
 # `صدر` is the noun "chest" (medical) AND the verb "was issued" (government).
-# Before round 1, raw substring matching put `صدر` in OUT_OF_SCOPE_TRIGGERS,
+# Raw substring matching once put `صدر` in OUT_OF_SCOPE_TRIGGERS,
 # which falsely routed every government-issuance question to out_of_scope.
 # The fix: drop `صدر` from raw triggers, require `(ألم|وجع) صدر` bigram for
 # medical detection. These tests pin the fix.

@@ -40,7 +40,7 @@ NO_PASSAGE_ANSWER_AR = "لم أجد في المصادر المسترجعة نص�
 _FAQ_QUESTION = "س:"
 _FAQ_ANSWER = "ج:"
 # A sentence ends at . ! ? or ؟ followed by whitespace or the end of the text, so the dots in
-# "1.5" or "example.gov.sa" do not end one.
+# "1.5" or "services.example" do not end one.
 _SENTENCE_END = re.compile(r"[.!?؟](?=\s|$)")
 _SENTENCES_PER_PROSE_QUOTE = 2
 

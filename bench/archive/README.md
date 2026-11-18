@@ -8,7 +8,8 @@ code, and some of their labels are no longer used:
   sources may support them. The current docs call them "facts not in the gold answer".
 - The mock rows score `MockProvider`'s fixed placeholder answers. Their behavior column shows the
   rules acting alone; their quality columns mean nothing.
-- "Phase" and "Round" labels name stages of the original build.
+- "Phase" and "Round" labels, and section marks such as "§0.7", name stages and design notes of
+  the original build. Those notes are not in this repository.
 
 | File | What it is |
 | --- | --- |

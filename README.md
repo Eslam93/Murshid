@@ -49,7 +49,7 @@ behavior on all 26 of those, and on 62 of the 93 held-out items they never saw
 Where it breaks: on the held-out items the rules answer (50 of 59) and ask for clarification (9 of
 10) as expected, but rarely refuse (2 of 14) or answer in part and escalate (1 of 10). A question
 about a service outside the corpus, such as a driving licence, a family visit visa or a
-recruitment office, usually gets a clarification request, because the router finds no category
+domestic-worker agency, usually gets a clarification request, because the router finds no category
 and has no trigger for it. The
 support gate, written against two bait questions, fired on none of the 93 items, including the
 three bait questions among them. [bench/rules-only/REPORT.md](bench/rules-only/REPORT.md) has the

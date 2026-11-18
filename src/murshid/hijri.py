@@ -14,7 +14,7 @@ variants (`الأول` vs `الاول`, `الآخر` vs `الاخر`, `ذو` vs 
 **What this module deliberately does NOT do:**
   - Calendar arithmetic across year boundaries. Adding `15 days` to `20 شعبان 1447هـ`
     requires Umm al-Qura tables (Saudi-official Hijri calendar) and a real Hijri
-    converter library. Documented in `docs/CREATIVE.md` as a future production hook.
+    converter library. Documented in `docs/DECISIONS.md` as a future hook.
   - Hijri ↔ Gregorian conversion. Same reason; would need `hijri-converter` or
     `umalqurra` as a runtime dependency.
   - Arabic-Indic digit normalization lives elsewhere, in `normalize.fold_arabic_indic_digits` and wired into

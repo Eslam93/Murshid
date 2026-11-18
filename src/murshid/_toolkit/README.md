@@ -12,7 +12,7 @@ Do not edit these files. Change the core in the ToolKit, commit there, and re-ru
 uv run python tools/vendor_toolkit.py --toolkit ../ToolKit --commit <new-commit>
 ```
 
-| Folder | ToolKit ID | ToolKit project | Used in Murshid for |
+| Folder | ToolKit ID | ToolKit project | Copied for |
 |---|---|---|---|
 | `quote_matching` | W03 | `retrieval-rag` | Arabic folding with a map back to the original text; quote alignment for citations |
 | `lexical_retrieval` | C56 | `retrieval-rag` | BM25 tokenizer with Arabic folding and light stemming |
@@ -29,6 +29,11 @@ uv run python tools/vendor_toolkit.py --toolkit ../ToolKit --commit <new-commit>
 | `python_tooling` | C68 | `delivery-tooling` | check that the pyproject quality gates are not weakened |
 | `ci_workflow` | C71 | `delivery-tooling` | check that the CI workflow is safe for a stranger's pull request |
 | `container_image` | C69 | `delivery-tooling` | check that the Dockerfile keeps secrets out and runs as non-root |
+
+Murshid's own code imports four of them today: `fail_fast_settings` (src/murshid/settings.py),
+and `hybrid_retrieval`, `python_tooling` and `ci_workflow` (tests only). The other eleven are
+copied for planned work and nothing calls them yet; keep this paragraph in step when that
+changes.
 
 Each core's own README (`<name>/core/README.md`) documents its API, its limits and the
 measurements it was released with.

@@ -1,149 +1,172 @@
 # Murshid
 
-Arabic-first RAG over Saudi government-services FAQs. CLI demo with a 5-provider abstraction (Mock + Claude + OpenAI + Gemini live; Falcon-Arabic stub for the residency-aware production path), structured-output judge bench, red-team adversarial harness, and explicit trust-thinking instrumentation (refusal-tone scoring, critic refusal-cause breakdown, cross-judge sanity swap).
+Arabic-first question answering over a synthetic corpus of Saudi government-services FAQs. Murshid
+answers in the user's own register (Modern Standard Arabic, Saudi or Gulf dialect, or a mix),
+quotes its sources verbatim in MSA, and decides by rules, before any model is called, when to
+answer, answer in part and escalate, refuse, or ask for clarification.
 
-The artifact to read first is `bench/results.md` + the 3-question demo. The reader can predict system behavior from `docs/ARCHITECTURE.md` without reading code.
+> The corpus is invented for this project and is not official guidance: every fee, rule, date and
+> reference number in it is made up. See [data/README.md](data/README.md).
 
----
+## What it does
 
-## Two-minute setup
+- **Routes** each question to one of five service categories (iqama, traffic fines, sponsorship
+  transfer, municipal permits, labour office) or to out-of-scope, with Arabic keyword rules.
+- **Detects the register** (MSA, dialect, mixed) and the dialect family; English domain terms such
+  as `OTP` or `Absher` do not count as code-switching.
+- **Retrieves** from 20 documents (84 chunks) with BM25 and BGE-M3 embeddings over three views of
+  the question (as typed, lightly normalised, rewritten to MSA), fused by reciprocal rank.
+- **Decides the behavior by rules:** refuses on out-of-scope triggers; asks for clarification on an
+  ambiguous date or an unrecognised service; refuses policy-bait questions ("I heard that…",
+  "is there a special exemption…") whose specific terms no retrieved passage contains, before the
+  model is called; and tags a partial answer with escalation when a question mixes an in-scope
+  part with travel or visa matters.
+- **Generates** with Claude, OpenAI or Gemini, or with a zero-key provider: `extractive` (quotes
+  the retrieved passages; the default) or `replay` (recorded real-model answers to the bench
+  questions).
+- **Benchmarks** providers with a structured-output judge: behavior match, recall, correctness,
+  faithfulness, citation accuracy, refusal tone, and a rubric for each red-team case.
+
+An optional critic, a second model call that checks the answer's grounding, exists but is off by
+default: in the recorded run it refused 11 correct answers and caught no wrong one
+([ADR 2](docs/ARCHITECTURE.md#5-adr-2--llm-provider-strategy)).
+
+## Results so far
+
+From the recorded run in [bench/results.md](bench/results.md) (2026-05-23): 16 questions and 10
+red-team cases, judged by Gemini 2.5 Flash.
+
+| Provider, critic off | Behavior | Correctness /3 | Faithfulness /3 | Citation accuracy |
+| --- | ---: | ---: | ---: | ---: |
+| OpenAI `gpt-5.5-2026-04-23` | 26 / 26 | 2.18 | 2.55 | 0.48 |
+| Claude `claude-sonnet-4-6` | 26 / 26 | 2.09 | 2.45 | 0.33 |
+
+Read these with two caveats. The rules were tuned on these same 26 items, so 26 / 26 shows fit,
+not generalisation. And the quality scores rest on 11 gold answers: differences under 0.3 are
+directional. A held-out split of 93 items the rules never saw, 68 questions and 25 red-team
+cases ([data/heldout/](data/heldout/README.md)), exists to measure generalisation; its scores
+will be reported beside these, never pooled with them.
+
+## Quick start
+
+You need [uv](https://docs.astral.sh/uv/); it installs Python 3.12 if it is missing.
 
 ```bash
-# Python 3.11+ recommended. Editable install.
-pip install -r requirements.txt
-pip install -e .
-
-# Optional: real-provider API keys. Copy and fill in.
-cp .env.example .env
-# Edit .env with ANTHROPIC_API_KEY / OPENAI_API_KEY / GEMINI_API_KEY.
-# Mock provider needs no keys.
-
-# Tests — full verification (~70-110s end-to-end; first run downloads BGE-M3 ~2.3GB)
-pytest tests/
-
-# Fast path (~10s, no BGE-M3 download) — skips the 3 test files that
-# build a real dense index (test_pipeline, test_support_gate, test_arabic_indic_digits).
-# Useful when you want a quick sanity pass without the 2.3GB weight pull.
-pytest --ignore=tests/test_pipeline.py --ignore=tests/test_support_gate.py --ignore=tests/test_arabic_indic_digits.py
+git clone https://github.com/Eslam93/Murshid.git
+cd Murshid
+uv sync --extra providers  # core, dev tools and the model SDKs; no model download
+uv run pytest              # the fast tests: no model, no network, no key
 ```
 
-The first full test run downloads BGE-M3 weights (~2.3GB) into the Hugging Face cache. Subsequent runs hit the cache.
+Without `--extra providers` the tests that drive the model SDKs over a fake transport are
+skipped; nothing else changes.
 
-## Run the 3-question demo
+The tests that build a real BGE-M3 index need the `local-embed` extra and about 2.3 GB of weights,
+downloaded into the Hugging Face cache on first use:
 
 ```bash
-python scripts/demo.py
+uv sync --extra local-embed
+uv run pytest --real-embedder -m real_embedder
 ```
 
-Runs three questions end-to-end with the Mock provider (zero API keys required):
-
-1. **q-001** — MSA, iqama renewal. Expected: `answer`. Demonstrates the in-corpus answer path with verbatim MSA citations.
-2. **q-007** — Khaleeji dialect, sponsorship transfer with Hijri date. Expected: `answer`. Demonstrates dialect→MSA query rewrite, Hijri date preservation, and same-register answer + verbatim MSA citation discipline.
-3. **q-014** — Out-of-corpus personal loan question. Expected: `refuse_with_redirect`. Demonstrates the hard out-of-scope short-circuit before retrieval.
-
-### Output
-
-The demo writes the full trace to `demo_output.txt` (UTF-8) and prints only a brief status tail to stdout.
-
-**Why a file, not stdout:** Windows PowerShell mangles RTL Arabic in stdout (cp1252 vs UTF-8). Open `demo_output.txt` in any editor that handles UTF-8 + RTL (VS Code, Notepad++) to see the rendered Arabic answer + citations correctly.
-
-### Single-query mode
+## Run the demo
 
 ```bash
-python scripts/demo.py "كيف أجدد إقامتي إذا كان جواز السفر سينتهي قريباً؟"
+uv sync --extra local-embed
+uv run python scripts/demo.py                          # three questions
+uv run python scripts/demo.py "كيف أجدد إقامتي؟"         # one question of your own
+uv run python scripts/demo.py --provider replay        # recorded Claude / OpenAI answers
 ```
 
-Accepts an ad-hoc query as the first positional argument. Same output contract (file + status tail).
+The three questions are q-001 (MSA, iqama renewal with a Hijri date), q-007 (Khaleeji dialect,
+sponsorship transfer) and q-014 (a personal loan question, outside the corpus, which is
+refused). The provider defaults to `LLM_PROVIDER` (`extractive` unless set), which needs no key
+and no network. The demo writes the full trace to `out/demo_output.txt` (UTF-8) and prints a
+short status line: Windows PowerShell mangles right-to-left Arabic in the terminal, so open the
+file in an editor that handles it.
+
+A web UI (Gradio) answers the same way in the browser:
+
+```bash
+uv sync --extra local-embed --extra ui
+uv run python scripts/ui.py
+```
+
+Paid providers need the `providers` extra and a key in `.env` (copy `.env.example`); they appear
+only when their key is set.
 
 ## Run the bench
 
 ```bash
-# Default: all providers, both critic modes, full standard + red-team set + sanity-swap
-python -m murshid.bench
-
-# Cost-controlled subsets
-python -m murshid.bench --providers mock                       # zero-cost
-python -m murshid.bench --providers mock,claude --critic off   # ~$0.10
-python -m murshid.bench --mode red_team                        # red-team only + minimal pre-loop
-python -m murshid.bench --question-ids q-001,q-007 \
-    --red-team-ids rt-001,rt-002,rt-003 --no-sanity-swap       # focused
-
-# Free re-render after a metric-logic tweak (uses bench/case-cache.json)
-python -m murshid.bench --render-only
+uv run python -m murshid.bench --render-only      # rebuild bench/results.md from the recorded cases
 ```
 
-Outputs:
+`--render-only` calls no model and needs no extra. Any other run builds the BGE-M3 index, so it
+needs `uv sync --extra local-embed`; this one runs the rules alone, with no key:
 
-- `bench/results.md` — aggregate + per-case + critic refusal-cause breakdown + sanity-swap delta.
-- `bench/cost-log.jsonl` — per-call token + cost trace (answer calls only; full call-graph tracing is deferred — see ADR 2).
-- `bench/refusal-log.jsonl` — every non-answer behavior with expected vs taken + critic state.
-- `bench/case-cache.json` — per-case results for free `--render-only` re-renders.
+```bash
+uv run python -m murshid.bench --providers mock --critic off --no-sanity-swap
+```
 
-See `docs/ARCHITECTURE.md` §4 (ADR 2) for the bench results narrative and the production-default decision.
+A bench run that reaches a paid provider or judge spends real money: its default providers are
+`mock,claude,openai`, and the judge is called whenever a judge's key is set. A provider or judge
+without a key is skipped. A run writes `bench/results.md`, `bench/case-cache.json`,
+`bench/cost-log.jsonl` and `bench/refusal-log.jsonl`, replacing the recorded ones; restore them
+with git if that was not the point.
 
 ## Repository layout
 
 ```
 .
-├── README.md                       — this file
+├── README.md
 ├── docs/
-│   ├── ARCHITECTURE.md             — system diagram + ADRs 1/2/3 + Arabic risks + GCC gaps + predictive walkthrough
-│   └── CREATIVE.md                 — red-team harness as headline; Hijri / Arabic-Indic add-ons; path-not-taken
-├── data/
-│   ├── sources.json                — 20 Arabic government-services FAQ documents
-│   ├── questions.json              — 16 user questions, 4-state behavior vocabulary
-│   ├── gold_answers.json           — 11 gold answers
-│   └── red_team.json               — 10 adversarial cases, 9 categories
-├── src/murshid/                    — pipeline + bench + providers
-├── tests/                          — 202+ test cases
+│   ├── ARCHITECTURE.md   — system diagram, component contracts, ADRs, Arabic risks, GCC gaps, a worked trace
+│   └── DECISIONS.md      — the design decisions and the paths not taken
+├── data/                 — the synthetic corpus and the tuned question sets (see data/README.md)
+│   └── heldout/          — 68 questions, 25 red-team cases and 31 gold answers the rules never saw
+├── src/murshid/          — pipeline, providers, settings and the bench
+│   └── _toolkit/         — vendored ToolKit cores, byte-identical copies (see its README)
+├── tests/                — the test suite; `--real-embedder` adds the BGE-M3 tests
 ├── scripts/
-│   ├── demo.py                     — 3-question demo
-│   ├── verify_keys.py              — API-key smoke test for real providers
-│   ├── debug_judge.py              — single-shot judge call debugging
-│   └── seed_bench.py               — bench seeding helper
+│   ├── demo.py           — the three-question demo
+│   ├── ui.py             — the Gradio UI
+│   ├── verify_keys.py    — checks which model ids your API keys can reach
+│   └── debug_judge.py    — one judge call, for debugging
+├── tools/vendor_toolkit.py — copies the ToolKit cores at one commit
 └── bench/
-    ├── results.md                  — canonical bench output (see ARCHITECTURE §4 / ADR 2)
-    ├── case-cache.json             — per-case results for --render-only re-renders
-    ├── cost-log.jsonl
-    ├── refusal-log.jsonl
-    └── archive/                    — historical snapshots (Phase 3 + Gemini Pro Track A)
-        ├── results-phase3-snapshot.md
-        ├── results-gemini-pro-focused.md
-        └── case-cache-gemini-pro.json
+    ├── results.md        — the recorded run of 2026-05-23
+    ├── case-cache.json   — its per-case results, for --render-only and the replay provider
+    ├── cost-log.jsonl    — per answer-call tokens and cost
+    ├── refusal-log.jsonl — every non-answer, with the expected behavior
+    └── archive/          — an earlier run and a focused Gemini Pro run (see its README)
 ```
+
+## What is not here
+
+- **No real government data.** The corpus is synthetic, and its passages say so.
+- **No user accounts, persistent state or vector database.** One process; BM25 and BGE-M3 indexes
+  held in memory, which the 84-chunk corpus fits comfortably.
+- **No Arabic-native model in the bench.** Falcon-Arabic was planned for in-Kingdom hosting and
+  never built; ALLaM needs a watsonx tenant. See
+  [ADR 2](docs/ARCHITECTURE.md#5-adr-2--llm-provider-strategy).
+- **No Hijri calendar arithmetic.** `src/murshid/hijri.py` detects Hijri dates and canonicalises
+  month names (33 tests), but nothing in the pipeline calls it yet, and it does no Hijri ↔
+  Gregorian conversion.
+- **A narrow support gate.** Its patterns were written against the two policy-bait cases it was
+  tuned on (rt-001, rt-002); a bait question phrased another way reaches the model.
+- **Answer-call cost only.** The cost column leaves out rewrite, critic, enrichment and judge
+  calls.
 
 ## Reading order
 
-1. **This README** (~2 min) — orientation.
-2. **`docs/ARCHITECTURE.md`** (~10 min) — system diagram, 3 ADRs, Arabic risks, GCC gaps, predictive walkthrough.
-3. **`bench/results.md`** (~3 min) — the canonical evidence; read the banner at the top first.
-4. **`docs/CREATIVE.md`** (~3 min) — red-team as headline; path-not-taken.
-5. **`demo_output.txt`** (~2 min) — 3-question end-to-end demo output.
+1. This README.
+2. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — how the system decides, with a worked trace.
+3. [bench/results.md](bench/results.md) — the recorded evidence.
+4. [docs/DECISIONS.md](docs/DECISIONS.md) — why it is built this way, and what was left out.
+5. [data/README.md](data/README.md) and [data/heldout/README.md](data/heldout/README.md) — what
+   the data is and how the held-out split was written.
 
-Total: ~20 minutes. The demo execution path (`python scripts/demo.py`) produces the .txt artifact in ~30 seconds with the Mock provider.
+## Licence
 
-## What's NOT here
-
-Honest scoping:
-
-- **No web UI.** CLI only.
-- **No multi-tenant auth, user accounts, or persistent state.** Single-process; in-memory indices.
-- **No vector database.** BGE-M3 dense + BM25 sparse held in process memory; the ~20-document corpus fits comfortably.
-- **No Hala-9B Arabic model.** CC-BY-NC license incompatible with commercial use.
-- **Hijri date structured detection — SHIPPED** (`src/murshid/hijri.py`, 33 tests in `tests/test_hijri.py`). Canonicalizes month-name variants (`ربيع الأول`/`ربيع الاول`, `ذو القعدة`/`ذي القعدة`) and returns frozen `HijriDate` dataclasses with day/month/year/marker/raw_text. **Calendar arithmetic and Hijri↔Gregorian conversion are NOT built** — those would require a real Hijri-calendar library (`hijri-converter` or `umalqurra`) and dedicated bench evidence; named explicitly in `docs/CREATIVE.md` §7 as the next hook.
-- **Arabic-Indic numeral normalization — SHIPPED at the retrieval layer** (`fold_arabic_indic_digits` in `src/murshid/normalize.py`, wired into `retrieve._bm25_normalize`, 31 tests in `tests/test_arabic_indic_digits.py`). A query in Arabic-Indic digits (`١٠ رمضان ١٤٤٧هـ`) now hits the Western-digit indexed corpus via the BM25 layer. NOT folded into `light_normalize` — the normalization spec stays frozen; the digit fold is an explicit composed pass at the retrieval call site.
-- **No Falcon-Arabic provider runs in the bench.** Provider class is a stub. The residency-compliant KSA production path is documented in `docs/ARCHITECTURE.md` ADR 2 + GCC production gaps section, and `docs/CREATIVE.md` mentions the on-prem Ollama deployment story.
-- **Pre-generation support gate — SHIPPED** (`pipeline._assess_specific_support`, 20 tests in `tests/test_support_gate.py`). Closes the rt-001 / rt-002 policy hallucination bait class deterministically before generation. Pattern + term-matching heuristic; the residual production hardening step (a judge-based support assessor for novel bait phrasings) is documented in ADR 2 but not built — would add a pre-generation LLM call per query, doubling bench cost.
-- **No retry budget for judge / critic / rewrite calls beyond the provider-internal retries.** `retry_call` wraps SDK calls; bench-level retry loops were not built. See ADR 2.
-
-Each cut item is documented where a reader would look for it.
-
-## License
-
-The code is open for evaluation; the FAQ data in `data/` is fabricated for this project and contains test annotations (e.g., `"لا تستخدم هذه القاعدة لأي تاريخ حقيقي خارج بيئة الاختبار"`) that real production data would not have. See `docs/ARCHITECTURE.md` §9 for the implication this has on the critic-on test artifact for q-007.
-
-## The review process (something we're proud of)
-
-This project was built through a deliberate **multi-round adversarial review pipeline**: three pre-Phase-1 reviewer rounds on the dataset and design contract, then Round 1 → Round 2 → Round 2 follow-up → Round 3 → Round 3 follow-up of external code review (Codex GPT-5 acting as the reviewer in each pass). A private adversarial Phase 3 pass between rounds caught the bench-evidence issues nobody else flagged.
-
-Each round was driven by a **reviewer prompt template**, so any round can be re-run to get a fresh external read.
+The code is released under the [MIT licence](LICENSE). The files in `data/` carry no licence
+statement yet.

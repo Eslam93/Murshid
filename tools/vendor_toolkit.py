@@ -231,9 +231,14 @@ Do not edit these files. Change the core in the ToolKit, commit there, and re-ru
 uv run python tools/vendor_toolkit.py --toolkit ../ToolKit --commit <new-commit>
 ```
 
-| Folder | ToolKit ID | ToolKit project | Used in Murshid for |
+| Folder | ToolKit ID | ToolKit project | Copied for |
 |---|---|---|---|
 {rows}
+
+Murshid's own code imports four of them today: `fail_fast_settings` (src/murshid/settings.py),
+and `hybrid_retrieval`, `python_tooling` and `ci_workflow` (tests only). The other eleven are
+copied for planned work and nothing calls them yet; keep this paragraph in step when that
+changes.
 
 Each core's own README (`<name>/core/README.md`) documents its API, its limits and the
 measurements it was released with.

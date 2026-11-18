@@ -13,8 +13,13 @@ from __future__ import annotations
 
 import os
 import time
+from typing import TYPE_CHECKING
 
 from murshid.providers.base import ProviderResponse, retry_call
+
+if TYPE_CHECKING:
+    # The SDK is an optional extra, so it is imported for real only when a call is made.
+    import anthropic
 
 # Per Anthropic models docs (2026-05-22). USD per 1M tokens.
 _CLAUDE_PRICING: dict[str, tuple[float, float]] = {
@@ -48,7 +53,7 @@ class ClaudeProvider:
         except ImportError:
             return False
 
-    def _client_for(self, timeout: float):
+    def _client_for(self, timeout: float) -> anthropic.Anthropic:
         """Build a per-call client with the requested timeout."""
         import anthropic
 

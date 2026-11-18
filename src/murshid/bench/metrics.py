@@ -23,6 +23,7 @@ import re
 import statistics
 from dataclasses import asdict, dataclass, field, fields
 from pathlib import Path
+from typing import Any, NotRequired, TypedDict
 
 from murshid.normalize import light_normalize
 from murshid.pipeline import Answer
@@ -31,6 +32,52 @@ from murshid.providers.base import LLMProvider
 # ---------------------------------------------------------------------------
 # Data shapes
 # ---------------------------------------------------------------------------
+
+# Records of the bench data files. The required keys are the ones the bench indexes directly;
+# the rest are read with a default or not at all, so a record (or a test fixture) may omit them.
+
+
+class Question(TypedDict):
+    """One record of `data/questions.json`."""
+
+    question_id: str
+    text: str
+    register: NotRequired[str]
+    dialect_family: NotRequired[str]
+    contains_code_switching: NotRequired[bool]
+    expected_behavior: NotRequired[str]
+    expected_source_ids: NotRequired[list[str]]
+    rationale: NotRequired[str]
+
+
+class GoldCitation(TypedDict):
+    """One passage a correct answer is expected to quote."""
+
+    quoted_passage: str
+    source_id: NotRequired[str]
+    service_title: NotRequired[str]
+
+
+class GoldAnswer(TypedDict):
+    """One record of `data/gold_answers.json`, keyed to its question by `question_id`."""
+
+    question_id: str
+    gold_answer_text: str
+    expected_register: NotRequired[str]
+    gold_citations: NotRequired[list[GoldCitation]]
+    gold_passage_ids: NotRequired[list[str]]
+
+
+class RedTeamCase(TypedDict):
+    """One record of `data/red_team.json`; `evaluation_notes` is the per-case judge rubric."""
+
+    case_id: str
+    question_text: str
+    category: NotRequired[str]
+    register: NotRequired[str]
+    expected_behavior: NotRequired[str]
+    expected_source_ids: NotRequired[list[str]]
+    evaluation_notes: NotRequired[str]
 
 
 @dataclass
@@ -263,18 +310,33 @@ def compute_citation_accuracy_rule(
 # ---------------------------------------------------------------------------
 
 
-def _extract_json(text: str) -> dict:
+def _extract_json(text: str) -> dict[str, Any]:
     """Robustly extract the first JSON object from a judge response."""
+    # A judge's reply is open JSON, read field by field with defaults.
+    payload: dict[str, Any]
     # Try direct parse first.
     try:
-        return json.loads(text)
+        payload = json.loads(text)
+        return payload
     except json.JSONDecodeError:
         pass
     # Fallback: extract the first {...} block.
     match = re.search(r"\{.*\}", text, re.DOTALL)
     if not match:
         raise json.JSONDecodeError("no JSON object found in judge response", text, 0)
-    return json.loads(match.group(0))
+    payload = json.loads(match.group(0))
+    return payload
+
+
+def _judge_score(payload: dict[str, Any], key: str) -> float | None:
+    """The judge's score under `key` as a float, or None when it is missing or not a number."""
+    value = payload.get(key)
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def judge_correctness(
@@ -285,7 +347,7 @@ def judge_correctness(
     gold_register: str,
     predicted_register: str,
     timeout: float = 60.0,
-) -> tuple[dict, str]:
+) -> tuple[dict[str, Any], str]:
     """Call the judge for correctness + register match. Returns (payload, error_str).
 
     On error, payload is {} and error_str carries the diagnosis.
@@ -321,7 +383,7 @@ def judge_faithfulness(
     predicted_answer: str,
     retrieved_passages: list[str],
     timeout: float = 60.0,
-) -> tuple[dict, str]:
+) -> tuple[dict[str, Any], str]:
     """Call the judge for faithfulness against retrieved passages.
 
     Phase 3 follow-up: max_tokens 600 → 4000 (same thinking-mode reason as
@@ -357,7 +419,7 @@ def judge_refusal_tone(
     expected_behavior: str,
     user_register: str,
     timeout: float = 60.0,
-) -> tuple[dict, str]:
+) -> tuple[dict[str, Any], str]:
     """Phase 4: cultural-tone scoring for non-answer behaviors (§0.7).
 
     Returns (payload, error_str). On error, payload is {} and error_str
@@ -391,7 +453,7 @@ def judge_red_team(
     expected_behavior: str,
     evaluation_notes: str,
     timeout: float = 60.0,
-) -> tuple[dict, str]:
+) -> tuple[dict[str, Any], str]:
     """Phase 4: per-case red-team rubric judge.
 
     Receives the case's `evaluation_notes` verbatim as the rubric — the
@@ -426,9 +488,9 @@ def judge_red_team(
 
 def evaluate_case(
     *,
-    question: dict,
+    question: Question,
     answer: Answer,
-    gold: dict | None,
+    gold: GoldAnswer | None,
     judge: LLMProvider,
     provider_name: str,
     provider_model_id: str,
@@ -500,14 +562,8 @@ def evaluate_case(
             result.matched_facts = [str(x) for x in corr_payload.get("matched_facts", [])]
             result.missing_facts = [str(x) for x in corr_payload.get("missing_facts", [])]
             result.irrelevant_facts = [str(x) for x in corr_payload.get("irrelevant_facts", [])]
-            try:
-                result.correctness_score = float(corr_payload.get("correctness_score"))
-            except (TypeError, ValueError):
-                result.correctness_score = None
-            try:
-                result.register_match_score = float(corr_payload.get("register_match_score"))
-            except (TypeError, ValueError):
-                result.register_match_score = None
+            result.correctness_score = _judge_score(corr_payload, "correctness_score")
+            result.register_match_score = _judge_score(corr_payload, "register_match_score")
 
         faith_payload, faith_err = judge_faithfulness(
             judge=judge,
@@ -521,10 +577,7 @@ def evaluate_case(
             result.unsupported_claims = [
                 str(x) for x in faith_payload.get("unsupported_claims", [])
             ]
-            try:
-                result.faithfulness_score = float(faith_payload.get("faithfulness_score"))
-            except (TypeError, ValueError):
-                result.faithfulness_score = None
+            result.faithfulness_score = _judge_score(faith_payload, "faithfulness_score")
     # No gold: no recall, no correctness/faithfulness judge.
     # Refusal-tone (Phase 4) is INDEPENDENT of gold — fires whenever the
     # pipeline emitted a non-answer behavior (refuse / clarify / partial
@@ -545,10 +598,7 @@ def evaluate_case(
         if tone_err:
             result.judge_refusal_tone_error = tone_err
         else:
-            try:
-                result.refusal_tone_score = float(tone_payload.get("refusal_tone_score"))
-            except (TypeError, ValueError):
-                result.refusal_tone_score = None
+            result.refusal_tone_score = _judge_score(tone_payload, "refusal_tone_score")
             result.refusal_tone_notes = str(tone_payload.get("notes", ""))
 
     return result
@@ -556,7 +606,7 @@ def evaluate_case(
 
 def evaluate_red_team_case(
     *,
-    case: dict,
+    case: RedTeamCase,
     answer: Answer,
     judge: LLMProvider,
     provider_name: str,
@@ -575,7 +625,6 @@ def evaluate_red_team_case(
     behavior_match = answer.behavior_taken == expected_behavior
 
     retrieved_source_ids = [c.source_id for c in answer.citations]
-    retrieved_passages = [c.passage_text for c in answer.citations]
 
     result = CaseResult(
         question_id=case["case_id"],
@@ -637,10 +686,7 @@ def evaluate_red_team_case(
         # bench/results.md.
         result.red_team_rubric_pass = rubric_pass_from_judge and behavior_match
 
-        try:
-            result.red_team_rubric_score = float(rubric_payload.get("rubric_score"))
-        except (TypeError, ValueError):
-            result.red_team_rubric_score = None
+        result.red_team_rubric_score = _judge_score(rubric_payload, "rubric_score")
         result.red_team_rationale = str(rubric_payload.get("rationale", ""))
 
     # Refusal-tone for non-answer behaviors. Round 2 2.2: user_register from
@@ -658,10 +704,7 @@ def evaluate_red_team_case(
         if tone_err:
             result.judge_refusal_tone_error = tone_err
         else:
-            try:
-                result.refusal_tone_score = float(tone_payload.get("refusal_tone_score"))
-            except (TypeError, ValueError):
-                result.refusal_tone_score = None
+            result.refusal_tone_score = _judge_score(tone_payload, "refusal_tone_score")
             result.refusal_tone_notes = str(tone_payload.get("notes", ""))
 
     return result
@@ -834,8 +877,10 @@ def aggregate(cases: list[CaseResult]) -> AggregateMetrics:
 
     with_gold = [c for c in cases if c.has_gold]
     red_team = [c for c in cases if c.is_red_team]
-    with_tone = [c for c in cases if c.refusal_tone_score is not None]
-    red_team_scored = [c for c in red_team if c.red_team_rubric_score is not None]
+    tone_scores = [c.refusal_tone_score for c in cases if c.refusal_tone_score is not None]
+    rubric_scores = [
+        c.red_team_rubric_score for c in red_team if c.red_team_rubric_score is not None
+    ]
     red_team_with_pass = [c for c in red_team if c.red_team_rubric_pass is not None]
     retrieval_expected = [c for c in cases if _retrieval_was_expected(c)]
 
@@ -868,9 +913,9 @@ def aggregate(cases: list[CaseResult]) -> AggregateMetrics:
         avg_irrelevant_facts=_safe_mean(
             [float(len(c.irrelevant_facts)) for c in with_gold if c.correctness_score is not None]
         ),
-        refusal_tone_mean=_safe_mean([c.refusal_tone_score for c in with_tone]),
-        n_with_refusal_tone=len(with_tone),
-        red_team_rubric_mean=_safe_mean([c.red_team_rubric_score for c in red_team_scored]),
+        refusal_tone_mean=_safe_mean(tone_scores),
+        n_with_refusal_tone=len(tone_scores),
+        red_team_rubric_mean=_safe_mean(rubric_scores),
         red_team_rubric_pass_rate=(
             sum(1 for c in red_team_with_pass if c.red_team_rubric_pass) / len(red_team_with_pass)
             if red_team_with_pass

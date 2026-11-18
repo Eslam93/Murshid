@@ -15,8 +15,14 @@ from __future__ import annotations
 
 import os
 import time
+from typing import TYPE_CHECKING, cast
 
 from murshid.providers.base import ProviderResponse, retry_call
+
+if TYPE_CHECKING:
+    # The SDK is an optional extra, so it is imported for real only when a call is made.
+    from openai import OpenAI
+    from openai.types import CompletionUsage
 
 # Approximate USD per 1M tokens. Pricing for GPT-5.x is not fully published
 # in the same shape as Anthropic's table; these estimates are conservative
@@ -49,7 +55,7 @@ class OpenAIProvider:
         except ImportError:
             return False
 
-    def _client_for(self, timeout: float):
+    def _client_for(self, timeout: float) -> OpenAI:
         from openai import OpenAI
 
         return OpenAI(api_key=self._api_key, timeout=timeout)
@@ -77,7 +83,10 @@ class OpenAIProvider:
 
         choice = resp.choices[0]
         text = choice.message.content or ""
-        usage = resp.usage
+        # A completion that is not streamed always reports usage; the SDK types the field
+        # optional for the sake of streamed chunks. The cast only tells mypy so: a reply without
+        # usage still fails on the attribute access below.
+        usage = cast("CompletionUsage", resp.usage)
         return ProviderResponse(
             text=text,
             input_tokens=usage.prompt_tokens,

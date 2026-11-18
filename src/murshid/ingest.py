@@ -17,15 +17,33 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import TYPE_CHECKING, NotRequired, TypedDict
 
 import numpy as np
 
 from murshid.normalize import light_normalize
 from murshid.providers.base import LLMProvider
 
+if TYPE_CHECKING:
+    # An optional extra (local-embed): imported for real only when the first embedder loads.
+    from sentence_transformers import SentenceTransformer
+
 # ---------------------------------------------------------------------------
 # Data shapes
 # ---------------------------------------------------------------------------
+
+
+class Source(TypedDict):
+    """One record of `data/sources.json`. Chunking reads the first four fields."""
+
+    source_id: str
+    service_category: str
+    service_title: str
+    content: str
+    language: NotRequired[str]
+    contains_hijri: NotRequired[bool]
+    contains_english_terms: NotRequired[list[str]]
+    notes: NotRequired[str]
 
 
 @dataclass
@@ -101,7 +119,7 @@ def chunk_paragraphs(text: str) -> list[str]:
     return [p for p in parts if p]
 
 
-def chunk_source(source: dict) -> list[Chunk]:
+def chunk_source(source: Source) -> list[Chunk]:
     """Deterministic chunker. FAQ detection by `س:`, else paragraph split."""
     text = source["content"]
     raw_chunks = chunk_faq(text) if is_faq_format(text) else chunk_paragraphs(text)
@@ -117,7 +135,7 @@ def chunk_source(source: dict) -> list[Chunk]:
     ]
 
 
-def chunk_all_sources(sources: list[dict]) -> list[Chunk]:
+def chunk_all_sources(sources: list[Source]) -> list[Chunk]:
     """Apply `chunk_source` to every source and flatten."""
     return [c for s in sources for c in chunk_source(s)]
 
@@ -189,10 +207,10 @@ def enrich_all_chunks(chunks: list[Chunk], provider: LLMProvider) -> list[Chunk]
 # Embedding (sentence-transformers, BGE-M3 by default)
 # ---------------------------------------------------------------------------
 
-_EMBEDDER_CACHE: dict[str, object] = {}
+_EMBEDDER_CACHE: dict[str, SentenceTransformer] = {}
 
 
-def get_embedder(model_name: str = "BAAI/bge-m3"):
+def get_embedder(model_name: str = "BAAI/bge-m3") -> SentenceTransformer:
     """Lazy-loaded sentence-transformers embedder. Cached per model name.
 
     Note: first call downloads the BGE-M3 weights (~2.3GB) into the HF cache.
@@ -246,10 +264,11 @@ def embed_chunks(chunks: list[Chunk], embedder_model: str = "BAAI/bge-m3") -> np
 # ---------------------------------------------------------------------------
 
 
-def load_sources(sources_path: Path) -> list[dict]:
+def load_sources(sources_path: Path) -> list[Source]:
     """Read `sources.json` as UTF-8."""
     with sources_path.open("r", encoding="utf-8") as f:
-        return json.load(f)
+        sources: list[Source] = json.load(f)
+    return sources
 
 
 def build_index(

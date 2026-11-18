@@ -44,7 +44,7 @@ class RateLimitError(APIError):
     """Mirrors anthropic.RateLimitError / openai.RateLimitError name."""
 
 
-class ResourceExhausted(Exception):
+class ResourceExhausted(Exception):  # noqa: N818 - retry_call matches this exact Google class name
     """Mirrors google.api_core.exceptions.ResourceExhausted name."""
 
 

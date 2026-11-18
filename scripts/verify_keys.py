@@ -161,9 +161,9 @@ def verify_gemini(model_id: str | None = None) -> tuple[bool, str]:
     # Fallback: Flash variants commonly available on free tier.
     for fallback_model in ("gemini-3-flash-preview", "gemini-2.5-flash"):
         try:
-            ok, msg = _try_gemini_model(key, fallback_model)
+            _ok, msg = _try_gemini_model(key, fallback_model)
             return True, f"{msg}  [PRIMARY {model} FAILED: {primary_err}]"
-        except Exception:
+        except Exception:  # noqa: S112 - try the next fallback; the primary error is what we report
             continue
 
     return False, primary_err

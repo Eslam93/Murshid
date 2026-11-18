@@ -16,6 +16,7 @@ Every result carries the citation contract:
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from typing import Any
 
 import numpy as np
 
@@ -46,7 +47,7 @@ class RetrievalResult:
     passage_text: str
     score: float
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 

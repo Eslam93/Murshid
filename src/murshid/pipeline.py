@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import asdict, dataclass
+from typing import Any
 
 from murshid.critic import critique_answer
 from murshid.ingest import Index
@@ -323,7 +324,7 @@ class Answer:
     input_tokens: int
     output_tokens: int
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 

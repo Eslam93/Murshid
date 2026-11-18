@@ -16,6 +16,7 @@ missed dates.
 from __future__ import annotations
 
 import json
+from dataclasses import FrozenInstanceError
 from pathlib import Path
 
 import pytest
@@ -228,7 +229,7 @@ def test_hijri_date_is_frozen():
         has_marker=True,
         raw_text="5 رمضان 1447هـ",
     )
-    with pytest.raises(Exception):  # FrozenInstanceError; subclass of AttributeError
+    with pytest.raises(FrozenInstanceError):
         d.day = 6  # type: ignore[misc]
 
 

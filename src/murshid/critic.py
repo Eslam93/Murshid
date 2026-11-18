@@ -26,6 +26,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass, field
+from typing import Any
 
 from murshid.providers.base import LLMProvider
 from murshid.retrieve import RetrievalResult
@@ -79,7 +80,7 @@ def _format_user_prompt(query: str, answer: str, citations: list[RetrievalResult
     )
 
 
-def _extract_json(text: str) -> dict:
+def _extract_json(text: str) -> dict[str, Any]:
     """Robust JSON extraction matching `bench/metrics.py:_extract_json`.
 
     Real LLM providers wrap JSON in markdown code blocks (` ```json\\n{...}\\n``` `)
@@ -90,14 +91,19 @@ def _extract_json(text: str) -> dict:
     """
     if not text:
         raise json.JSONDecodeError("empty response from critic", "", 0)
+    # The critic's reply is open JSON. A reply that parses to something other than an object
+    # fails the key lookups in `critique_answer`, which then fails closed.
+    payload: dict[str, Any]
     try:
-        return json.loads(text)
+        payload = json.loads(text)
+        return payload
     except json.JSONDecodeError:
         pass
     match = re.search(r"\{.*\}", text, re.DOTALL)
     if not match:
         raise json.JSONDecodeError("no JSON object found in critic response", text, 0)
-    return json.loads(match.group(0))
+    payload = json.loads(match.group(0))
+    return payload
 
 
 def critique_answer(

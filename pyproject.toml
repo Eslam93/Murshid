@@ -125,6 +125,8 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101", "S105", "S106", "S107"]
 "scripts/**" = ["T201"]
+# The bench is a command-line entry point: its progress lines and summary go to stdout.
+"src/murshid/bench/runner.py" = ["T201"]
 # Developer tools run git on the developer's own checkout.
 "tools/**" = ["S603", "S607", "T201"]
 
@@ -145,6 +147,17 @@ exclude = ['^src/murshid/_toolkit/']
 [[tool.mypy.overrides]]
 module = ["murshid._toolkit.*"]
 follow_imports = "silent"
+
+# rank-bm25 ships no type information (no py.typed, no stubs package).
+[[tool.mypy.overrides]]
+module = ["rank_bm25"]
+ignore_missing_imports = true
+
+# google-generativeai documents `genai.configure` and `genai.GenerativeModel` as its API, but its
+# __init__ imports them without __all__, so strict mode's no_implicit_reexport hides them.
+[[tool.mypy.overrides]]
+module = ["google.generativeai"]
+implicit_reexport = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "src/murshid/_toolkit"]

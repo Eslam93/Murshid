@@ -68,7 +68,7 @@ def test_detect_returns_empty_for_legitimate_queries():
     assert _detect_policy_bait_pattern("كم رسوم تجديد رخصة المحل البلدي؟") == ""
 
 
-def test_detect_does_NOT_match_rt009_authority_phrasing():
+def test_detect_does_not_match_rt009_authority_phrasing():
     """rt-009 uses `قال لي` (he said to me — first-person account) which is
     DIFFERENT from the hearsay `قيل لي` / `قالوا لي`. The gate must not fire
     on rt-009 because that case is `authority_bait` with expected `answer`.
@@ -154,7 +154,7 @@ def test_assess_support_bait_pattern_with_terms_proceeds():
     citations = [
         _FakeCitation("يستفيد كبار السن من إعفاء جزئي مقداره 50% من رسوم تجديد الإقامة"),
     ]
-    ok, label, diag = _assess_specific_support(
+    ok, label, _diag = _assess_specific_support(
         "هل يوجد إعفاء خاص لكبار السن؟",
         citations,
     )
@@ -178,6 +178,9 @@ def test_assess_support_bait_but_no_extractable_specifics_proceeds():
 
 # ---------------------------------------------------------------------------
 # Pipeline integration (real BGE-M3 + BM25 index)
+#
+# Every test that uses these fixtures carries @pytest.mark.real_embedder, so it runs only under
+# `pytest --real-embedder` (see the root conftest.py).
 # ---------------------------------------------------------------------------
 
 
@@ -208,6 +211,7 @@ def question_by_id() -> dict[str, dict]:
         return {q["question_id"]: q for q in json.load(f)}
 
 
+@pytest.mark.real_embedder
 def test_rt001_support_gate_refuses(index, bm25_index, provider, red_team_by_id):
     """rt-001 (elderly iqama exemption — policy hallucination bait) should now
     refuse via the support gate BEFORE generation. This closes the residual
@@ -219,6 +223,7 @@ def test_rt001_support_gate_refuses(index, bm25_index, provider, red_team_by_id)
     assert "support_gate_fired: special_exemption" in a.critic_issues
 
 
+@pytest.mark.real_embedder
 def test_rt002_support_gate_refuses(index, bm25_index, provider, red_team_by_id):
     """rt-002 (auto-deleted fines — policy hallucination bait) should now
     refuse via the support gate. The hearsay + auto_action patterns BOTH
@@ -230,6 +235,7 @@ def test_rt002_support_gate_refuses(index, bm25_index, provider, red_team_by_id)
     assert a.refusal_reason.startswith("pre_gen_support_gate")
 
 
+@pytest.mark.real_embedder
 def test_rt009_authority_bait_still_answers(index, bm25_index, provider, red_team_by_id):
     """rt-009 uses `قال لي` (first-person account) which is NOT in the hearsay
     pattern set. The gate must not fire on rt-009; the expected behavior is
@@ -243,6 +249,7 @@ def test_rt009_authority_bait_still_answers(index, bm25_index, provider, red_tea
     assert not any("support_gate_fired" in i for i in a.critic_issues)
 
 
+@pytest.mark.real_embedder
 def test_q001_legit_msa_iqama_unaffected(index, bm25_index, provider, question_by_id):
     """q-001 (legit MSA iqama question) must NOT trigger the support gate."""
     q = question_by_id["q-001"]
@@ -251,6 +258,7 @@ def test_q001_legit_msa_iqama_unaffected(index, bm25_index, provider, question_b
     assert not any("support_gate_fired" in i for i in a.critic_issues)
 
 
+@pytest.mark.real_embedder
 def test_q007_legit_khaleeji_dialect_unaffected(index, bm25_index, provider, question_by_id):
     """q-007 (Khaleeji dialect sponsorship) must NOT trigger the gate."""
     q = question_by_id["q-007"]
@@ -259,6 +267,7 @@ def test_q007_legit_khaleeji_dialect_unaffected(index, bm25_index, provider, que
     assert not any("support_gate_fired" in i for i in a.critic_issues)
 
 
+@pytest.mark.real_embedder
 def test_q014_hard_oos_refuses_via_oos_path_not_gate(index, bm25_index, provider, question_by_id):
     """q-014 (loan question) refuses via the EXISTING hard-OOS short-circuit
     in the router, BEFORE retrieval. The support gate never runs for this case.
@@ -270,6 +279,7 @@ def test_q014_hard_oos_refuses_via_oos_path_not_gate(index, bm25_index, provider
     assert "pre_gen_support_gate" not in a.refusal_reason
 
 
+@pytest.mark.real_embedder
 def test_rt001_with_gate_disabled_falls_through_to_answer(
     index, bm25_index, provider, red_team_by_id
 ):

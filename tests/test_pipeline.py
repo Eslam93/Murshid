@@ -40,6 +40,9 @@ DATA = Path(__file__).parent.parent / "data"
 
 # ---------------------------------------------------------------------------
 # Module-scoped fixtures (build the index once)
+#
+# Every test here uses the BGE-M3 index, so each carries @pytest.mark.real_embedder and runs
+# only under `pytest --real-embedder` (see the root conftest.py).
 # ---------------------------------------------------------------------------
 
 
@@ -75,6 +78,7 @@ def red_team_by_id() -> dict[str, dict]:
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.real_embedder
 def test_q001_msa_iqama_answers(index, bm25_index, provider, question_by_id):
     a = answer_question(question_by_id["q-001"]["text"], index, provider, bm25_index=bm25_index)
     assert a.behavior_taken == "answer"
@@ -83,6 +87,7 @@ def test_q001_msa_iqama_answers(index, bm25_index, provider, question_by_id):
     assert a.question_register == "MSA"
 
 
+@pytest.mark.real_embedder
 def test_q004_ambiguous_10_09_date_clarifies(index, bm25_index, provider, question_by_id):
     """q-004 has `10/09` without `هجري` / `ميلادي` — must ask which calendar."""
     a = answer_question(question_by_id["q-004"]["text"], index, provider, bm25_index=bm25_index)
@@ -92,6 +97,7 @@ def test_q004_ambiguous_10_09_date_clarifies(index, bm25_index, provider, questi
     )
 
 
+@pytest.mark.real_embedder
 def test_q005_bdal_faqid_plus_travel_partial_escalates(index, bm25_index, provider, question_by_id):
     """q-005 asks bdal-faqid fees (answerable) AND tomorrow travel (not in corpus).
     Pipeline routes iqama → retrieves → tags partial_answer_with_escalation."""
@@ -101,6 +107,7 @@ def test_q005_bdal_faqid_plus_travel_partial_escalates(index, bm25_index, provid
     assert len(a.citations) > 0
 
 
+@pytest.mark.real_embedder
 def test_q007_khaleeji_dialect_sponsorship_answers(index, bm25_index, provider, question_by_id):
     a = answer_question(question_by_id["q-007"]["text"], index, provider, bm25_index=bm25_index)
     assert a.behavior_taken == "answer"
@@ -109,6 +116,7 @@ def test_q007_khaleeji_dialect_sponsorship_answers(index, bm25_index, provider, 
     assert a.dialect_family == "khaleeji_general"
 
 
+@pytest.mark.real_embedder
 def test_q014_loan_question_hard_refuses(index, bm25_index, provider, question_by_id):
     a = answer_question(question_by_id["q-014"]["text"], index, provider, bm25_index=bm25_index)
     assert a.behavior_taken == "refuse_with_redirect"
@@ -117,6 +125,7 @@ def test_q014_loan_question_hard_refuses(index, bm25_index, provider, question_b
     assert len(a.citations) == 0
 
 
+@pytest.mark.real_embedder
 def test_q015_religious_rites_hard_refuses(index, bm25_index, provider, question_by_id):
     a = answer_question(question_by_id["q-015"]["text"], index, provider, bm25_index=bm25_index)
     assert a.behavior_taken == "refuse_with_redirect"
@@ -124,6 +133,7 @@ def test_q015_religious_rites_hard_refuses(index, bm25_index, provider, question
     assert a.routing_confidence >= 0.7
 
 
+@pytest.mark.real_embedder
 def test_q016_hijri_correction_deadline_answers(index, bm25_index, provider, question_by_id):
     a = answer_question(question_by_id["q-016"]["text"], index, provider, bm25_index=bm25_index)
     assert a.behavior_taken == "answer"
@@ -135,6 +145,7 @@ def test_q016_hijri_correction_deadline_answers(index, bm25_index, provider, que
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.real_embedder
 def test_rt003_hawiya_plus_travel_partial_escalates(index, bm25_index, provider, red_team_by_id):
     """rt-003 — the kickoff §0.7 Agent-3 query. Has بدل فاقد (in-corpus) + travel (out)."""
     a = answer_question(
@@ -143,6 +154,7 @@ def test_rt003_hawiya_plus_travel_partial_escalates(index, bm25_index, provider,
     assert a.behavior_taken == "partial_answer_with_escalation"
 
 
+@pytest.mark.real_embedder
 def test_rt005_vague_admin_clarifies(index, bm25_index, provider, red_team_by_id):
     """rt-005 — no specific keywords, soft OOS → clarify, not refuse."""
     a = answer_question(
@@ -151,6 +163,7 @@ def test_rt005_vague_admin_clarifies(index, bm25_index, provider, red_team_by_id
     assert a.behavior_taken == "ask_clarification"
 
 
+@pytest.mark.real_embedder
 def test_rt007_month_only_ambiguous_clarifies(index, bm25_index, provider, red_team_by_id):
     """rt-007 — `الشهر الخامس` without calendar specifier."""
     a = answer_question(
@@ -159,6 +172,7 @@ def test_rt007_month_only_ambiguous_clarifies(index, bm25_index, provider, red_t
     assert a.behavior_taken == "ask_clarification"
 
 
+@pytest.mark.real_embedder
 def test_rt008_chest_pain_medical_refuses(index, bm25_index, provider, red_team_by_id):
     """rt-008 — `ألم صدر` matches MEDICAL_PATTERNS bigram → hard OOS refuse."""
     a = answer_question(
@@ -167,6 +181,7 @@ def test_rt008_chest_pain_medical_refuses(index, bm25_index, provider, red_team_
     assert a.behavior_taken == "refuse_with_redirect"
 
 
+@pytest.mark.real_embedder
 def test_rt009_authority_bait_sign_permit_answers(index, bm25_index, provider, red_team_by_id):
     """rt-009 — authority bait. System should ANSWER with grounded correction
     citing municipal-003, NOT refuse. Round-1 review §2.1 / round-1 data fix."""
@@ -224,6 +239,7 @@ class _CriticOverrideProvider(MockProvider):
         return super().generate(system, user, max_tokens=max_tokens, timeout=timeout)
 
 
+@pytest.mark.real_embedder
 def test_critic_grounded_false_gates_to_refuse(index, bm25_index, question_by_id):
     """Option B: critic.grounded=false → behavior=refuse_with_redirect,
     answer_text replaced by CRITIC_UNGROUNDED_REFUSAL_AR."""
@@ -247,6 +263,7 @@ def test_critic_grounded_false_gates_to_refuse(index, bm25_index, question_by_id
     assert "ungrounded" in a.refusal_reason.lower()
 
 
+@pytest.mark.real_embedder
 def test_critic_register_mismatch_only_logs_but_returns(index, bm25_index, question_by_id):
     """Option B: register_match=false but grounded=true → behavior unchanged,
     issues logged. Answer body is whatever the mock generated."""
@@ -270,6 +287,7 @@ def test_critic_register_mismatch_only_logs_but_returns(index, bm25_index, quest
     assert "MSA" in a.critic_issues[0] or "register" in a.critic_issues[0].lower()
 
 
+@pytest.mark.real_embedder
 def test_critic_both_false_refuses(index, bm25_index, question_by_id):
     """Option B: both checks false → grounded path takes precedence → refuse."""
     provider = _CriticOverrideProvider(
@@ -289,6 +307,7 @@ def test_critic_both_false_refuses(index, bm25_index, question_by_id):
     assert a.answer_text == CRITIC_UNGROUNDED_REFUSAL_AR
 
 
+@pytest.mark.real_embedder
 def test_critic_provider_error_refuses_with_error_reason(index, bm25_index, question_by_id):
     """When the critic itself errors, `critic_valid=False`, `grounded` defaults
     to False (from critic.py), and the gate fires. Refusal_reason explicitly
@@ -307,6 +326,7 @@ def test_critic_provider_error_refuses_with_error_reason(index, bm25_index, ques
     assert a.answer_text == CRITIC_UNGROUNDED_REFUSAL_AR
 
 
+@pytest.mark.real_embedder
 def test_critic_partial_escalation_still_tagged_when_grounded(index, bm25_index, red_team_by_id):
     """Sanity: partial-escalation tagging is preserved when critic passes (grounded=true).
     Critic gate doesn't override partial-escalation in the grounded path."""
@@ -323,6 +343,7 @@ def test_critic_partial_escalation_still_tagged_when_grounded(index, bm25_index,
     assert a.critic_grounded is True
 
 
+@pytest.mark.real_embedder
 def test_critic_grounded_false_overrides_partial_escalation(index, bm25_index, red_team_by_id):
     """If a query qualifies for partial_answer_with_escalation BUT the critic
     flags grounded=false, the refuse-with-redirect tag wins. Trust > partial-tagging."""
@@ -349,6 +370,7 @@ def test_critic_grounded_false_overrides_partial_escalation(index, bm25_index, r
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.real_embedder
 def test_arabic_indic_ambiguous_date_clarifies(index, bm25_index, provider):
     """`١٠/٠٩` is the same ambiguity as `10/09` — a reviewer probing with
     Arabic-Indic numerals must hit the ask_clarification path, not bypass it."""
@@ -358,6 +380,7 @@ def test_arabic_indic_ambiguous_date_clarifies(index, bm25_index, provider):
     assert "ambiguous date" in a.refusal_reason.lower()
 
 
+@pytest.mark.real_embedder
 def test_western_ambiguous_date_with_explicit_calendar_does_not_clarify(
     index, bm25_index, provider
 ):

@@ -29,7 +29,9 @@ import argparse
 import json
 import sys
 import time
+from collections.abc import Sequence
 from pathlib import Path
+from typing import Any, NotRequired, Protocol, TypedDict
 
 # Allow `python -m murshid.bench` from the repo root.
 ROOT = Path(__file__).resolve().parents[3]
@@ -47,6 +49,9 @@ except ImportError:
 from murshid.bench.metrics import (  # noqa: E402
     AggregateMetrics,
     CaseResult,
+    GoldAnswer,
+    Question,
+    RedTeamCase,
     aggregate,
     dump_cases,
     evaluate_case,
@@ -54,14 +59,14 @@ from murshid.bench.metrics import (  # noqa: E402
     judge_correctness,
     load_cases,
 )
-from murshid.ingest import build_index  # noqa: E402
+from murshid.ingest import Index, build_index  # noqa: E402
 from murshid.pipeline import Answer, answer_question  # noqa: E402
-from murshid.providers.base import LLMProvider  # noqa: E402
+from murshid.providers.base import LLMProvider, ProviderResponse  # noqa: E402
 from murshid.providers.claude import ClaudeProvider  # noqa: E402
 from murshid.providers.gemini import GeminiProvider  # noqa: E402
 from murshid.providers.mock import MockProvider  # noqa: E402
 from murshid.providers.openai import OpenAIProvider  # noqa: E402
-from murshid.retrieve import build_bm25_index  # noqa: E402
+from murshid.retrieve import BM25Index, build_bm25_index  # noqa: E402
 
 BENCH_DIR = ROOT / "bench"
 DATA_DIR = ROOT / "data"
@@ -136,14 +141,26 @@ def _now_iso() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%S")
 
 
-def _append_jsonl(path: Path, record: dict) -> None:
+class _TokenUsage(TypedDict):
+    """The token counts and latency of one call, as the cost log records them."""
+
+    input_tokens: int
+    output_tokens: int
+    latency_s: float
+
+
+def _append_jsonl(path: Path, record: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as f:
         f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 
 def _log_cost(
-    provider: LLMProvider, question_id: str, kind: str, response_like: dict, cost_usd: float
+    provider: LLMProvider,
+    question_id: str,
+    kind: str,
+    response_like: _TokenUsage,
+    cost_usd: float,
 ) -> None:
     _append_jsonl(
         COST_LOG_PATH,
@@ -214,10 +231,10 @@ def _run_one(
     *,
     provider: LLMProvider,
     judge: LLMProvider | None,
-    question: dict,
-    gold: dict | None,
-    index,
-    bm25_index,
+    question: Question,
+    gold: GoldAnswer | None,
+    index: Index,
+    bm25_index: BM25Index | None,
     critic_mode: str,
 ) -> CaseResult:
     """Run one (provider, critic_mode) on one question + evaluate."""
@@ -249,8 +266,6 @@ def _run_one(
     if provider.name != "mock":
         # Approximate from token counts on the Answer (latency_s, input/output_tokens
         # are populated). Build a synthetic ProviderResponse-like dict for cost calc.
-        from murshid.providers.base import ProviderResponse
-
         fake_resp = ProviderResponse(
             text=answer.answer_text,
             input_tokens=answer.input_tokens,
@@ -285,13 +300,15 @@ def _run_one(
             name = "no_judge"
             model_id = "n/a"
 
-            def generate(self, system, user, max_tokens=1024, timeout=30.0):  # type: ignore[override]
+            def generate(
+                self, system: str, user: str, max_tokens: int = 1024, timeout: float = 30.0
+            ) -> ProviderResponse:
                 raise RuntimeError("no judge configured")
 
             def is_available(self) -> bool:
                 return False
 
-            def cost_estimate_usd(self, response) -> float:
+            def cost_estimate_usd(self, response: ProviderResponse) -> float:
                 return 0.0
 
         judge_to_use: LLMProvider = _NoJudge()
@@ -315,9 +332,9 @@ def _run_one_red_team(
     *,
     provider: LLMProvider,
     judge: LLMProvider | None,
-    case_data: dict,
-    index,
-    bm25_index,
+    case_data: RedTeamCase,
+    index: Index,
+    bm25_index: BM25Index | None,
     critic_mode: str,
 ) -> CaseResult:
     """Run one red-team case through (provider, critic_mode) + score it."""
@@ -351,8 +368,6 @@ def _run_one_red_team(
     # Cost log.
     answer_cost = 0.0
     if provider.name != "mock":
-        from murshid.providers.base import ProviderResponse
-
         fake_resp = ProviderResponse(
             text=answer.answer_text,
             input_tokens=answer.input_tokens,
@@ -384,13 +399,15 @@ def _run_one_red_team(
             name = "no_judge"
             model_id = "n/a"
 
-            def generate(self, system, user, max_tokens=1024, timeout=30.0):  # type: ignore[override]
+            def generate(
+                self, system: str, user: str, max_tokens: int = 1024, timeout: float = 30.0
+            ) -> ProviderResponse:
                 raise RuntimeError("no judge configured")
 
             def is_available(self) -> bool:
                 return False
 
-            def cost_estimate_usd(self, response) -> float:
+            def cost_estimate_usd(self, response: ProviderResponse) -> float:
                 return 0.0
 
         judge_to_use: LLMProvider = _NoJudge()
@@ -421,6 +438,33 @@ SANITY_SWAP_CASE_IDS = ["q-001", "q-007", "q-013"]
 SANITY_SWAP_PROVIDER_PREFERENCE = ["openai", "claude", "gemini", "mock"]
 # Match the verdict's default critic mode (critic=off auto-selected in Phase 3).
 SANITY_SWAP_CRITIC_MODE = "off"
+
+
+class SwapRow(TypedDict):
+    """One sanity-swap case: skipped, a swap-judge error, or both judges' scores."""
+
+    question_id: str
+    skipped: NotRequired[bool]
+    reason: NotRequired[str]
+    error: NotRequired[str]
+    provider_compared: NotRequired[str]
+    provider_model_id: NotRequired[str]
+    primary_correctness: NotRequired[float | None]
+    swap_correctness: NotRequired[float | None]
+    delta_correctness: NotRequired[float | None]
+    primary_register: NotRequired[float | None]
+    # The swap judge's register score exactly as it returned it; the table renders it as is.
+    swap_register: NotRequired[object]
+
+
+class SanitySwapReport(TypedDict):
+    """What `run_judge_sanity_swap` returns and `render_results_md` renders."""
+
+    primary_judge: str
+    swap_judge: str
+    note: str
+    abs_mean_delta_correctness: float | None
+    per_case: list[SwapRow]
 
 
 def _pick_swap_candidate(
@@ -457,9 +501,9 @@ def run_judge_sanity_swap(
     primary_judge: LLMProvider,
     swap_judge: LLMProvider,
     cases: list[CaseResult],
-    questions_by_id: dict[str, dict],
-    golds_by_id: dict[str, dict],
-) -> dict:
+    questions_by_id: dict[str, Question],
+    golds_by_id: dict[str, GoldAnswer],
+) -> SanitySwapReport:
     """Phase 4 polish: re-score the SAME predicted answer with the swap judge.
 
     For each sanity-swap case, pull the stored predicted answer text from a
@@ -468,7 +512,7 @@ def run_judge_sanity_swap(
     cross-judge delta. This quantifies actual self-preference bias instead of
     the Round-1 degenerate gold-vs-gold calibration.
     """
-    deltas: list[dict] = []
+    deltas: list[SwapRow] = []
     for qid in SANITY_SWAP_CASE_IDS:
         primary = _pick_swap_candidate(cases, qid)
         if primary is None:
@@ -526,11 +570,8 @@ def run_judge_sanity_swap(
         )
 
     # Compute the absolute-mean bias if we have enough data.
-    valid_deltas = [
-        d.get("delta_correctness")
-        for d in deltas
-        if isinstance(d.get("delta_correctness"), (int, float))
-    ]
+    delta_values = [d.get("delta_correctness") for d in deltas]
+    valid_deltas = [v for v in delta_values if isinstance(v, (int, float))]
     abs_mean = sum(abs(d) for d in valid_deltas) / len(valid_deltas) if valid_deltas else None
 
     return {
@@ -552,7 +593,7 @@ def run_judge_sanity_swap(
 # ---------------------------------------------------------------------------
 
 
-def _fmt(value, n: int = 3) -> str:
+def _fmt(value: object, n: int = 3) -> str:
     if value is None:
         return "—"
     if isinstance(value, float):
@@ -560,13 +601,20 @@ def _fmt(value, n: int = 3) -> str:
     return str(value)
 
 
+class _ProviderLabel(Protocol):
+    """What the results header shows of a provider. `--render-only` passes stand-ins."""
+
+    name: str
+    model_id: str
+
+
 def render_results_md(
     *,
-    providers: list[LLMProvider],
+    providers: Sequence[_ProviderLabel],
     judge: LLMProvider | None,
     aggregates_standard: list[AggregateMetrics],
     aggregates_red_team: list[AggregateMetrics],
-    sanity_swap: dict | None,
+    sanity_swap: SanitySwapReport | None,
     per_case_standard: list[CaseResult],
     per_case_red_team: list[CaseResult],
     mode: str = "full",
@@ -976,7 +1024,7 @@ def main(argv: list[str] | None = None) -> int:
             inferred_mode = "red_team"
 
         md = render_results_md(
-            providers=stub_providers,  # type: ignore[arg-type]
+            providers=stub_providers,
             judge=None,  # judge model name isn't preserved in cache; the existing
             # results.md "Configuration" line is overwritten by the
             # render — accept the loss for render-only re-runs.
@@ -1034,11 +1082,11 @@ def main(argv: list[str] | None = None) -> int:
 
     # Load data.
     with (DATA_DIR / "questions.json").open(encoding="utf-8") as f:
-        questions = json.load(f)
+        questions: list[Question] = json.load(f)
     with (DATA_DIR / "gold_answers.json").open(encoding="utf-8") as f:
-        gold_list = json.load(f)
+        gold_list: list[GoldAnswer] = json.load(f)
     with (DATA_DIR / "red_team.json").open(encoding="utf-8") as f:
-        red_team = json.load(f)
+        red_team: list[RedTeamCase] = json.load(f)
     questions_by_id = {q["question_id"]: q for q in questions}
     golds_by_id = {g["question_id"]: g for g in gold_list}
 
@@ -1170,7 +1218,7 @@ def main(argv: list[str] | None = None) -> int:
 
     # Sanity swap — Phase 4 fixed: scores the SAME predicted answer with two
     # judges. Uses only standard cases (which have gold answers).
-    sanity_swap = None
+    sanity_swap: SanitySwapReport | None = None
     if not args.no_sanity_swap and judge is not None:
         swap_judge = ClaudeProvider(model_id="claude-opus-4-7")
         if swap_judge.is_available():

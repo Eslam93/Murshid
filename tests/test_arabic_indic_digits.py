@@ -133,7 +133,7 @@ def test_to_arabic_indic_round_trip():
 # ---------------------------------------------------------------------------
 
 
-def test_light_normalize_does_NOT_fold_digits():
+def test_light_normalize_does_not_fold_digits():
     """The kickoff §0.2 documented 4-step normalization (NFKC + tatweel +
     diacritics + hamzated-alef) does NOT include digit folding. Phase 8
     digit folding is a SEPARATE function applied at the retrieval layer

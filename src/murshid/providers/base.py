@@ -17,7 +17,7 @@ import logging
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Protocol, TypeVar, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 _log = logging.getLogger("murshid.providers")
 
@@ -31,7 +31,8 @@ class ProviderResponse:
     output_tokens: int
     latency_s: float
     finish_reason: str = "stop"
-    raw: dict = field(default_factory=dict)
+    # Free-form provider metadata (response id, served model, ...); its keys vary by vendor.
+    raw: dict[str, Any] = field(default_factory=dict)
 
 
 @runtime_checkable
@@ -132,25 +133,19 @@ def _is_transient(exc: BaseException) -> bool:
     checked FIRST so `BadRequestError(APIError)` doesn't get retried just
     because it inherits from `APIError`.
     """
-    for klass in type(exc).__mro__:
-        if klass.__name__ in _NON_TRANSIENT_ERROR_NAMES:
-            return False
-    for klass in type(exc).__mro__:
-        if klass.__name__ in _TRANSIENT_ERROR_NAMES:
-            return True
-    return False
+    mro = type(exc).__mro__
+    if any(klass.__name__ in _NON_TRANSIENT_ERROR_NAMES for klass in mro):
+        return False
+    return any(klass.__name__ in _TRANSIENT_ERROR_NAMES for klass in mro)
 
 
-_T = TypeVar("_T")
-
-
-def retry_call(
-    fn: Callable[..., _T],
-    *args,
+def retry_call[T](
+    fn: Callable[..., T],
+    *args: Any,
     max_retries: int = 2,
     backoff_base: float = 1.0,
-    **kwargs,
-) -> _T:
+    **kwargs: Any,
+) -> T:
     """Call `fn(*args, **kwargs)`; retry up to `max_retries` times on transient
     errors with exponential backoff (`backoff_base * 2 ** attempt` seconds).
 
@@ -176,5 +171,8 @@ def retry_call(
                 last_exc = e
                 continue
             raise
-    assert last_exc is not None  # unreachable: loop either returns or raises
+    # Unreachable for max_retries >= 0: the loop either returns or raises. An explicit raise
+    # rather than `assert`, so the check survives `python -O`.
+    if last_exc is None:
+        raise AssertionError
     raise last_exc

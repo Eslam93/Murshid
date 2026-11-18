@@ -735,7 +735,10 @@ def render_results_md(
         f"- Providers: {', '.join(f'{p.name} ({p.model_id})' for p in providers) or '(none)'}"
     )
     lines.append(f"- Judge: {judge_label or '(none — judge-scored metrics SKIPPED)'}")
-    lines.append("- Critic modes: off, on (two passes per provider)")
+    critic_modes = list(
+        dict.fromkeys(c.critic_mode for c in per_case_standard + per_case_red_team + mock_cases)
+    )
+    lines.append(f"- Critic modes: {', '.join(critic_modes) or '(none)'}")
     lines.append(
         f"- Questions: {n_questions} ({n_gold} with a gold answer); red-team cases: {n_red_team}"
     )

@@ -7,7 +7,7 @@ Recorded: 2026-05-23T13:56:41. Rendered again from the case cache, with no model
 - Split: tuned (`data/`, the items the rules were tuned on)
 - Providers: mock (mock-1), claude (claude-sonnet-4-6), openai (gpt-5.5-2026-04-23)
 - Judge: gemini-2.5-flash
-- Critic modes: off, on (two passes per provider)
+- Critic modes: on, off
 - Questions: 16 (11 with a gold answer); red-team cases: 10
 - Mock provider: left out of the tables below, because its answer is a fixed placeholder. With it, the rules alone took the expected behavior in 52 of 52 cells.
 - Run manifest, cost log and refusal log: in this file's folder

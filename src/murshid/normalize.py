@@ -2,8 +2,8 @@
 
 Tokenizer-aligned for BGE-M3 (light by default). Preserves ى, ة, hamza —
 those distinctions are meaningful in MSA proper nouns and government / legal
-Arabic. Aggressive operations sit behind NORMALIZE_AGGRESSIVE=true and are
-NOT used in the default pipeline.
+Arabic. Aggressive operations are opt-in (`aggressive_normalize`, or
+`normalize(text, aggressive=True)`) and are NOT used in the default pipeline.
 
 Why stdlib + regex rather than CAMeL Tools:
 - CAMeL Tools' default normalization is aggressive (collapses ى / ة / hamza).
@@ -14,7 +14,6 @@ Why stdlib + regex rather than CAMeL Tools:
   pre-positioned mistake candidate.
 """
 
-import os
 import re
 import unicodedata
 
@@ -96,8 +95,8 @@ def light_normalize(text: str) -> str:
       - ta-marbuta -> ha (ة -> ه)
       - hamza folding (ئ -> ي, ؤ -> و, ء removal)
 
-    To enable the aggressive set, call `aggressive_normalize` directly or set
-    `NORMALIZE_AGGRESSIVE=true` and use the dispatch in `normalize`.
+    To enable the aggressive set, call `aggressive_normalize` directly or
+    `normalize(text, aggressive=True)`.
     """
     text = unicodedata.normalize("NFKC", text)
     text = _TATWEEL.sub("", text)
@@ -109,9 +108,8 @@ def light_normalize(text: str) -> str:
 def aggressive_normalize(text: str) -> str:
     """Light normalization + the lossy operations.
 
-    Only call when `NORMALIZE_AGGRESSIVE=true`. Erases distinctions used in
-    MSA proper nouns and government / legal Arabic — see ADR 3 for why this
-    is opt-in, not default.
+    Opt-in only. Erases distinctions used in MSA proper nouns and government /
+    legal Arabic — see ADR 3 for why this is opt-in, not default.
     """
     text = light_normalize(text)
     text = _ALEF_MAKSURA.sub("ي", text)  # ى -> ي
@@ -122,12 +120,12 @@ def aggressive_normalize(text: str) -> str:
     return text
 
 
-def normalize(text: str) -> str:
-    """Apply the configured normalization level (default: light).
+def normalize(text: str, *, aggressive: bool = False) -> str:
+    """Apply one normalization level: light by default (§0.2), the lossy set on request.
 
-    Reads `NORMALIZE_AGGRESSIVE` env var; defaults to false per §0.2.
+    The caller chooses; no environment variable does. The old `NORMALIZE_AGGRESSIVE`
+    switch was read only here, and nothing calls this function on the pipeline's path.
     """
-    aggressive = os.environ.get("NORMALIZE_AGGRESSIVE", "false").lower() == "true"
     return aggressive_normalize(text) if aggressive else light_normalize(text)
 
 

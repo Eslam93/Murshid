@@ -4,7 +4,7 @@ The CRITICAL tests pin the default-light behavior: do NOT collapse ى, ة, hamza
 These are the regression tests for the §0.2 design call.
 """
 
-from murshid.normalize import aggressive_normalize, light_normalize
+from murshid.normalize import aggressive_normalize, light_normalize, normalize
 
 # ---------------------------------------------------------------------------
 # Light normalization — applied operations
@@ -128,3 +128,21 @@ def test_arabic_indic_numerals_pass_through_by_default():
     text = "الرقم ١٠٠"
     out = light_normalize(text)
     assert "١٠٠" in out
+
+
+# ---------------------------------------------------------------------------
+# `normalize`: the caller chooses the level; no environment variable does.
+# ---------------------------------------------------------------------------
+
+
+def test_normalize_is_light_by_default_whatever_the_environment(monkeypatch):
+    monkeypatch.setenv("NORMALIZE_AGGRESSIVE", "true")  # the removed switch changes nothing
+    text = "إقامة موسى في مؤتمر"
+    assert normalize(text) == light_normalize(text)
+    assert "ة" in normalize(text)
+
+
+def test_normalize_applies_the_lossy_set_only_on_request():
+    text = "إقامة موسى في مؤتمر"
+    assert normalize(text, aggressive=True) == aggressive_normalize(text)
+    assert normalize(text, aggressive=True) != normalize(text)

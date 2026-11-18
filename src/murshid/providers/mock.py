@@ -1,12 +1,14 @@
-"""MockProvider — canned responses for zero-key reviewer demo (§0.5 #1).
+"""MockProvider — canned responses for zero-key pipeline tests (§0.5 #1).
 
-Routes by system-prompt substring (rules-first; could be tightened with an
-explicit role flag in Phase 3). Recognised roles:
+Routes by the `[ROLE: ...]` sentinel each role prompt carries (`prompt_role`). Recognised roles:
 
   - Enrichment  (ingest.ENRICHMENT_PROMPT_AR): returns JSON {summary, keywords}
   - Rewrite     (rewrite.REWRITE_PROMPT_AR):   returns the query unchanged (identity)
   - Critic      (critic.CRITIC_PROMPT_AR):     returns JSON pass
   - Answer      (anything else):               returns a deterministic Arabic stub
+
+The extractive and replay providers route the same way and reuse these replies for every role
+but the answer.
 """
 
 from __future__ import annotations
@@ -14,8 +16,24 @@ from __future__ import annotations
 import json
 import re
 import time
+from typing import Literal
 
 from murshid.providers.base import ProviderResponse
+
+PromptRole = Literal["enrichment", "rewrite", "critic", "answer"]
+
+
+def prompt_role(system: str) -> PromptRole:
+    """The role a system prompt asks for, from its `[ROLE: ...]` sentinel; `answer` by default."""
+    # Sentinel-token routing (Round 1 fix §3.4): far more robust than substring sniffing on
+    # Arabic content that could shift across edits.
+    if "[ROLE: enrichment]" in system:
+        return "enrichment"
+    if "[ROLE: rewrite]" in system:
+        return "rewrite"
+    if "[ROLE: critic]" in system:
+        return "critic"
+    return "answer"
 
 
 class MockProvider:
@@ -53,14 +71,12 @@ class MockProvider:
     # ------------------------------------------------------------------
 
     def _respond(self, system: str, user: str) -> str:
-        # Sentinel-token routing (Round 1 fix §3.4). Each role prompt carries
-        # an explicit `[ROLE: ...]` marker — far more robust than substring
-        # sniffing on Arabic content that could shift across edits.
-        if "[ROLE: enrichment]" in system:
+        role = prompt_role(system)
+        if role == "enrichment":
             return self._enrich_response(user)
-        if "[ROLE: rewrite]" in system:
+        if role == "rewrite":
             return self._rewrite_response(user)
-        if "[ROLE: critic]" in system:
+        if role == "critic":
             return self._critic_response()
         return self._answer_response(user)
 

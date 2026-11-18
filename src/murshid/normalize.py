@@ -1,4 +1,4 @@
-"""Light Arabic normalization (§0.2).
+"""Light Arabic normalization (ADR 3 in docs/ARCHITECTURE.md).
 
 Tokenizer-aligned for BGE-M3 (light by default). Preserves ى, ة, hamza —
 those distinctions are meaningful in MSA proper nouns and government / legal
@@ -33,13 +33,13 @@ _HAMZA_ON_YA = re.compile(r"ئ")  # ئ
 _HAMZA_ON_WAW = re.compile(r"ؤ")  # ؤ
 _STANDALONE_HAMZA = re.compile(r"ء")  # ء
 
-# Arabic-Indic digit translation tables (Phase 8 creative add-on).
+# Arabic-Indic digit translation tables.
 # Basic Arabic-Indic block: U+0660..U+0669.  Extended (Persian / Urdu): U+06F0..U+06F9.
 # Folding both into ASCII Western digits keeps the BM25 lexical-match layer
 # numeric-script-agnostic. NFKC does NOT do this conversion (Arabic-Indic
 # digits are real characters, not typographic variants like full-width digits),
-# so we need an explicit mapping. Kept SEPARATE from `light_normalize` to
-# preserve the kickoff §0.2 spec — digit folding is wired in at the retrieval
+# so we need an explicit mapping. Kept SEPARATE from `light_normalize`, whose
+# four operations stay fixed — digit folding is wired in at the retrieval
 # layer (`retrieve.py` BM25 indexing + query) as an additive pass.
 _ARABIC_INDIC_TO_WESTERN = str.maketrans(
     {
@@ -121,7 +121,7 @@ def aggressive_normalize(text: str) -> str:
 
 
 def normalize(text: str, *, aggressive: bool = False) -> str:
-    """Apply one normalization level: light by default (§0.2), the lossy set on request.
+    """Apply one normalization level: light by default, the lossy set on request.
 
     The caller chooses; no environment variable does. The old `NORMALIZE_AGGRESSIVE`
     switch was read only here, and nothing calls this function on the pipeline's path.
@@ -136,10 +136,10 @@ def fold_arabic_indic_digits(text: str) -> str:
     `۰۱۲۳۴۵۶۷۸۹` (U+06F0..U+06F9) both map to `0123456789`. Non-digit
     characters pass through unchanged.
 
-    Phase 8 creative add-on. Wired into `retrieve.py` at the BM25 layer so
+    Wired into `retrieve.py` at the BM25 layer so
     a query in Arabic-Indic digits (`١٠ رمضان ١٤٤٧هـ`) hits the Western-digit
     indexed corpus and vice versa. NOT applied to `passage_text` in the
-    citation contract — citations stay verbatim per §0.8.
+    citation contract — citations stay verbatim.
 
     Examples:
         >>> fold_arabic_indic_digits("١٠/٠٩")

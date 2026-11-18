@@ -1,5 +1,5 @@
-"""Mini-bench (§0.6).
+"""Mini-bench: the evaluation harness, run with `python -m murshid.bench`.
 
-Authoring-time evaluation harness. `python -m murshid.bench` entry point.
-Phase 3 implements metrics + runner.
+`metrics` scores one case; `runner` runs the providers over the question sets and renders
+`bench/results.md`.
 """

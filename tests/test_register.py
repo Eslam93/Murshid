@@ -91,7 +91,7 @@ def test_msa_with_allowlisted_english_still_msa():
 
 
 # ---------------------------------------------------------------------------
-# Phase 6 hardening — Egyptian + Levantine dialect detection
+# Egyptian + Levantine dialect detection
 # ---------------------------------------------------------------------------
 #
 # These tests pin the register detector's DETECTION (not fine classification)

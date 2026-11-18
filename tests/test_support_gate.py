@@ -1,4 +1,4 @@
-"""Tests for the pre-generation support gate (R2 2.3 heavier variant; Phase 8).
+"""Tests for the pre-generation support gate.
 
 Pins three contracts:
   1. Unit tests for the gate's helper functions (`_detect_policy_bait_pattern`,
@@ -214,8 +214,8 @@ def question_by_id() -> dict[str, dict]:
 @pytest.mark.real_embedder
 def test_rt001_support_gate_refuses(index, bm25_index, provider, red_team_by_id):
     """rt-001 (elderly iqama exemption — policy hallucination bait) should now
-    refuse via the support gate BEFORE generation. This closes the residual
-    open issue from Round 2 follow-up review."""
+    refuse via the support gate BEFORE generation, which the critic alone
+    did not do reliably."""
     rt = red_team_by_id["rt-001"]
     a = answer_question(rt["question_text"], index, provider, bm25_index=bm25_index)
     assert a.behavior_taken == "refuse_with_redirect"

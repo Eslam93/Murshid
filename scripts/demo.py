@@ -1,10 +1,10 @@
-"""Phase 2 demo (§2 scripts/demo.py).
+"""The 3-question demo.
 
 Runs the 3-question demo or a single ad-hoc question through the full pipeline
 (router → register → rewrite → multi-view hybrid retrieve → generate → critic).
 Writes UTF-8 to `<MURSHID_OUT_DIR>/demo_output.txt` (`out/` by default); tails
 minimal status to stdout (Windows PowerShell mangles RTL Arabic in stdout —
-README directs reviewers to open the file).
+the README says to open the file instead).
 
 Usage:
   uv run python scripts/demo.py                                  # 3-question suite
@@ -132,7 +132,7 @@ def render_question_block(idx: int, q: dict, answer: Answer) -> str:
 
 
 def render_summary(answers: list[tuple[dict, Answer]]) -> str:
-    lines: list[str] = ["=" * 80, "Phase 2 demo summary", "=" * 80, ""]
+    lines: list[str] = ["=" * 80, "Demo summary", "=" * 80, ""]
     for q, a in answers:
         cat_ok = a.service_category == q["expected_category"]
         beh_ok = a.behavior_taken == q["expected_behavior"]
@@ -231,7 +231,7 @@ def main(argv: list[str]) -> int:
         )
 
     # Render and write
-    blocks: list[str] = ["Murshid — Phase 2 demo output\n"]
+    blocks: list[str] = ["Murshid — demo output\n"]
     if not single_query:
         blocks.append(render_summary(answers))
     for i, (q, a) in enumerate(answers):

@@ -1,10 +1,9 @@
-"""Ingestion: chunk -> enrich -> embed -> index (§0.3, Phase 1 task 9).
+"""Ingestion: chunk -> enrich -> embed -> index.
 
-Phase 1 implementation:
   - Deterministic chunking: FAQ detect by `س:` markers; else paragraph split.
-  - Ordinal numbering: `source_id:chunk-N` (debug-only per §0.6 — recall and
+  - Ordinal numbering: `source_id:chunk-N` (for debugging only — recall and
     citation matching is content-based, not chunk-id-based).
-  - Chunk metadata enrichment (§0.3, external RAG-architecture learning):
+  - Chunk metadata enrichment:
     per-chunk LLM call produces `summary` + `keywords`; both concatenated
     into BM25-indexed text and the embedder input. `passage_text` stays
     verbatim so citation accuracy anchors on the source quote.
@@ -55,7 +54,7 @@ class Chunk:
     EMBEDDING / BM25 input (`embedding_input`), not into `passage_text`.
 
     `enrichment_status` records the outcome of the metadata enrichment LLM
-    call: "ok" | "failed_json" | "failed_provider" | "skipped". Phase 3 audits
+    call: "ok" | "failed_json" | "failed_provider" | "skipped". Audits
     use this to identify chunks that lost enrichment surface so they can be
     retried or downgraded explicitly.
     """
@@ -141,7 +140,7 @@ def chunk_all_sources(sources: list[Source]) -> list[Chunk]:
 
 
 # ---------------------------------------------------------------------------
-# Metadata enrichment (§0.3 — external RAG-architecture learning)
+# Metadata enrichment
 # ---------------------------------------------------------------------------
 
 ENRICHMENT_PROMPT_AR = """[ROLE: enrichment]
@@ -248,7 +247,7 @@ def embed_chunks(chunks: list[Chunk], embedder_model: str = "BAAI/bge-m3") -> np
     for chunk in chunks:
         chunk.embedding_input = build_embedding_input(chunk)
         # Embed the LIGHT-NORMALIZED form for consistency with retrieval-time
-        # query normalization (§0.3).
+        # query normalization.
         inputs.append(light_normalize(chunk.embedding_input))
 
     embeddings = embedder.encode(
@@ -281,7 +280,7 @@ def build_index(
     Args:
         data_dir: Path to the `data/` directory (containing `sources.json`).
         enrichment_provider: LLM for per-chunk summary/keywords enrichment.
-            Phase 1 uses MockProvider; Phase 2+ wires a cheap real model.
+            The bench, demo and UI pass METADATA_ENRICHMENT_PROVIDER (mock by default).
         embedder_model: sentence-transformers model name. Default BGE-M3.
 
     Returns:

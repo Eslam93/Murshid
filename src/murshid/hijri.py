@@ -1,4 +1,4 @@
-"""Hijri date detection (kickoff §3 Phase 8 task 2, scoped per §0.9).
+"""Hijri date detection: find Hijri dates in Arabic text, with canonical month names.
 
 Detects Hijri date mentions in Arabic text — day + month name + (optional) year +
 (optional) `هـ` marker. Returns structured `HijriDate` instances with canonical
@@ -8,7 +8,7 @@ variants (`الأول` vs `الاول`, `الآخر` vs `الاخر`, `ذو` vs 
 **What this module does:**
   - Detect Hijri date occurrences via regex over the 12 Islamic months.
   - Canonicalize month-name spelling variants.
-  - Preserve the raw verbatim text for citation discipline (§0.8).
+  - Preserve the raw verbatim text, so a citation can quote it unchanged.
   - Provide a `month_index` (1-12) for ordering / comparison.
 
 **What this module deliberately does NOT do:**
@@ -17,18 +17,16 @@ variants (`الأول` vs `الاول`, `الآخر` vs `الاخر`, `ذو` vs 
     converter library. Documented in `docs/CREATIVE.md` as a future production hook.
   - Hijri ↔ Gregorian conversion. Same reason; would need `hijri-converter` or
     `umalqurra` as a runtime dependency.
-  - Arabic-Indic digit normalization is the OTHER Phase 8 creative add-on, now
-    shipped in `normalize.fold_arabic_indic_digits` and wired into
+  - Arabic-Indic digit normalization lives elsewhere, in `normalize.fold_arabic_indic_digits` and wired into
     `retrieve._bm25_normalize`. This module's regex uses Python's Unicode-aware
     digit class (``\\d``) so Arabic-Indic numeric Hijri dates like
     ``٥ رمضان ١٤٤٧هـ`` are detected incidentally. See
     ``tests/test_hijri.py::test_extract_arabic_indic_digit_date`` for the
     structured-detection pin.
 
-The corpus + question + red-team data has been audited (see `scripts/seed_bench.py`
-adjacents) for Hijri patterns: dates use Western digits + Arabic month name + `1447هـ`
-year marker. This module matches those patterns + the common spelling variants a
-reviewer might probe with.
+The corpus, question and red-team data were audited for Hijri patterns: dates use
+Western digits + Arabic month name + `1447هـ` year marker. This module matches those
+patterns + the common spelling variants a reader might try.
 """
 
 from __future__ import annotations

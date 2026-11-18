@@ -1,4 +1,4 @@
-"""Phase 4 reviewer fix #6 — provider retry helper.
+"""Provider retry helper.
 
 Pins the contract of `murshid.providers.base.retry_call`:
   - Returns immediately on success.
@@ -26,7 +26,7 @@ class APIError(Exception):
 
     Both SDKs subclass APIError for BOTH transient (APIConnectionError,
     RateLimitError) AND non-transient (BadRequestError, AuthenticationError)
-    errors. Round-2 reviewer (2.1) flagged that the original retry_call
+    errors. A review found that the original retry_call
     over-retried any subclass of APIError because the transient allowlist
     included `APIError` itself. The fix is a non-transient blocklist that
     takes precedence over the MRO walk.
@@ -53,7 +53,7 @@ class BadRequestError(APIError):
 
     SDK-realistic inheritance: subclasses APIError just like the real
     anthropic.BadRequestError and openai.BadRequestError. This is the case
-    the Round-2 reviewer caught — older test had inherited from Exception
+    the review caught — the older test had inherited from Exception
     directly, so the MRO walk never hit APIError and the over-retry bug
     was invisible to the test.
     """
@@ -192,7 +192,7 @@ def test_retry_call_stdlib_connection_error_is_transient(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# Round 2 regression — non-transient SDK errors must not retry even though
+# Regression — non-transient SDK errors must not retry even though
 # they inherit from APIError (which the old transient allowlist included).
 # ---------------------------------------------------------------------------
 

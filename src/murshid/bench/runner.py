@@ -1,4 +1,4 @@
-"""Bench runner (§0.6) — entry point for `python -m murshid.bench`.
+"""Bench runner — entry point for `python -m murshid.bench`.
 
 Runs the full pipeline against each available provider over the gold answers
 + remaining standard questions. Two passes per provider:
@@ -14,8 +14,7 @@ Runs the full pipeline against each available provider over the gold answers
                     orchestration runs in addition.
 
 Plus the 3-case judge sanity swap (`BENCH_SANITY_SWAP_JUDGE_MODEL`, by default Claude Opus 4.7)
-to quantify self-preference bias (re-scoring the SAME predicted answer across two judges, Phase 4
-polish).
+to quantify self-preference bias (re-scoring the SAME predicted answer across two judges).
 
 Providers and judges come from the provider registry (`murshid.providers.factory`) and the
 settings (`murshid.settings`): the judge is `BENCH_JUDGE_MODEL`, the data is read from
@@ -191,9 +190,8 @@ def _log_refusal(
 ) -> None:
     """Append a non-answer trace row to bench/refusal-log.jsonl.
 
-    Round 2 MEDIUM #5: `expected_behavior` and `behavior_matched` are now
-    captured per kickoff §7's refusal-log contract so a row can be audited
-    without rejoining `bench/results.md`.
+    Each row carries `expected_behavior` and `behavior_matched`, so a row
+    can be audited without rejoining `bench/results.md`.
     """
     if answer.behavior_taken == "answer":
         return  # only log non-answers
@@ -431,7 +429,7 @@ def _run_one_red_team(
 
 
 # ---------------------------------------------------------------------------
-# Judge sanity swap (§0.6)
+# Judge sanity swap
 # ---------------------------------------------------------------------------
 
 # 3 cases that exercise distinct registers — one MSA, one dialect, one mixed.
@@ -440,7 +438,7 @@ SANITY_SWAP_CASE_IDS = ["q-001", "q-007", "q-013"]
 # representative real model over mock; falls back gracefully if a provider was
 # skipped for missing keys.
 SANITY_SWAP_PROVIDER_PREFERENCE = ["openai", "claude", "gemini", "mock"]
-# Match the verdict's default critic mode (critic=off auto-selected in Phase 3).
+# Match the verdict's default critic mode (critic=off, the mode the first bench run selected).
 SANITY_SWAP_CRITIC_MODE = "off"
 
 
@@ -508,13 +506,13 @@ def run_judge_sanity_swap(
     questions_by_id: dict[str, Question],
     golds_by_id: dict[str, GoldAnswer],
 ) -> SanitySwapReport:
-    """Phase 4 polish: re-score the SAME predicted answer with the swap judge.
+    """Re-score the SAME predicted answer with the swap judge.
 
     For each sanity-swap case, pull the stored predicted answer text from a
     real provider's CaseResult (`SANITY_SWAP_PROVIDER_PREFERENCE`, critic=off),
     re-call the swap judge against that prediction + the gold, and report the
-    cross-judge delta. This quantifies actual self-preference bias instead of
-    the Round-1 degenerate gold-vs-gold calibration.
+    cross-judge delta. This quantifies actual self-preference bias, which
+    scoring the gold answer against itself cannot.
     """
     deltas: list[SwapRow] = []
     for qid in SANITY_SWAP_CASE_IDS:
@@ -582,7 +580,7 @@ def run_judge_sanity_swap(
         "primary_judge": primary_judge.model_id,
         "swap_judge": swap_judge.model_id,
         "note": (
-            "Phase 4 polish: swap judge re-scores the SAME predicted answer across "
+            "The swap judge re-scores the SAME predicted answer across "
             "two judges (primary vs swap). Δ correctness quantifies cross-judge "
             "self-preference bias on real predictions. ADR 2 reports |mean Δ| as "
             "the bias headline number."
@@ -635,7 +633,7 @@ def render_results_md(
     )
     lines.append(f"- Judge: {judge.model_id if judge else '(none — judge-scored metrics SKIPPED)'}")
     lines.append("- Critic modes: off, on (two passes per provider)")
-    lines.append("- Standard set: 16 questions (11 with gold), Red-team: 10 cases (Phase 4)")
+    lines.append("- Standard set: 16 questions (11 with gold), Red-team: 10 cases")
     lines.append("- Cost log: `bench/cost-log.jsonl`")
     lines.append("- Refusal log: `bench/refusal-log.jsonl`")
     lines.append("")
@@ -643,14 +641,11 @@ def render_results_md(
         lines.append("## Mode: red-team-only re-run")
         lines.append("")
         lines.append(
-            "Phase 4 partial re-run scoped to red-team cases + the fixed sanity-swap. "
-            "Phase 3 standard tables (16 questions × providers × critic modes) preserved "
-            "verbatim in `bench/archive/results-phase3-snapshot.md`; the Phase 3 verdict (openai "
-            "`gpt-5.5-2026-04-23`, critic=off — behavior 1.000, correctness 2.20 / 3, "
-            "faithfulness 2.36 / 3, 1.00 hallucinated facts per question, cost $0.15 / 16 cases) "
-            "still stands. This file contains the Phase 4 additions only: red-team aggregate, "
-            "red-team per-case results, and the fixed sanity-swap that scores the SAME predicted "
-            "answer across two judges (not the Round-1 degenerate gold-vs-gold)."
+            "A partial re-run scoped to the red-team cases and the sanity swap. The "
+            "standard tables (16 questions × providers × critic modes) of the previous run are "
+            "preserved verbatim in `bench/archive/results-phase3-snapshot.md`. This file "
+            "contains only the red-team aggregate, the red-team per-case results, and the "
+            "sanity swap, which scores the SAME predicted answer with two judges."
         )
         lines.append("")
 
@@ -698,7 +693,7 @@ def render_results_md(
             )
         lines.append("")
 
-    # Critic refusal-cause breakdown — reviewer fix #3.
+    # Critic refusal-cause breakdown.
     # Splits the umbrella `refuse_with_redirect` count by WHY the critic gate
     # fired so the reader can tell harness fragility (critic itself errored)
     # apart from real groundedness catches. Only meaningful in critic_mode=on.
@@ -771,7 +766,7 @@ def render_results_md(
             )
         lines.append("")
         lines.append(
-            "Recall@expected uses red-team `expected_source_ids` (retrieval target per §0.7), not gold support. "
+            "Recall@expected uses red-team `expected_source_ids` (the retrieval target), not gold support. "
             "Cases with `expected_source_ids: []` are excluded from recall. The rubric judge receives "
             "`evaluation_notes` per case as the per-case rubric."
         )
@@ -897,7 +892,7 @@ def render_results_md(
 
     # ====================================================================
     # Errors detail — surface answer_error exception class/message inline
-    # so reviewers don't have to open case-cache.json to diagnose.
+    # so a reader does not have to open case-cache.json to diagnose.
     # ====================================================================
     errored_cases = [c for c in (per_case_standard + per_case_red_team) if c.answer_error]
     if errored_cases:
@@ -925,7 +920,7 @@ def render_results_md(
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Murshid mini-bench (§0.6)")
+    parser = argparse.ArgumentParser(description="Murshid mini-bench")
     parser.add_argument(
         "--providers",
         default="mock,claude,openai",
@@ -950,7 +945,7 @@ def main(argv: list[str] | None = None) -> int:
             "full (default): standard set + red-team + sanity-swap. "
             "red_team: skip standard, run red-team + 3-question minimal predictions "
             "for sanity-swap. Snapshots existing results.md to results-phase3-snapshot.md. "
-            "standard: original Phase 3 behavior; no red-team scoring."
+            "standard: the standard set only; no red-team scoring."
         ),
     )
     parser.add_argument(
@@ -969,7 +964,7 @@ def main(argv: list[str] | None = None) -> int:
         help=(
             "Comma-separated question IDs to filter the standard set. "
             "Empty = all 16 questions. Lets a small focused bench refresh only "
-            "the cases the reviewer asked about without paying for the full set."
+            "the cases you need without paying for the full set."
         ),
     )
     parser.add_argument(
@@ -1061,7 +1056,7 @@ def main(argv: list[str] | None = None) -> int:
         if p.exists():
             p.unlink()
 
-    # Red-team-only mode: snapshot the existing results.md so Phase 3 standard
+    # Red-team-only mode: snapshot the existing results.md so the standard
     # tables are preserved verbatim while the new red-team + sanity-swap data
     # gets written to results.md. The snapshot is the audit trail for the
     # standard verdict — the new results.md will reference it inline.
@@ -1227,7 +1222,7 @@ def main(argv: list[str] | None = None) -> int:
                 ]
                 aggregates_red_team.append(aggregate(rt_subset))
 
-    # Sanity swap — Phase 4 fixed: scores the SAME predicted answer with two
+    # Sanity swap: scores the SAME predicted answer with two
     # judges. Uses only standard cases (which have gold answers).
     sanity_swap: SanitySwapReport | None = None
     if not args.no_sanity_swap and judge is not None:

@@ -1,4 +1,4 @@
-"""Service-category query classifier (§0.3 pre-routing).
+"""Service-category query classifier (routing before retrieval).
 
 Categories: `iqama | traffic_fines | sponsorship_transfer | municipal_permits |
 labor_office | out_of_scope`.
@@ -14,7 +14,7 @@ The router distinguishes two flavors of `out_of_scope`:
     clarification, because the query may be in-corpus but lacks the right
     disambiguating term.
 
-Arabic polysemy note (Round 1 fix): `صدر` was previously a raw medical trigger
+Arabic polysemy note: `صدر` was previously a raw medical trigger
 but it is also the verb "was issued" in government Arabic (e.g.,
 `صدر التصريح البلدي`). Medical detection now requires the bigram pattern
 `(ألم|وجع) صدر` to avoid false positives on issuance verbs.
@@ -36,11 +36,11 @@ class RoutingResult:
 
 
 # Per-category Arabic keyword sets. Tuned against the corpus + the 16 questions.
-# Phase 6 hardening (post round-1 review): added high-value Arabic synonyms
-# that a reviewer asking in their own words would naturally use — `غرامة`
+# Added high-value Arabic synonyms that a user asking in their own words
+# would naturally use — `غرامة`
 # (synonym for `مخالفة`), `بطاقة الإقامة` / `كرت الإقامة` (colloquial Arabic
 # names for the residency ID card), `إذن العمل` (alternate name for `رخصة عمل`).
-# Without these, a reviewer rewording our test questions hits soft-OOS
+# Without these, a user rewording the test questions hits soft-OOS
 # spuriously.
 CATEGORY_KEYWORDS: dict[str, set[str]] = {
     "iqama": {
@@ -55,7 +55,7 @@ CATEGORY_KEYWORDS: dict[str, set[str]] = {
         "بدل تالف",
         "جواز",
         "الجواز",
-        # Phase 6: colloquial / alternate names for the residency card
+        # colloquial / alternate names for the residency card
         "بطاقة الإقامة",
         "بطاقة إقامة",
         "كرت الإقامة",
@@ -75,7 +75,7 @@ CATEGORY_KEYWORDS: dict[str, set[str]] = {
         "اعتراض",
         "تقسيط",
         "تخفيض",
-        # Phase 6: غرامة is the common Arabic synonym for مخالفة
+        # غرامة is the common Arabic synonym for مخالفة
         "غرامة",
         "الغرامة",
         "غرامات",
@@ -123,7 +123,7 @@ CATEGORY_KEYWORDS: dict[str, set[str]] = {
         "توثيق عقد",
         "مكتب العمل",
         "OTP",  # labor-002 specifically gates contract acceptance on OTP
-        # Phase 6: إذن العمل / تصريح العمل are alternate names
+        # إذن العمل / تصريح العمل are alternate names
         "إذن العمل",
         "إذن عمل",
         "تصريح العمل",
@@ -173,7 +173,7 @@ def _weighted_keyword_score(text: str, keywords: set[str]) -> int:
     bare-word match (`تصريح`). This is the standard "longest match wins"
     behavior — without it, queries like `تصريح العمل` tie between
     `municipal_permits` (bare `تصريح`) and `labor_office` (`تصريح العمل`),
-    and dict-iteration order picks the wrong category. Phase 6 hardening.
+    and dict-iteration order picks the wrong category.
     """
     return sum(len(kw.split()) for kw in keywords if kw in text)
 

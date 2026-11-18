@@ -1,12 +1,12 @@
-"""Dialect → MSA query rewriter (§0.3 multi-view, view #3).
+"""Dialect → MSA query rewriter (the third retrieval view).
 
 Calls an LLM via the provider layer. Preserves:
 - English domain tokens (OTP, iqama, IBAN, ...) verbatim
 - Dates and numbers verbatim (especially Hijri references)
 - Proper nouns verbatim
 
-In Phase 2 the default `MockProvider` returns the query unchanged (identity
-rewrite). Phase 3+ swaps in a real cheap model.
+The zero-key providers (mock, extractive, replay) return the query unchanged
+(identity rewrite); a paid provider rewrites it.
 """
 
 from __future__ import annotations

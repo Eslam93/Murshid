@@ -1,4 +1,4 @@
-"""Tests for src/murshid/hijri.py — Phase 8 creative add-on (Hijri detection).
+"""Tests for src/murshid/hijri.py (Hijri date detection).
 
 Pins the contract surfaced in the docstring:
   - extract_hijri_dates returns structured HijriDate in document order
@@ -90,7 +90,7 @@ def test_extract_handles_empty_and_none_input():
 
 
 def test_extract_arabic_indic_digit_date():
-    """Round 3 reviewer suggested pin: a reviewer probing with Arabic-Indic
+    """A question written with Arabic-Indic
     digits (`٥ رمضان ١٤٤٧هـ` instead of `5 رمضان 1447هـ`) should detect
     cleanly. The regex uses Python `\\d` which is Unicode-digit-aware, so
     this works incidentally; pinning the contract here so a future regex
@@ -141,8 +141,8 @@ def test_extract_ignores_gregorian_dates():
 )
 def test_canonicalize_month_name_variants(variant, expected_canonical, expected_index):
     """Common orthographic variants must canonicalize to one stable spelling.
-    A reviewer probing with `ذي القعدة` (genitive) should get the same canonical
-    month as one probing with `ذو القعدة` (nominative)."""
+    A question with `ذي القعدة` (genitive) should get the same canonical
+    month as one with `ذو القعدة` (nominative)."""
     assert canonicalize_month_name(variant) == expected_canonical
     # Round-trip through extract to confirm the index lookup agrees.
     result = extract_hijri_dates(f"تاريخ 1 {variant} 1447هـ")
@@ -246,11 +246,11 @@ def _all_text_from(path: Path) -> str:
 
 def test_sources_contain_expected_hijri_dates():
     """data/sources.json carries Hijri dates in iqama-002, traffic-fines-004,
-    sponsorship-003, and municipal-004 per the planning scan. Detect them all."""
+    sponsorship-003, and municipal-004. Detect them all."""
     text = _all_text_from(DATA / "sources.json")
     dates = extract_hijri_dates(text)
-    # The detector should find at minimum: 10 رمضان, 20 شعبان, 5 ذو القعدة (per
-    # the planning-time corpus scan in scripts/seed_bench.py).
+    # The detector should find at minimum: 10 رمضان, 20 شعبان, 5 ذو القعدة
+    # (the dates a scan of the corpus found).
     canonical_months = {d.month_name for d in dates}
     assert "رمضان" in canonical_months
     assert "شعبان" in canonical_months

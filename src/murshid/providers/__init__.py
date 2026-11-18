@@ -1,4 +1,4 @@
-"""LLM provider abstraction (§0.5).
+"""LLM provider abstraction.
 
 Zero-key providers: Extractive (the default: quotes the retrieved passages), Replay (recorded
 real-model answers to the bench questions), Mock (a test double). Paid providers: Claude, OpenAI,

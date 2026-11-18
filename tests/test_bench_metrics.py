@@ -1,6 +1,6 @@
-"""Phase 4 tests — bench/metrics.py extensions.
+"""Tests for bench/metrics.py: the judges, case scoring and aggregation.
 
-Pins the four new contracts shipped in Phase 4:
+Pins these contracts:
   1. `judge_refusal_tone` parses well-formed JSON, surfaces parse errors.
   2. `judge_red_team` parses the rubric payload (rubric_pass bool + score).
   3. `evaluate_case` stores predicted_answer_text + predicted_register, and
@@ -149,7 +149,7 @@ def _make_answer(
 ) -> Answer:
     """Build a synthetic Answer for test scoring.
 
-    `register` becomes `question_register` per Round 2 fix 2.2; if
+    `register` becomes `question_register`; if
     `answer_register` is omitted it mirrors `register` to preserve old
     test behavior (matched-register cases). Tests that need to exercise
     register mismatch should pass `answer_register` explicitly.
@@ -262,7 +262,7 @@ def test_judge_red_team_parses_rubric_payload():
 
 
 # ---------------------------------------------------------------------------
-# evaluate_case — Phase 4 additions
+# evaluate_case — refusal tone and stored predictions
 # ---------------------------------------------------------------------------
 
 
@@ -442,8 +442,8 @@ def test_evaluate_red_team_case_behavior_mismatch():
 
 
 def test_red_team_rubric_pass_gated_on_behavior_match():
-    """Round 2 MEDIUM #4: a case where the judge thought the content satisfied
-    the rubric but the BEHAVIOR mismatched (e.g., rt-001/rt-002 in the Phase 4
+    """A case where the judge thought the content satisfied
+    the rubric but the BEHAVIOR mismatched (e.g., rt-001/rt-002 in an earlier
     bench showed `refuse_with_redirect → answer ✗` AND rubric ✓) must now
     surface as rubric_pass=False. Behavior_match is a precondition for a
     case-level pass."""
@@ -826,9 +826,9 @@ def test_critic_breakdown_critic_off_mode_zero():
 
 def test_dump_and_load_cases_roundtrip(tmp_path):
     """dump_cases + load_cases must preserve every CaseResult field used by
-    aggregate() and the renderer — fields touched include critic_* (fix #3),
-    predicted_answer_text (sanity-swap polish), refusal_tone_score (Phase 4),
-    red_team_* fields (Phase 4)."""
+    aggregate() and the renderer — fields touched include critic_*,
+    predicted_answer_text (the sanity swap), refusal_tone_score and the
+    red_team_* fields."""
     from murshid.bench.metrics import dump_cases, load_cases
 
     cases = [

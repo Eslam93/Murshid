@@ -1,4 +1,4 @@
-"""Register detector (§0.4).
+"""Register detector (ADR 3 in docs/ARCHITECTURE.md).
 
 Three-class output: `MSA | dialect | mixed`. `contains_code_switching` is a
 separate slicing boolean per ADR 3.
@@ -9,7 +9,7 @@ Rules-first decision tree:
   3. Otherwise → `MSA`.
 
 Allowlisted English domain tokens (`iqama`, `OTP`, `IBAN`, ...) do NOT flip
-register; they set `contains_code_switching=true` only. This is the §0.4 catch
+register; they set `contains_code_switching=true` only. This is the catch
 that distinguishes domain-code-switching from conversational mixing.
 
 LLM zero-shot fallback for low-confidence cases is supported via the optional
@@ -34,7 +34,7 @@ class RegisterResult:
 
 
 # Strong dialect markers — single occurrence is decisive.
-# Phase 6 hardening: extended to detect (not finely classify) Egyptian and
+# Extended to detect (not finely classify) Egyptian and
 # Levantine markers. The system prompt's "answer in same register" rule does
 # the right thing once we detect dialect; family detection is coarse on
 # purpose (NADI 2024 winning F1 was 50.57 — fine-grained ID is out of reach).
@@ -53,7 +53,7 @@ STRONG_DIALECT_MARKERS: set[str] = {
     "لسه",
     "مو",
     "شلونك",
-    # Egyptian (Phase 6 — for review-robustness, not deep coverage)
+    # Egyptian (so a question in it reads as dialect, not deep coverage)
     "إزاي",
     "ازاي",
     "مش",
@@ -61,7 +61,7 @@ STRONG_DIALECT_MARKERS: set[str] = {
     "ليه",
     "كده",
     "ايه",
-    # Levantine (Phase 6 — same rationale)
+    # Levantine (same rationale)
     "هيك",
     "ليش",
     "كيفك",
@@ -91,7 +91,7 @@ MEDIUM_DIALECT_MARKERS: set[str] = {
 NAJDI_MARKERS: set[str] = {"وش", "أبغى", "ابغى", "ابغا", "مو", "أسوي", "اسوي"}
 KHALEEJI_MARKERS: set[str] = {"شلون", "شلونك", "وايد", "شو"}
 HIJAZI_MARKERS: set[str] = {"إيش", "ايش", "كده"}
-# Phase 6: Egyptian + Levantine markers. We DETECT these (so register flips to
+# Egyptian + Levantine markers. We DETECT these (so register flips to
 # `dialect` correctly) but classify family as `egyptian` / `levantine` only
 # loosely — there's no production-grade fine-grained dialect ID at this scope.
 EGYPTIAN_MARKERS: set[str] = {"إزاي", "ازاي", "مش", "اللي", "ليه", "ايه"}
@@ -111,7 +111,7 @@ MSA_FORMAL_MARKERS: set[str] = {
     "لاسيما",
 }
 
-# Domain-token allowlist (§0.4, ADR 3 — intentionally conservative).
+# Domain-token allowlist (ADR 3 — intentionally conservative).
 # `unpaid` and `rejected` are deliberately EXCLUDED — see ADR 3.
 DOMAIN_ALLOWLIST: set[str] = {
     "iqama",
@@ -157,7 +157,7 @@ def _detect_family(strong: set[str], medium: set[str]) -> str:
 
     Saudi families are checked before Egyptian / Levantine because the corpus
     is Saudi-centric and Saudi markers are weighted higher in our keyword set.
-    The Phase 6 extension (Egyptian / Levantine) exists so the REGISTER is
+    The Egyptian / Levantine markers exist so the REGISTER is
     correctly detected as `dialect`, not so we make confident family claims.
     """
     found = strong | medium

@@ -1,8 +1,8 @@
-"""System prompts + few-shot exemplars (§0.8).
+"""System prompts + few-shot exemplars.
 
-Phase 1's `pipeline.py` carried an inline minimal prompt; Phase 2 moves the
-canonical version here with the §0.8 rules expressed explicitly and a few-shot
-exemplar pair for register matching.
+The answer rules, stated explicitly: answer in the user's register, quote the sources verbatim
+in MSA, invent nothing, answer only what was asked, and escalate or refuse when the sources fall
+short. A few-shot exemplar pair shows register matching.
 """
 
 SYSTEM_PROMPT_AR = """أنت مساعد لإجابة أسئلة المواطنين السعوديين عن الخدمات الحكومية.

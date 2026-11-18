@@ -126,7 +126,7 @@ def test_labor_office_otp_routes_correctly():
 
 
 # ---------------------------------------------------------------------------
-# Negative tests for `صدر` polysemy (Round-1 §2.1 regression guard)
+# Negative tests for `صدر` polysemy (regression guard)
 # ---------------------------------------------------------------------------
 #
 # `صدر` is the noun "chest" (medical) AND the verb "was issued" (government).
@@ -179,7 +179,7 @@ def test_waja_sadar_also_routes_to_oos():
 
 
 # ---------------------------------------------------------------------------
-# Soft-vs-hard OOS confidence distinction (Round-1 §3.3 guard)
+# Soft-vs-hard OOS confidence distinction (regression guard)
 # ---------------------------------------------------------------------------
 
 
@@ -206,10 +206,10 @@ def test_soft_oos_returns_low_confidence():
 
 
 # ---------------------------------------------------------------------------
-# Phase 6 hardening — Arabic synonyms (review-robustness)
+# Arabic synonyms
 # ---------------------------------------------------------------------------
 #
-# A reviewer plugging in their own questions won't use our exact keywords.
+# A user asking in their own words won't use our exact keywords.
 # These tests pin the synonym expansions that catch the most common ones:
 # `غرامة` (synonym for `مخالفة`), `بطاقة إقامة` / `كرت الإقامة` (colloquial
 # names for the residency card), `إذن العمل` (alt name for `رخصة عمل`).

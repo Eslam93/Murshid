@@ -1,7 +1,7 @@
 """Tests for src/murshid/ingest.py.
 
 Pins the chunker on iqama-002 (prose), iqama-003 (FAQ), and municipal-004
-(prose with Hijri). Asserts enrichment populates per kickoff Phase 1 task 9.
+(prose with Hijri). Asserts that enrichment populates every chunk.
 """
 
 from pathlib import Path
@@ -122,14 +122,14 @@ def test_chunk_ids_are_ordinal_and_unique(sources):
 
 
 # ---------------------------------------------------------------------------
-# Enrichment populates summary + keywords (Phase 1 task 9 contract)
+# Enrichment populates summary + keywords
 # ---------------------------------------------------------------------------
 
 
 def test_enrichment_populates_fields_for_all_chunks(sources):
     """Every chunk gets summary + keywords after enrichment (best-effort).
 
-    Phase 1 acceptance: enrichment is non-fatal but must populate fields
+    Enrichment is non-fatal but must populate fields
     when the provider succeeds. MockProvider always succeeds.
     """
     for src in sources[:3]:  # First 3 sources is enough for the contract

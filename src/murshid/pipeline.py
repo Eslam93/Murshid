@@ -1,7 +1,7 @@
-"""End-to-end pipeline (§0.3, §0.5, §0.8) — Phase 2 full flow + Round-1 fixes.
+"""End-to-end pipeline: route, detect register, retrieve, gate, generate, critique.
 
 Flow:
-  0. Input length cap (§7).
+  0. Input length cap.
   1. `router.route_query(query)` → (category, confidence).
   2. `register.detect_register(query)` → (register, contains_code_switching, dialect_family).
   3. **Hard out-of-scope** (trigger fired, confidence ≥ HARD_OOS_CONFIDENCE) →
@@ -47,7 +47,7 @@ from murshid.router import route_query
 # Constants
 # ---------------------------------------------------------------------------
 
-# §7 — All input that touches the LLM is length-capped (default 4000 chars).
+# All input that touches the LLM is length-capped (default 4000 chars).
 INPUT_LENGTH_CAP = 4000
 
 # Router OOS confidence ≥ this threshold → HARD out-of-scope (trigger fired).
@@ -64,10 +64,9 @@ CALENDAR_TERMS: set[str] = {"هجري", "الهجري", "هـ", "ميلادي", 
 # these, the answer should be tagged as partial_answer_with_escalation because
 # the travel / visa / embassy parts aren't covered by the in-corpus sources.
 #
-# Round 2 MEDIUM #7: broadened to cover common Gulf "tomorrow" variants
-# (`بكره` without ة, `باكر`, `الغد`) so the metric isn't limited to the
-# q-005 / rt-003 calibration vocabulary. The original list was tuned for the
-# specific data and was correctly flagged as too narrow for a general claim.
+# Broadened to cover common Gulf "tomorrow" variants (`بكره` without ة,
+# `باكر`, `الغد`) so the list isn't limited to the q-005 / rt-003 vocabulary
+# it was first written for, which was too narrow for a general claim.
 PARTIAL_ESCALATION_TERMS: set[str] = {
     # travel / visa / embassy (Arabic-language)
     "أسافر",
@@ -85,15 +84,15 @@ PARTIAL_ESCALATION_TERMS: set[str] = {
 
 # Regex for short numeric dates like 10/09 (NOT 10/09/2025). Two flavors:
 # Western digits (`10/09`) and Arabic-Indic digits (`١٠/٠٩`). Detecting both
-# matters because a reviewer probing the system with Arabic-Indic numerals
-# could otherwise bypass the ambiguity-detection path (Phase 6 hardening item).
+# matters because a question written with Arabic-Indic numerals would
+# otherwise bypass the ambiguity-detection path.
 _SHORT_NUMERIC_DATE_WESTERN = re.compile(r"(?<!\d)\d{1,2}/\d{1,2}(?!/\d)")
 _SHORT_NUMERIC_DATE_ARABIC = re.compile(r"(?<![٠-٩])[٠-٩]{1,2}/[٠-٩]{1,2}(?![٠-٩])")
 
 # ----------------------------------------------------------------------------
-# Pre-generation support gate (R2 2.3 heavier variant; Phase 8 closeout)
+# Pre-generation support gate
 # ----------------------------------------------------------------------------
-# The Round-2 reviewer caught that the tightened critic prompt (which catches
+# A review of the bench found that the tightened critic prompt (which catches
 # `unsupported_specific_claim` post-generation) is non-deterministic on
 # in-domain policy bait — rt-001 (elderly iqama exemption) and rt-002
 # (auto-deleted fines after 6 months) still fell through to generation across
@@ -286,7 +285,7 @@ class Answer:
     match, behavior match, citation accuracy, and faithfulness without re-running
     the pipeline.
 
-    Round 2 fix (2.2): register is split into two fields. `question_register`
+    Register is split into two fields. `question_register`
     is what the pipeline's detector found on the user's QUERY (was previously
     the single `register` field — misleadingly used by the bench as the answer's
     register). `answer_register` is what the detector finds on the generated
@@ -300,14 +299,14 @@ class Answer:
     # Routing
     service_category: str
     routing_confidence: float
-    # Register (Round 2 2.2: split into question vs answer registers)
+    # Register, split into question vs answer registers
     question_register: str  # detected on the query — was previously named `register`
     answer_register: str  # detected on the generated answer_text post-generation
     dialect_family: str
     contains_code_switching: bool
     # Rewrite
     rewritten_query: str
-    # Behavior decision the pipeline took (4-state vocabulary §0.6 / data contract)
+    # Behavior decision the pipeline took (the 4-state vocabulary of the data files)
     behavior_taken: (
         str  # answer | refuse_with_redirect | ask_clarification | partial_answer_with_escalation
     )
@@ -337,7 +336,7 @@ def _has_ambiguous_date(query: str) -> bool:
     """True iff the query carries a short / partial date but no calendar specifier.
 
     Patterns:
-      - `10/09` or `١٠/٠٩` (no year, no calendar marker) — q-004 + Phase 6 hardening.
+      - `10/09` or `١٠/٠٩` (no year, no calendar marker) — q-004.
       - `الشهر الخامس` alone — rt-007.
 
     The presence of `هجري` / `ميلادي` / `هـ` short-circuits to False (the
@@ -430,8 +429,8 @@ CRITIC_UNGROUNDED_REFUSAL_AR = (
 # topic-overlapping passages) but BEFORE generation (so we never paid the
 # model call). The question matched a policy-hallucination-bait pattern
 # (hearsay / auto-action / special-exemption) AND the retrieved passages
-# don't contain the SPECIFIC terms the question is asking about. R2 2.3
-# heavier variant; closes the rt-001 / rt-002 inconsistency the tightened
+# don't contain the SPECIFIC terms the question is asking about. This
+# closes the rt-001 / rt-002 inconsistency the tightened
 # critic prompt + max_tokens bump couldn't fully fix on the model side.
 SUPPORT_GATE_REFUSAL_AR = (
     "آسف، السؤال يتضمن تفاصيل محددة (شرط، إعفاء، مدة، أو سياسة تلقائية) "
@@ -520,7 +519,7 @@ def answer_question(
 
     Returns an `Answer` capturing every intermediate signal.
     """
-    # 0. Length cap (§7) — applied before any provider call.
+    # 0. Length cap — applied before any provider call.
     if len(query) > INPUT_LENGTH_CAP:
         query = query[:INPUT_LENGTH_CAP]
 
@@ -606,7 +605,7 @@ def answer_question(
         bm25_index=bm25_index,
     )
 
-    # 8b. Pre-generation support gate (R2 2.3 heavier variant). Refuses BEFORE
+    # 8b. Pre-generation support gate. Refuses BEFORE
     # the generation call when the query matches a policy-hallucination-bait
     # pattern AND the retrieved passages don't contain the question's specific
     # claim terms. Closes the rt-001 / rt-002 inconsistency that the tightened
@@ -698,7 +697,7 @@ def answer_question(
     # stays `answer`. Per Option B: register slip is a quality signal, not a
     # trust gate.
 
-    # Round 2 2.2: detect the ACTUAL answer register on the generated text so
+    # Detect the ACTUAL answer register on the generated text so
     # the bench's correctness judge isn't fed the question-register label as
     # if it were the answer's register. Critic-gated refusal uses an MSA
     # template; detect_register on it will return MSA, which is correct.

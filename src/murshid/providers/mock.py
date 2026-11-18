@@ -1,4 +1,4 @@
-"""MockProvider — canned responses for zero-key pipeline tests (§0.5 #1).
+"""MockProvider — canned responses for zero-key pipeline tests.
 
 Routes by the `[ROLE: ...]` sentinel each role prompt carries (`prompt_role`). Recognised roles:
 
@@ -26,7 +26,7 @@ PromptRole = Literal["enrichment", "rewrite", "critic", "answer"]
 
 def prompt_role(system: str) -> PromptRole:
     """The role a system prompt asks for, from its `[ROLE: ...]` sentinel; `answer` by default."""
-    # Sentinel-token routing (Round 1 fix §3.4): far more robust than substring sniffing on
+    # Sentinel-token routing: far more robust than substring sniffing on
     # Arabic content that could shift across edits.
     if "[ROLE: enrichment]" in system:
         return "enrichment"
@@ -107,7 +107,7 @@ class MockProvider:
         return json.dumps(payload, ensure_ascii=False)
 
     # ------------------------------------------------------------------
-    # Rewrite: identity (return query unchanged) in Phase 2
+    # Rewrite: identity (return the query unchanged)
     # ------------------------------------------------------------------
 
     def _rewrite_response(self, user: str) -> str:

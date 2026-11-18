@@ -1,4 +1,4 @@
-"""Tests for Arabic-Indic digit normalization — Phase 8 creative add-on.
+"""Tests for Arabic-Indic digit normalization.
 
 Two layers:
   1. `fold_arabic_indic_digits` / `to_arabic_indic_digits` unit contract.
@@ -57,7 +57,7 @@ def test_fold_basic_arabic_indic(arabic_indic, western):
 def test_fold_extended_persian_urdu(persian_urdu, western):
     """The extended Arabic-Indic block (U+06F0..U+06F9) is used in Persian
     and Urdu — less common in Saudi Arabic but should fold the same way so
-    a reviewer probing with a Persian-keyboard input still matches."""
+    a question typed on a Persian keyboard still matches."""
     assert fold_arabic_indic_digits(persian_urdu) == western
 
 
@@ -134,11 +134,11 @@ def test_to_arabic_indic_round_trip():
 
 
 def test_light_normalize_does_not_fold_digits():
-    """The kickoff §0.2 documented 4-step normalization (NFKC + tatweel +
-    diacritics + hamzated-alef) does NOT include digit folding. Phase 8
-    digit folding is a SEPARATE function applied at the retrieval layer
-    in `retrieve.py`. Pinning this so a future contributor doesn't bolt
-    fold_digits onto light_normalize without thinking about the §0.2 spec."""
+    """The 4-step light normalization (NFKC + tatweel + diacritics +
+    hamzated-alef, ADR 3) does NOT include digit folding. Digit folding
+    is a SEPARATE function applied at the retrieval layer in
+    `retrieve.py`. Pinning this so a future contributor doesn't bolt
+    fold_digits onto light_normalize without revisiting ADR 3."""
     text = "١٠ رمضان ١٤٤٧هـ"
     out = light_normalize(text)
     # tatweel and the hijri-marker-letter behaviour are preserved per
@@ -220,9 +220,9 @@ def test_retrieval_arabic_indic_query_matches_western_corpus():
 
 
 def test_retrieval_passage_text_stays_verbatim():
-    """Citation contract (§0.8): passage_text is the verbatim source quote.
+    """Citation contract: passage_text is the verbatim source quote.
     The digit fold applies ONLY to the BM25 indexing input (and to the query),
-    not to passage_text. A reviewer reading the citation sees the original
+    not to passage_text. A reader of the citation sees the original
     Western digits even though BM25 internally indexed the folded form."""
     from murshid.ingest import Chunk
 

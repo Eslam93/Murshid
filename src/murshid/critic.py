@@ -1,11 +1,10 @@
-"""Critic post-check (§0.8) — Round-1 fix: structural default-fail on exception.
+"""Critic post-check: a model's verdict on register match and groundedness, failing closed.
 
-Verifies register match + groundedness before returning the answer. The kickoff
-§0.8 frames the critic as a gate ("If critic fails twice, escalate"). Round 1
-review (Round 1 of the post-code review pipeline, §2.3) caught that the previous implementation
-default-passed on any exception, turning the critic into telemetry, not a gate.
+Verifies register match + groundedness before returning the answer. The critic is meant as a
+gate, so it fails closed: an earlier version passed by default on any exception, which turned
+the critic into telemetry, not a gate.
 
-Phase 3 follow-up (post first bench run): the bench surfaced that real
+The first bench run surfaced that real
 providers (Claude / OpenAI) return JSON wrapped in markdown code blocks or with
 leading prose, which `json.loads(response.text)` rejects. With Option B gating,
 every parse failure refused — Claude `critic=on` dropped to 18.8% behavior
@@ -123,16 +122,16 @@ def critique_answer(
     # from provider errors in `issues`).
     #
     # max_tokens budget history:
-    #   256  — Phase 2 default. Insufficient once markdown-wrapped JSON arrived
-    #          in Phase 3 (Anthropic / OpenAI wrap their JSON in ```json blocks).
-    #   512  — Phase 3 follow-up. Worked for Claude but openai's GPT-5.x family
+    #   256  — the first default. Insufficient once real providers answered
+    #          (Anthropic / OpenAI wrap their JSON in ```json blocks).
+    #   512  — after the first bench run. Worked for Claude but openai's GPT-5.x family
     #          has an invisible "thinking" budget that consumed the 512 before
     #          any visible JSON could be emitted, returning empty responses
-    #          that defaulted to grounded=False under the Round-1 default-fail
-    #          policy. The Round-2 focused bench surfaced this on 3 of 5
+    #          that defaulted to grounded=False under the fail-closed
+    #          policy. A focused bench run surfaced this on 3 of 5
     #          openai/critic=on cells.
-    #   4000 — Round-2 follow-up. Matches the judge max_tokens. Same pattern
-    #          as the Phase 3 Gemini Pro thinking-budget fix.
+    #   4000 — the current budget. Matches the judge max_tokens. Same pattern
+    #          as the Gemini Pro thinking-budget fix in the judges.
     try:
         response = provider.generate(
             system=CRITIC_PROMPT_AR,

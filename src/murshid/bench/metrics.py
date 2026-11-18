@@ -1,6 +1,6 @@
-"""Bench metrics (§0.6). 7 metrics per case + structured judge output.
+"""Bench metrics: 7 metrics per case + structured judge output.
 
-Per kickoff §0.6:
+The metrics:
   1. Retrieval recall@5      — content-based: gold_citations[].quoted_passage substring match
   2. Correctness + register  — structured judge JSON: {matched_facts, missing_facts,
                                irrelevant_facts, correctness_score, register_match_score}
@@ -12,7 +12,7 @@ Per kickoff §0.6:
   7. Latency p50             — aggregated across cases
 
 Judges are real LLM calls: `BENCH_JUDGE_MODEL`, out of family for the
-Claude and OpenAI answers per §0.6. The sanity swap re-scores 3 cases with
+Claude and OpenAI answers it scores. The sanity swap re-scores 3 cases with
 `BENCH_SANITY_SWAP_JUDGE_MODEL` to quantify self-preference bias. Their
 default model ids are in `murshid.providers.factory`.
 """
@@ -118,13 +118,13 @@ class CaseResult:
     unsupported_claims: list[str] = field(default_factory=list)
     faithfulness_score: float | None = None
 
-    # Predicted-answer storage (Phase 4 sanity-swap polish): preserve the
-    # exact predicted text + register so the swap judge re-scores the SAME
-    # prediction rather than gold-vs-gold (the Round-1 degenerate behavior).
+    # Predicted-answer storage for the sanity swap: preserve the exact
+    # predicted text + register so the swap judge re-scores the SAME
+    # prediction rather than comparing the gold answer with itself.
     predicted_answer_text: str = ""
     predicted_register: str = ""
 
-    # Critic verdict propagation (Phase 4 reviewer fix #3): split critic-gated
+    # Critic verdict propagation: split critic-gated
     # refusals into harness failures vs. real groundedness catches. The pipeline
     # already stores these on the `Answer`; we copy them through so the bench
     # can break down `behavior=refuse_with_redirect` counts by cause.
@@ -133,14 +133,14 @@ class CaseResult:
     critic_register_match: bool = True  # False when critic flagged register slip
     critic_issues: list[str] = field(default_factory=list)
 
-    # Refusal-tone (Phase 4): judge-scored 0-3 cultural-tone metric for any
-    # non-answer behavior. §0.7 explicitly grades how the system refuses, not
+    # Refusal-tone: judge-scored 0-3 cultural-tone metric for any
+    # non-answer behavior. The bench grades how the system refuses, not
     # just whether it refused.
     refusal_tone_score: float | None = None
     refusal_tone_notes: str = ""
     judge_refusal_tone_error: str = ""
 
-    # Red-team specific (Phase 4): rubric judge that receives the case's
+    # Red-team specific: rubric judge that receives the case's
     # `evaluation_notes` as the per-case rubric and scores satisfaction.
     is_red_team: bool = False
     red_team_category: str = ""
@@ -270,7 +270,7 @@ def compute_recall_at_5(
     gold_quoted_passages: list[str],
     retrieved_passage_texts: list[str],
 ) -> tuple[float, list[str]]:
-    """Content-based recall@5 per §0.6 metric 1.
+    """Content-based recall@5 (metric 1 above).
 
     A gold quoted_passage is matched if its light-normalized form appears as a
     substring in ANY retrieved passage's light-normalized form.
@@ -353,7 +353,7 @@ def judge_correctness(
 
     On error, payload is {} and error_str carries the diagnosis.
 
-    Phase 3 follow-up: max_tokens bumped from 800 → 4000 because Gemini Pro
+    max_tokens is 4000, not the original 800, because Gemini Pro
     "thinking" mode consumes the output budget internally before emitting
     visible JSON. With 800 we got 29 visible tokens and a truncated response;
     4000 leaves room for reasoning + complete JSON.
@@ -387,7 +387,7 @@ def judge_faithfulness(
 ) -> tuple[dict[str, Any], str]:
     """Call the judge for faithfulness against retrieved passages.
 
-    Phase 3 follow-up: max_tokens 600 → 4000 (same thinking-mode reason as
+    max_tokens is 4000, not the original 600 (same thinking-mode reason as
     `judge_correctness`).
     """
     context = (
@@ -421,7 +421,7 @@ def judge_refusal_tone(
     user_register: str,
     timeout: float = 60.0,
 ) -> tuple[dict[str, Any], str]:
-    """Phase 4: cultural-tone scoring for non-answer behaviors (§0.7).
+    """Cultural-tone scoring for non-answer behaviors.
 
     Returns (payload, error_str). On error, payload is {} and error_str
     carries the diagnosis (same pattern as `judge_correctness` /
@@ -455,11 +455,11 @@ def judge_red_team(
     evaluation_notes: str,
     timeout: float = 60.0,
 ) -> tuple[dict[str, Any], str]:
-    """Phase 4: per-case red-team rubric judge.
+    """Per-case red-team rubric judge.
 
     Receives the case's `evaluation_notes` verbatim as the rubric — the
     judge scores satisfaction of THIS case's notes, not generic correctness.
-    Per §0.7: "evaluation_notes are the judge rubric, not passive metadata."
+    The case's evaluation_notes are the judge's rubric, not passive metadata.
     """
     user_block = (
         f"السؤال:\n{question}\n\n"
@@ -516,7 +516,7 @@ def evaluate_case(
         expected_source_ids=list(question.get("expected_source_ids", [])),
         retrieved_source_ids=retrieved_source_ids,
         predicted_answer_text=answer.answer_text,
-        predicted_register=answer.answer_register,  # Round 2 2.2: actual answer register
+        predicted_register=answer.answer_register,  # the answer's own register, as detected
         critic_valid=answer.critic_valid,
         critic_grounded=answer.critic_grounded,
         critic_register_match=answer.critic_register_match,
@@ -545,10 +545,9 @@ def evaluate_case(
             result.citation_accuracy = 0.0
 
         # Judge calls — only when gold exists.
-        # Round 2 2.2: `predicted_register` is the ACTUAL answer's register
-        # (detected by the pipeline on response text), not the question's
-        # register. Prevents the self-fulfilling register-match metric the
-        # reviewer flagged.
+        # `predicted_register` is the ACTUAL answer's register (detected by
+        # the pipeline on the response text), not the question's register,
+        # so the register-match metric cannot fulfil itself.
         corr_payload, corr_err = judge_correctness(
             judge=judge,
             question=question["text"],
@@ -580,13 +579,13 @@ def evaluate_case(
             ]
             result.faithfulness_score = _judge_score(faith_payload, "faithfulness_score")
     # No gold: no recall, no correctness/faithfulness judge.
-    # Refusal-tone (Phase 4) is INDEPENDENT of gold — fires whenever the
+    # Refusal-tone is INDEPENDENT of gold — fires whenever the
     # pipeline emitted a non-answer behavior (refuse / clarify / partial
     # escalation). This catches q-015 (no gold) and any unexpected refusal.
-    # Round 2 2.2: `user_register` is the question's expected register from
-    # the dataset when available (ground truth for test scoring), not the
-    # detector output — which the reviewer showed could disagree (rt-007
-    # labeled `dialect` in data but detected as `MSA`).
+    # `user_register` is the question's expected register from the dataset
+    # when available (ground truth for test scoring), not the detector
+    # output, which can disagree (rt-007 is labeled `dialect` in the data
+    # but detected as `MSA`).
     if answer.behavior_taken != "answer":
         user_register = question.get("register") or answer.question_register
         tone_payload, tone_err = judge_refusal_tone(
@@ -616,7 +615,7 @@ def evaluate_red_team_case(
 ) -> CaseResult:
     """Score a red-team Answer against the case's `evaluation_notes` rubric.
 
-    Red-team cases have NO gold answer — the rubric IS the gold (§0.7).
+    Red-team cases have NO gold answer — the rubric IS the gold.
     The judge receives (question, model_answer, expected_behavior,
     evaluation_notes) and scores satisfaction against the per-case notes.
     Refusal-tone is scored for non-answer behaviors (rt-001, rt-002, rt-005,
@@ -638,7 +637,7 @@ def evaluate_red_team_case(
         expected_source_ids=list(case.get("expected_source_ids", [])),
         retrieved_source_ids=retrieved_source_ids,
         predicted_answer_text=answer.answer_text,
-        predicted_register=answer.answer_register,  # Round 2 2.2: actual answer register
+        predicted_register=answer.answer_register,  # the answer's own register, as detected
         critic_valid=answer.critic_valid,
         critic_grounded=answer.critic_grounded,
         critic_register_match=answer.critic_register_match,
@@ -653,7 +652,7 @@ def evaluate_red_team_case(
 
     # Recall@5 — only meaningful when the case names retrieval targets.
     # Red-team cases with `expected_source_ids: []` (typically refuse / clarify
-    # behaviors) are excluded from recall scoring per §0.7.
+    # behaviors) are excluded from recall scoring.
     expected_ids = list(case.get("expected_source_ids", []))
     if expected_ids:
         # Content-based recall here would need quoted_passages, which red-team
@@ -679,18 +678,18 @@ def evaluate_red_team_case(
         elif isinstance(rp, str):
             rubric_pass_from_judge = rp.strip().lower() in {"true", "1", "yes"}
 
-        # Round 2 MEDIUM #4: rubric pass must also reflect behavior match.
+        # Rubric pass must also reflect behavior match.
         # A case where the model answered when expected to refuse cannot be a
         # case-level pass, even if the judge thought the content satisfied
-        # the per-case notes. This closes the rt-001 / rt-002 anomaly where
-        # `refuse_with_redirect → answer ✗` showed rubric pass ✓ in
+        # the per-case notes. Without this, rt-001 / rt-002 showed
+        # `refuse_with_redirect → answer ✗` beside rubric pass ✓ in
         # bench/results.md.
         result.red_team_rubric_pass = rubric_pass_from_judge and behavior_match
 
         result.red_team_rubric_score = _judge_score(rubric_payload, "rubric_score")
         result.red_team_rationale = str(rubric_payload.get("rationale", ""))
 
-    # Refusal-tone for non-answer behaviors. Round 2 2.2: user_register from
+    # Refusal-tone for non-answer behaviors. user_register comes from
     # the data case label (ground truth for test scoring), fallback to the
     # question-side detector when the dataset doesn't ship a register field.
     if answer.behavior_taken != "answer":
@@ -746,7 +745,7 @@ class AggregateMetrics:
     avg_missing_facts: float | None
     avg_irrelevant_facts: float | None
 
-    # Phase 4 additions
+    # Refusal tone and red-team rubric
     refusal_tone_mean: float | None
     n_with_refusal_tone: int
     red_team_rubric_mean: float | None
@@ -773,7 +772,7 @@ class AggregateMetrics:
 def dump_cases(path: Path, cases: list[CaseResult]) -> None:
     """Serialize per-case results to JSON for later re-render.
 
-    Phase 4 reviewer fix #13: every bench run dumps its case data so a future
+    Every bench run dumps its case data so a future
     `--render-only` invocation can re-apply new aggregate logic / rendering
     fixes without paying for another set of pipeline + judge calls.
     """
@@ -785,7 +784,7 @@ def dump_cases(path: Path, cases: list[CaseResult]) -> None:
 def load_cases(path: Path) -> list[CaseResult]:
     """Inverse of `dump_cases`. Returns a list of CaseResult instances.
 
-    Forward-compatibility scope (Round 2 MEDIUM #6 — narrowed claim):
+    Forward-compatibility scope:
 
     - **Extra keys in the JSON (future schema):** silently dropped. Tested by
       `test_load_cases_drops_unknown_keys`.
@@ -845,7 +844,7 @@ def _empty_aggregate() -> AggregateMetrics:
 def _retrieval_was_expected(c: CaseResult) -> bool:
     """True when the pipeline was supposed to retrieve something for this case.
 
-    Used to filter recall@5 and citation-accuracy aggregates per reviewer fix #5.
+    Used to filter the recall@5 and citation-accuracy aggregates.
     Cases where `expected_behavior` is `ask_clarification` or `refuse_with_redirect`
     correctly short-circuit before retrieval — counting recall=0 against them
     deflates the metric for cases where retrieval WORKING was the expected
@@ -868,7 +867,7 @@ def aggregate(cases: list[CaseResult]) -> AggregateMetrics:
     Works for standard-question batches AND red-team batches. The renderer
     decides which fields to surface based on `n_red_team` vs `n_with_gold`.
 
-    Reviewer fix #5 (Phase 4 follow-up): recall@5 and citation-accuracy
+    Recall@5 and citation-accuracy
     aggregates exclude cases where the pipeline correctly short-circuited
     before retrieval (ask_clarification / refuse_with_redirect). See
     `_retrieval_was_expected` for the predicate.

@@ -1,4 +1,4 @@
-"""Retrieval (§0.3) — Phase 2 multi-view hybrid.
+"""Retrieval: multi-view hybrid search over the chunk index.
 
 Multi-view: every query produces three views (raw + light-normalized +
 MSA-rewrite). Each view scores via dense (BGE-M3) AND BM25; per-view rankings
@@ -27,18 +27,18 @@ from murshid.normalize import fold_arabic_indic_digits, light_normalize
 def _bm25_normalize(text: str) -> str:
     """Normalization applied to BOTH the BM25 indexing input and the BM25 query.
 
-    `light_normalize` + Arabic-Indic digit folding. The digit fold (Phase 8
-    creative add-on) makes the lexical-match layer numeric-script-agnostic so
+    `light_normalize` + Arabic-Indic digit folding. The digit fold
+    makes the lexical-match layer numeric-script-agnostic so
     a query in Arabic-Indic digits (`١٠ رمضان ١٤٤٧هـ`) hits the Western-digit
-    indexed corpus. Applied here rather than in `light_normalize` itself to
-    preserve the kickoff §0.2 spec for the general normalizer.
+    indexed corpus. Applied here rather than in `light_normalize` itself, so
+    the general normalizer keeps its four fixed operations.
     """
     return fold_arabic_indic_digits(light_normalize(text))
 
 
 @dataclass
 class RetrievalResult:
-    """Per-result citation contract (§0.3)."""
+    """Per-result citation contract."""
 
     source_id: str
     service_category: str

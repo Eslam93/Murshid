@@ -1,7 +1,7 @@
 """Tests for src/murshid/normalize.py.
 
 The CRITICAL tests pin the default-light behavior: do NOT collapse ى, ة, hamza.
-These are the regression tests for the §0.2 design call.
+These are the regression tests for the light-normalization decision (ADR 3).
 """
 
 from murshid.normalize import aggressive_normalize, light_normalize, normalize
@@ -112,7 +112,7 @@ def test_english_domain_tokens_pass_through():
 
 
 def test_hijri_date_preserved():
-    # The Hijri marker "هـ" is `ه` + tatweel. We strip tatweel per §0.2, so the
+    # The Hijri marker "هـ" is `ه` + tatweel. Light normalization strips tatweel, so the
     # normalized form is "1447ه" — still unambiguous, and the month name is
     # preserved verbatim so retrieval still matches.
     text = "20 رمضان 1447هـ"
@@ -123,8 +123,8 @@ def test_hijri_date_preserved():
 
 
 def test_arabic_indic_numerals_pass_through_by_default():
-    # We don't ship Arabic-Indic numeral normalization in v1 (per §0.9 / CREATIVE.md
-    # — that's a creative-additions item if time permits).
+    # light_normalize does not fold Arabic-Indic digits; the fold is a separate pass
+    # at the retrieval layer (normalize.fold_arabic_indic_digits).
     text = "الرقم ١٠٠"
     out = light_normalize(text)
     assert "١٠٠" in out

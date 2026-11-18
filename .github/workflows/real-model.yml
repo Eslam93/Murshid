@@ -1,0 +1,39 @@
+name: Real model
+
+# The checks that need the real BGE-M3 weights (about 2.3 GB): the tests marked real_embedder.
+# They are too slow for every pull request, so they run weekly on main and by hand (only someone
+# with write access can start a run). Like CI, no job needs a secret and the token can only read.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 4 * * 1" # Mondays at 04:23 UTC
+
+permissions:
+  contents: read
+
+concurrency:
+  group: real-model-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  real-embedder:
+    name: Tests on the real BGE-M3 weights
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      # BAAI/bge-m3 ships pytorch_model.bin only; without this, transformers fetches a converted
+      # second copy of the weights in the background and the cache doubles.
+      DISABLE_SAFETENSORS_CONVERSION: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.19"
+          enable-cache: true
+      - run: uv sync --frozen --all-extras
+      - name: Cache the BGE-M3 weights
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: huggingface-${{ runner.os }}-BAAI-bge-m3
+      - run: uv run pytest --real-embedder -m real_embedder

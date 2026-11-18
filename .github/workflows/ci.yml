@@ -1,0 +1,61 @@
+name: CI
+
+# Safe in public: no job needs a secret, the token can only read, and pull requests run on the
+# pull_request event only, never pull_request_target, so a stranger's pull request never runs with
+# this repository's secrets. No path filters: every change runs every check. The paid providers
+# are tested with fake transports, so no job needs a key. The checks that need the real BGE-M3
+# weights are in real-model.yml (weekly and by hand).
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    name: Lint, format, strict types, fast tests with the coverage floor
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.19" # the same uv as every job here and in real-model.yml
+          enable-cache: true
+      - run: uv sync --frozen --extra providers
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run mypy
+      - run: uv run pytest --cov
+
+  lockfile:
+    name: uv.lock is up to date with pyproject.toml
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.19"
+      # The other jobs install with --frozen, which trusts uv.lock as it is; this one fails when a
+      # dependency was changed in pyproject.toml without running uv lock.
+      - run: uv lock --check
+
+  windows:
+    name: Fast tests on Windows
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.19"
+          enable-cache: true
+      - run: uv sync --frozen --extra providers
+      - run: uv run pytest

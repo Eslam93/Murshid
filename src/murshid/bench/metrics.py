@@ -752,7 +752,7 @@ class AggregateMetrics:
     red_team_rubric_pass_rate: float | None
     n_red_team: int
 
-    # Reviewer fix #3 — critic refusal-cause breakdown. Splits the umbrella
+    # Critic refusal-cause breakdown. Splits the umbrella
     # `behavior=refuse_with_redirect` count by WHY the critic gate fired so
     # the bench distinguishes harness failures (critic itself crashed) from
     # real groundedness catches. Only meaningful when critic_mode == "on".
@@ -922,7 +922,7 @@ def aggregate(cases: list[CaseResult]) -> AggregateMetrics:
             else None
         ),
         n_red_team=len(red_team),
-        # Reviewer fix #3 — critic refusal-cause counters.
+        # Critic refusal-cause counters.
         # Hard-OOS / pre-retrieval refuses leave critic state at sentinel
         # (valid=True, grounded=True) so they don't match either critic-bucket.
         # Off-mode skips the critic so all three counts naturally land at 0.

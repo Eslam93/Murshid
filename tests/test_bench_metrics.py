@@ -575,7 +575,7 @@ def test_aggregate_standard_batch_ignores_red_team_fields():
 
 
 # ---------------------------------------------------------------------------
-# Reviewer fix #5 — recall / citation exclude non-answer cases
+# Recall / citation exclude non-answer cases
 # ---------------------------------------------------------------------------
 
 
@@ -713,7 +713,7 @@ def test_aggregate_citation_accuracy_excludes_non_answer_cases():
 
 
 # ---------------------------------------------------------------------------
-# Reviewer fix #3 — critic refusal-cause breakdown
+# Critic refusal-cause breakdown
 # ---------------------------------------------------------------------------
 
 
@@ -820,7 +820,7 @@ def test_critic_breakdown_critic_off_mode_zero():
 
 
 # ---------------------------------------------------------------------------
-# Reviewer fix #13 — dump / load CaseResults round trip
+# Dump / load CaseResults round trip
 # ---------------------------------------------------------------------------
 
 

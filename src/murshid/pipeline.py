@@ -418,8 +418,7 @@ AMBIGUOUS_DATE_CLARIFICATION_AR = (
 
 # Critic-gated refusal — distinct from REFUSAL_TEMPLATE_AR because we DID
 # retrieve sources, but the critic flagged the generated answer as ungrounded.
-# Trust criterion (#4) outranks ergonomics: better to decline than ship a
-# possibly-fabricated policy claim.
+# Declining beats shipping a possibly-fabricated policy claim.
 CRITIC_UNGROUNDED_REFUSAL_AR = (
     "آسف، لم أستطع التحقق من أن الإجابة المتاحة لي مستندة بشكل كامل إلى المصادر. "
     "تفضّل بمراجعة الجهة المختصة للتأكد من الإجراء قبل الاعتماد على أي معلومة."
@@ -662,7 +661,7 @@ def answer_question(
     # 11. Determine final behavior tag.
     #
     # Critic gate policy — Option B (Eslam, 2026-05-22):
-    #   - grounded=false → refuse_with_redirect (trust gate wins; #4 rubric)
+    #   - grounded=false → refuse_with_redirect (the refusal wins)
     #   - register_match=false only, grounded=true → log issue, return answer
     #   - both false → refuse_with_redirect (grounded check wins)
     #   - critic_valid=false (critic itself errored) → grounded defaults to false
@@ -678,7 +677,7 @@ def answer_question(
     answer_text = response.text
 
     if not critic.grounded:
-        # Critic-gated refusal. Trust criterion outranks ergonomics.
+        # Critic-gated refusal: declining beats a possibly-fabricated claim.
         behavior = "refuse_with_redirect"
         if not critic.valid:
             refusal_reason = (

@@ -20,7 +20,7 @@ openai / gemini) read their key from the settings (`.env` or the environment:
 `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `GEMINI_API_KEY`). The index is
 enriched by `METADATA_ENRICHMENT_PROVIDER` (mock, free, by default).
 
-The 3-question suite covers the rubric's required surfaces:
+The 3-question suite covers three paths:
   - MSA, in-corpus (q-001 — Hijri renewal date + fees)
   - Khaleeji dialect, in-corpus (q-007 — sponsorship transfer with Hijri end)
   - Out-of-corpus (q-014 — personal loan question about traffic fines)

@@ -35,19 +35,40 @@ default: in the recorded run it refused 11 correct answers and caught no wrong o
 
 ## Results so far
 
-From the recorded run in [bench/results.md](bench/results.md) (2026-05-23): 16 questions and 10
-red-team cases, judged by Gemini 2.5 Flash.
+**Behavior on questions the rules never saw: 62 of 93.** The rules were written and tuned on 26
+items (16 questions and 10 red-team cases). Frozen at the commit tagged `rules-frozen-2026-11-18`
+and run with no model and no key (the zero-key provider, the critic off), they take the expected
+behavior on all 26 of those, and on 62 of the 93 held-out items they never saw
+([data/heldout/](data/heldout/README.md)). The two splits are reported side by side, never pooled:
+
+| Split | Items | Expected behavior taken |
+| --- | ---: | --- |
+| Tuned (the items the rules were tuned on) | 26 | 26 (100%; 95% CI 87–100%) |
+| Held-out (items the rules never saw) | 93 | 62 (67%; 95% CI 57–75%) |
+
+Where it breaks: on the held-out items the rules answer (50 of 59) and ask for clarification (9 of
+10) as expected, but rarely refuse (2 of 14) or answer in part and escalate (1 of 10). A question
+about a service outside the corpus, such as a driving licence, a family visit visa or a
+recruitment office, usually gets a clarification request, because the router finds no category
+and has no trigger for it. The
+support gate, written against two bait questions, fired on none of the 93 items, including the
+three bait questions among them. [bench/rules-only/REPORT.md](bench/rules-only/REPORT.md) has the
+table of expected against taken behavior and every miss. The held-out labels were written by an AI
+agent; a second reading of 20 sampled labels agreed with 19 and found one borderline.
+
+**Answer quality on the tuned items**, from the recorded run in [bench/results.md](bench/results.md)
+(2026-05-23), judged by Gemini 2.5 Flash:
 
 | Provider, critic off | Behavior | Correctness /3 | Faithfulness /3 | Citation accuracy |
 | --- | ---: | ---: | ---: | ---: |
 | OpenAI `gpt-5.5-2026-04-23` | 26 / 26 | 2.18 | 2.55 | 0.48 |
 | Claude `claude-sonnet-4-6` | 26 / 26 | 2.09 | 2.45 | 0.33 |
 
-Read these with two caveats. The rules were tuned on these same 26 items, so 26 / 26 shows fit,
-not generalisation. And the quality scores rest on 11 gold answers: differences under 0.3 are
-directional. A held-out split of 93 items the rules never saw, 68 questions and 25 red-team
-cases ([data/heldout/](data/heldout/README.md)), exists to measure generalisation; its scores
-will be reported beside these, never pooled with them.
+The quality scores rest on 11 gold answers, so differences under 0.3 are directional. Answer
+quality on the held-out items needs paid model runs and has not been measured yet.
+
+Every recorded answer can be read on a static page, [docs/demo/index.html](docs/demo/index.html):
+recorded data, with no script, no server and no model call behind it.
 
 ## Quick start
 
@@ -160,7 +181,9 @@ of the other split, and replaces a recorded run only with `--overwrite`.
   month names (33 tests), but nothing in the pipeline calls it yet, and it does no Hijri ↔
   Gregorian conversion.
 - **A narrow support gate.** Its patterns were written against the two policy-bait cases it was
-  tuned on (rt-001, rt-002); a bait question phrased another way reaches the model.
+  tuned on (rt-001, rt-002). On the 93 held-out items it fired on none, including three bait
+  questions: one gave no term it extracts, one used the dialect spelling `سمعت إن`, and in one the
+  number it extracted appeared in a passage about a different rule.
 - **Answer-call cost only.** The cost column leaves out rewrite, critic, enrichment and judge
   calls.
 

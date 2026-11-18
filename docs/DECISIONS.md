@@ -64,8 +64,10 @@ thresholds, demographic markers) and requires ALL of them to appear in some retr
 otherwise it refuses with `SUPPORT_GATE_REFUSAL_AR` before the model is called. It is
 conservative by design: rt-009 (uses `قال لي`, not `قيل لي`) and q-007 pass through. In the
 recorded run it refused rt-001 and rt-002 in all 12 cells (3 providers × 2 critic modes), at no
-model cost. Its patterns were written against those two cases, so this shows it works on the
-questions it was written for; the held-out split tests whether it generalises.
+model cost. Its patterns were written against those two cases, so that shows it works on the
+questions it was written for. The held-out split shows it does not generalise: it fired on none
+of the 93 unseen items, including three bait questions phrased in ways its patterns do not cover
+(`docs/ARCHITECTURE.md`, ADR 2).
 
 ---
 

@@ -307,9 +307,14 @@ more than that no large judge bias showed.
 `support_gate_enabled=False` ablation exists on `answer_question`; the bench does not expose it
 as a flag.
 
-**Residual gap:** the gate covers the three bait patterns it was written for, and its patterns
-were written against rt-001 and rt-002. A bait question phrased another way passes the gate and
-reaches the model; the critic, when on, is the only check after that.
+**Residual gap, measured:** the gate covers the three bait patterns it was written for, and its
+patterns were written against rt-001 and rt-002. On the 93 held-out items it fired on none,
+including the three bait questions among them (`bench/rules-only/REPORT.md`): `h-066` gave no term
+the gate extracts ("fewer than five workers" is in none of its lists), `hr-011` wrote `سمعت إن`, a
+dialect spelling its hearsay patterns do not match, and in `hr-010` the number it extracted, 50,
+appears in a passage about a different rule (a 25–50% reduction after a corrective request), so it
+counted the claim as supported. A bait question phrased another way reaches the model; the critic,
+when on, is the only check after that.
 
 **Statistical caveat:** correctness and faithfulness aggregates use n ≤ 11 gold answers per
 provider × critic mode, and the red-team rubric n = 10. Treat differences ≤ 0.3 as directional,
@@ -507,9 +512,10 @@ detect `dialect` / `saudi_najdi`, and take the answer path.
 
 ## 10. Open issues
 
-1. **The support gate is narrow.** Its patterns were written against rt-001 and rt-002, and a
-   bait question phrased another way passes it. A judge-based support check before generation
-   would cover more, at the price of a model call per question.
+1. **The support gate is narrow.** Its patterns were written against rt-001 and rt-002, and on
+   the held-out split it fired on none of the 93 items (ADR 2 says why, case by case). A
+   judge-based support check before generation would cover more, at the price of a model call
+   per question.
 2. **The critic over-refuses on this corpus.** The sources carry "test environment, do not use
    for real" annotations on purpose (see `data/README.md`). A strict critic reads them as reasons
    to refuse: in the recorded run it refused q-007 for both providers. A real-policy corpus would
@@ -518,8 +524,17 @@ detect `dialect` / `saudi_najdi`, and take the answer path.
    not in it; `bench/cost-log.jsonl` has the per-call trace for answer calls.
 4. **The sanity swap is small.** Three cases; the bias measurement (|mean Δ correctness| = 0.00)
    is directional.
-5. **Tuned, not yet generalised.** The behavior numbers above are on the 26 items the rules were
-   tuned on. The held-out split (`data/heldout/`) is the measurement of generalisation.
+5. **Tuned, and measured on unseen items: 62 of 93.** With the rules frozen and no model in the
+   loop, the expected behavior was taken on 26 of 26 tuned items and 62 of 93 held-out items
+   (67%; 95% CI 57–75%; `bench/rules-only/REPORT.md`). Answers (50 of 59) and clarifications
+   (9 of 10) hold up; refusals (2 of 14) and partial answers (1 of 10) do not. Out-of-corpus
+   services with no trigger keyword get a clarification request instead of a refusal, and the
+   partial-escalation terms know only travel, visa, embassy and "tomorrow", so escalations to
+   other authorities (health certificates, refunds, final exit) are answered in full. The
+   new red-team categories show the same: no rule handles prompt injection (3 of 5 matched, by
+   the answer path) or medical urgency (1 of 3). The zero-key path does not rewrite dialect
+   questions to MSA, so a paid run's retrieval, and through it the gate, can differ on dialect
+   and mixed items.
 
 ---
 

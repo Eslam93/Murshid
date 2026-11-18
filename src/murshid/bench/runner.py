@@ -13,8 +13,13 @@ Runs the full pipeline against each available provider over the gold answers
                     register-only mismatch → log + ship). All deterministic
                     orchestration runs in addition.
 
-Plus the 3-case Opus-4.7 judge sanity swap to quantify self-preference bias
-(re-scoring the SAME predicted answer across two judges, Phase 4 polish).
+Plus the 3-case judge sanity swap (`BENCH_SANITY_SWAP_JUDGE_MODEL`, by default Claude Opus 4.7)
+to quantify self-preference bias (re-scoring the SAME predicted answer across two judges, Phase 4
+polish).
+
+Providers and judges come from the provider registry (`murshid.providers.factory`) and the
+settings (`murshid.settings`): the judge is `BENCH_JUDGE_MODEL`, the data is read from
+`MURSHID_DATA_DIR`, and the index is enriched by `METADATA_ENRICHMENT_PROVIDER`.
 
 Outputs:
   - `bench/results.md`           — aggregate + per-case results
@@ -38,14 +43,6 @@ ROOT = Path(__file__).resolve().parents[3]
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-# Load .env before importing provider classes that read env at construct time.
-try:
-    from dotenv import load_dotenv
-
-    load_dotenv(ROOT / ".env", override=True)
-except ImportError:
-    pass
-
 from murshid.bench.metrics import (  # noqa: E402
     AggregateMetrics,
     CaseResult,
@@ -62,14 +59,18 @@ from murshid.bench.metrics import (  # noqa: E402
 from murshid.ingest import Index, build_index  # noqa: E402
 from murshid.pipeline import Answer, answer_question  # noqa: E402
 from murshid.providers.base import LLMProvider, ProviderResponse  # noqa: E402
-from murshid.providers.claude import ClaudeProvider  # noqa: E402
-from murshid.providers.gemini import GeminiProvider  # noqa: E402
-from murshid.providers.mock import MockProvider  # noqa: E402
-from murshid.providers.openai import OpenAIProvider  # noqa: E402
+from murshid.providers.factory import (  # noqa: E402
+    PROVIDER_KINDS,
+    as_kind,
+    availability_hint,
+    build_enrichment_provider,
+    build_judge,
+    build_provider,
+)
 from murshid.retrieve import BM25Index, build_bm25_index  # noqa: E402
+from murshid.settings import Settings, SettingsError, get_settings  # noqa: E402
 
 BENCH_DIR = ROOT / "bench"
-DATA_DIR = ROOT / "data"
 COST_LOG_PATH = BENCH_DIR / "cost-log.jsonl"
 REFUSAL_LOG_PATH = BENCH_DIR / "refusal-log.jsonl"
 RESULTS_MD_PATH = BENCH_DIR / "results.md"
@@ -80,55 +81,58 @@ CASE_CACHE_PATH = BENCH_DIR / "case-cache.json"
 # Provider selection
 # ---------------------------------------------------------------------------
 
-_KNOWN_PROVIDERS = {
-    "mock": MockProvider,
-    "claude": ClaudeProvider,
-    "openai": OpenAIProvider,
-    "gemini": GeminiProvider,
-}
 
-
-def build_providers(names: list[str]) -> list[LLMProvider]:
-    """Instantiate each requested provider and skip the unavailable ones."""
+def build_providers(names: list[str], settings: Settings) -> list[LLMProvider]:
+    """Build each requested provider through the registry and skip the unavailable ones."""
     result: list[LLMProvider] = []
     for n in names:
-        cls = _KNOWN_PROVIDERS.get(n)
-        if cls is None:
+        if n not in PROVIDER_KINDS:
             print(f"[bench] WARNING: unknown provider {n!r}, skipping")
             continue
-        p = cls()
+        try:
+            p = build_provider(n, settings=settings)
+        except (OSError, ValueError) as e:  # e.g. the replay provider without its recordings
+            print(f"[bench] {n}: cannot be built ({e}), skipping")
+            continue
         if not p.is_available():
-            print(f"[bench] {n}: not available (missing API key / SDK), skipping")
+            print(f"[bench] {n}: not available ({availability_hint(as_kind(n))}), skipping")
             continue
         result.append(p)
         print(f"[bench] {n}: ready (model={p.model_id})")
     return result
 
 
-def select_judge() -> LLMProvider | None:
+def select_judge(settings: Settings) -> LLMProvider | None:
     """Pick the bench judge.
 
-    Default model: `gemini-2.5-flash` (out-of-family for Claude / OpenAI,
-    separate daily-quota bucket from Pro, no thinking-mode budget issues).
-    Overridable via `BENCH_JUDGE_MODEL` env var if you want to force Pro after
-    its quota resets.
+    Default model: the registry's Gemini 2.5 Flash (out-of-family for Claude /
+    OpenAI, separate daily-quota bucket from Pro, thinking capped by the
+    provider). `BENCH_JUDGE_MODEL` overrides it, for example to force Pro after
+    its quota resets; any claude-, gpt- or gemini- model id works.
 
     Fallback chain on unavailability:
-      1. Gemini at the configured judge model
-      2. Claude Opus 4.7 (self-preference bias must be flagged in ADR 2)
+      1. `BENCH_JUDGE_MODEL`
+      2. `BENCH_SANITY_SWAP_JUDGE_MODEL`, by default Claude Opus 4.7
+         (self-preference bias must be flagged in ADR 2)
     """
-    import os
-
-    judge_model = os.environ.get("BENCH_JUDGE_MODEL", "gemini-2.5-flash").strip()
-    g = GeminiProvider(model_id=judge_model)
-    if g.is_available():
-        print(f"[bench] judge: gemini (model={g.model_id})")
-        return g
-    c = ClaudeProvider(model_id="claude-opus-4-7")
-    if c.is_available():
-        print("[bench] judge: claude-opus-4-7 (FALLBACK — flag self-preference bias in ADR 2)")
-        return c
+    primary = build_judge(settings.bench_judge_model, settings)
+    if primary.is_available():
+        print(f"[bench] judge: {primary.name} (model={primary.model_id})")
+        return primary
+    fallback = build_judge(settings.bench_sanity_swap_judge_model, settings)
+    if fallback.is_available():
+        print(f"[bench] judge: {fallback.model_id} (FALLBACK — flag self-preference bias in ADR 2)")
+        return fallback
     print("[bench] no judge available — judge-scored metrics will be SKIPPED")
+    return None
+
+
+def select_swap_judge(settings: Settings) -> LLMProvider | None:
+    """The sanity-swap judge, `BENCH_SANITY_SWAP_JUDGE_MODEL`, or None when it has no key."""
+    swap_judge = build_judge(settings.bench_sanity_swap_judge_model, settings)
+    if swap_judge.is_available():
+        return swap_judge
+    print(f"[bench] {swap_judge.model_id} not available for sanity swap; skipping")
     return None
 
 
@@ -925,7 +929,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--providers",
         default="mock,claude,openai",
-        help="Comma-separated provider names (mock | claude | openai | gemini)",
+        help=f"Comma-separated provider kinds ({' | '.join(PROVIDER_KINDS)})",
     )
     parser.add_argument(
         "--critic",
@@ -935,7 +939,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--no-sanity-swap",
         action="store_true",
-        help="Skip the Opus-4.7 judge sanity swap.",
+        help="Skip the judge sanity swap (BENCH_SANITY_SWAP_JUDGE_MODEL).",
     )
     parser.add_argument(
         "--mode",
@@ -976,6 +980,12 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     args = parser.parse_args(argv)
+
+    try:
+        settings = get_settings()
+    except SettingsError as e:
+        print(f"[bench] {e}")
+        return 2
 
     # ---------------------------------------------------------------
     # Render-only mode — early exit
@@ -1067,25 +1077,26 @@ def main(argv: list[str] | None = None) -> int:
 
     # Build providers + judge.
     print(f"[bench] requested providers: {provider_names}")
-    providers = build_providers(provider_names)
+    providers = build_providers(provider_names, settings)
     if not providers:
         print("[bench] no providers available — aborting")
         return 1
-    judge = select_judge()
+    judge = select_judge(settings)
 
-    # Build index + bm25 once (use mock for enrichment to keep cost low — Phase 3
-    # can swap in a real cheap model via METADATA_ENRICHMENT_PROVIDER later).
+    # Build index + bm25 once. Enrichment uses METADATA_ENRICHMENT_PROVIDER (mock by default, to
+    # keep cost at zero; a cheap real model is one setting away).
+    data_dir = settings.murshid_data_dir
     print("[bench] building dense + BM25 indices...")
-    index = build_index(DATA_DIR, MockProvider())
+    index = build_index(data_dir, build_enrichment_provider(settings))
     bm25_index = build_bm25_index(index)
     print(f"[bench] index ready ({len(index)} chunks)")
 
     # Load data.
-    with (DATA_DIR / "questions.json").open(encoding="utf-8") as f:
+    with (data_dir / "questions.json").open(encoding="utf-8") as f:
         questions: list[Question] = json.load(f)
-    with (DATA_DIR / "gold_answers.json").open(encoding="utf-8") as f:
+    with (data_dir / "gold_answers.json").open(encoding="utf-8") as f:
         gold_list: list[GoldAnswer] = json.load(f)
-    with (DATA_DIR / "red_team.json").open(encoding="utf-8") as f:
+    with (data_dir / "red_team.json").open(encoding="utf-8") as f:
         red_team: list[RedTeamCase] = json.load(f)
     questions_by_id = {q["question_id"]: q for q in questions}
     golds_by_id = {g["question_id"]: g for g in gold_list}
@@ -1220,9 +1231,9 @@ def main(argv: list[str] | None = None) -> int:
     # judges. Uses only standard cases (which have gold answers).
     sanity_swap: SanitySwapReport | None = None
     if not args.no_sanity_swap and judge is not None:
-        swap_judge = ClaudeProvider(model_id="claude-opus-4-7")
-        if swap_judge.is_available():
-            print("[bench] running judge sanity swap (Opus-4.7)...")
+        swap_judge = select_swap_judge(settings)
+        if swap_judge is not None:
+            print(f"[bench] running judge sanity swap ({swap_judge.model_id})...")
             sanity_swap = run_judge_sanity_swap(
                 primary_judge=judge,
                 swap_judge=swap_judge,
@@ -1230,8 +1241,6 @@ def main(argv: list[str] | None = None) -> int:
                 questions_by_id=questions_by_id,
                 golds_by_id=golds_by_id,
             )
-        else:
-            print("[bench] Opus-4.7 not available for sanity swap; skipping")
 
     # Dump case data to disk so `--render-only` can re-apply renderer / aggregate
     # fixes without paying for another bench run.

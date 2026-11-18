@@ -1,13 +1,15 @@
 """Minimal Gradio UI for Murshid.
 
-Install:  pip install gradio
-Run:      python scripts/ui.py
+Install:  uv sync --extra ui --extra local-embed   (add --extra providers for the paid models)
+Run:      uv run python scripts/ui.py
 Open:     http://127.0.0.1:7860   (auto-launched in your browser)
 
-Type an Arabic (or English) question, pick a provider, hit Ask.
-Real providers (claude / openai / gemini) read API keys from `.env`
-(`ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `GEMINI_API_KEY`). Mock works
-with no keys.
+Type an Arabic (or English) question, pick a model, hit Ask. The model list holds what can answer
+now (`murshid.providers.factory.model_menu`): the zero-key providers always (extractive quotes
+the retrieved passages; replay answers the bench questions with recorded real-model answers),
+and a paid provider only when its key is set (`.env` or the environment: `ANTHROPIC_API_KEY` /
+`OPENAI_API_KEY` / `GEMINI_API_KEY`). The selection starts at `LLM_PROVIDER` (extractive unless
+set).
 
 Lowest-standard-of-pretty by design — three boxes (trace, answer, citations)
 and one button. RTL is on for the Arabic-bearing fields.
@@ -24,65 +26,60 @@ sys.path.insert(0, str(ROOT / "src"))
 try:
     import gradio as gr
 except ImportError:
-    print("[ui] gradio not installed. Run: pip install gradio")
+    print("[ui] gradio not installed. Run: uv sync --extra ui")
     sys.exit(1)
 
 from murshid.ingest import build_index  # noqa: E402
 from murshid.pipeline import answer_question  # noqa: E402
 from murshid.providers.base import LLMProvider  # noqa: E402
-from murshid.providers.mock import MockProvider  # noqa: E402
+from murshid.providers.factory import (  # noqa: E402
+    build_enrichment_provider,
+    build_provider,
+    configured_model_id,
+    model_menu,
+)
 from murshid.retrieve import build_bm25_index  # noqa: E402
+from murshid.settings import SettingsError, get_settings  # noqa: E402
 
-# Model -> (provider kind, model_id). Display name = model ID for clarity.
-# Defaults per kickoff §0.5 verified-current table; Gemini 2.5 Flash added
-# because it's the bench's actual judge model (separate quota from Pro).
-MODELS: dict[str, tuple[str, str | None]] = {
-    "mock": ("mock", None),
-    "claude-sonnet-4-6": ("claude", "claude-sonnet-4-6"),
-    "claude-opus-4-7": ("claude", "claude-opus-4-7"),
-    "claude-haiku-4-5-20251001": ("claude", "claude-haiku-4-5-20251001"),
-    "gpt-5.5-2026-04-23": ("openai", "gpt-5.5-2026-04-23"),
-    "gpt-5.4-mini-2026-03-17": ("openai", "gpt-5.4-mini-2026-03-17"),
-    "gemini-3.1-pro-preview": ("gemini", "gemini-3.1-pro-preview"),
-    "gemini-3-flash-preview": ("gemini", "gemini-3-flash-preview"),
-    "gemini-2.5-flash": ("gemini", "gemini-2.5-flash"),
+try:
+    SETTINGS = get_settings()
+except SettingsError as e:
+    print(f"[ui] {e}")
+    sys.exit(2)
+
+
+def _label(kind: str, model_id: str) -> str:
+    return f"{kind}: {model_id}"
+
+
+# Dropdown label -> (provider kind, model id), for the providers that can answer now.
+MODELS: dict[str, tuple[str, str]] = {
+    _label(kind, model_id): (kind, model_id) for kind, model_id in model_menu(SETTINGS)
 }
+_DEFAULT_CHOICE = _label(
+    SETTINGS.llm_provider, configured_model_id(SETTINGS.llm_provider, SETTINGS)
+)
+DEFAULT_MODEL = _DEFAULT_CHOICE if _DEFAULT_CHOICE in MODELS else next(iter(MODELS))
 _provider_cache: dict[str, LLMProvider] = {}
 
 
 def _build_provider(model_name: str) -> LLMProvider:
-    """Lazy-instantiate + cache, so the SDK client survives across calls."""
+    """Build once per dropdown entry and cache, so its SDK client lives across calls."""
     if model_name in _provider_cache:
         return _provider_cache[model_name]
     if model_name not in MODELS:
         raise ValueError(f"Unknown model: {model_name}. Choices: {list(MODELS)}")
     kind, model_id = MODELS[model_name]
-    if kind == "mock":
-        p: LLMProvider = MockProvider()
-    else:
-        from dotenv import load_dotenv
-
-        load_dotenv()
-        if kind == "claude":
-            from murshid.providers.claude import ClaudeProvider
-
-            p = ClaudeProvider(model_id=model_id)
-        elif kind == "openai":
-            from murshid.providers.openai import OpenAIProvider
-
-            p = OpenAIProvider(model_id=model_id)
-        elif kind == "gemini":
-            from murshid.providers.gemini import GeminiProvider
-
-            p = GeminiProvider(model_id=model_id)
-        else:
-            raise ValueError(f"Unknown kind: {kind}")
-    _provider_cache[model_name] = p
-    return p
+    provider = build_provider(kind, model_id, SETTINGS)
+    _provider_cache[model_name] = provider
+    return provider
 
 
 print("[ui] Building dense + BM25 index (first run downloads BGE-M3 ~2.3GB)...")
-INDEX = build_index(data_dir=ROOT / "data", enrichment_provider=MockProvider())
+INDEX = build_index(
+    data_dir=SETTINGS.murshid_data_dir,
+    enrichment_provider=build_enrichment_provider(SETTINGS),
+)
 BM25 = build_bm25_index(INDEX)
 print(f"[ui] Ready. {len(INDEX)} chunks indexed.")
 
@@ -141,8 +138,9 @@ def ask(
 with gr.Blocks(title="Murshid") as demo:
     gr.Markdown(
         "# Murshid — Arabic Government-Services RAG\n"
-        "Type a question, pick a provider, hit **Ask**. "
-        "Real providers need an API key in `.env`."
+        "Type a question, pick a model, hit **Ask**. `extractive` quotes the retrieved "
+        "passages and `replay` answers the bench questions with recorded real-model answers; "
+        "neither needs a key. Paid models appear when their API key is set."
     )
     with gr.Row():
         query_in = gr.Textbox(
@@ -153,7 +151,7 @@ with gr.Blocks(title="Murshid") as demo:
         )
         provider_in = gr.Dropdown(
             choices=list(MODELS.keys()),
-            value="mock",
+            value=DEFAULT_MODEL,
             label="Model",
         )
     with gr.Row():
@@ -166,7 +164,8 @@ with gr.Blocks(title="Murshid") as demo:
                 "user's register. If grounded=false → refuses with a template; "
                 "if only register mismatches → ships the answer + logs the slip. "
                 "Trade-off: extra LLM cost and latency in exchange for catching "
-                "ungrounded claims. Off by default here for ad-hoc exploration."
+                "ungrounded claims. Off by default here for ad-hoc exploration. "
+                "The zero-key providers' critic passes every answer."
             ),
         )
         support_gate_in = gr.Checkbox(

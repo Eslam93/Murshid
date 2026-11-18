@@ -30,6 +30,7 @@ from typing import Any
 
 from murshid.providers.base import ProviderResponse
 from murshid.providers.extractive import ExtractiveProvider, parse_answer_prompt
+from murshid.providers.factory import DEFAULT_MODEL_IDS
 from murshid.providers.mock import prompt_role
 
 # Recorded corpus domain -> its RFC 2606 replacement. Applied longest key first, so the visa
@@ -39,8 +40,6 @@ REPLAY_DOMAIN_MAP: dict[str, str] = {
     "example.gov.sa": "services.example",
 }
 
-# The recorded model replayed by default: the bench's best, OpenAI, read with critic off.
-DEFAULT_RECORDED_MODEL = "openai/gpt-5.5-2026-04-23"
 # Critic-off answers are the model's raw output; critic-on ones passed the critic too.
 CRITIC_MODE_ORDER = ("off", "on")
 # A recorded behavior whose answer text the model generated.
@@ -139,7 +138,7 @@ class ReplayProvider:
         data_dir: Path,
     ) -> None:
         """`recorded` is the model to replay, `<provider>/<model id>` as the bench wrote it."""
-        self.recorded = recorded or DEFAULT_RECORDED_MODEL
+        self.recorded = recorded or DEFAULT_MODEL_IDS["replay"]
         provider_name, _, model_id = self.recorded.partition("/")
         if not provider_name or not model_id:
             raise ValueError("the recorded model must be <provider>/<model id>")

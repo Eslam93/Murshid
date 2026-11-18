@@ -1,4 +1,10 @@
-"""Fixtures for Murshid's own tests.
+"""Test-wide guards and fixtures for Murshid's own tests.
+
+No test reads the developer's `.env` or a real API key: every test runs with the settings file
+switched off and every settings variable removed from the environment. A test that needs a
+setting passes it explicitly (`load_settings(Settings, _env_file=None, ...)`) or sets it with
+`monkeypatch.setenv`. A key in a test is always a fake one, and a paid provider in a test always
+talks to a fake transport.
 
 `fake_embedder` puts a model-free embedder where the BGE-M3 model would load, so the default
 test run can build an index over the real corpus and run the whole pipeline.
@@ -10,7 +16,19 @@ import numpy as np
 import pytest
 
 import murshid.ingest as ingest
+import murshid.settings
 from murshid._toolkit.hybrid_retrieval.core import FakeEmbedder
+from murshid.settings import env_names
+
+# Read by the vendor SDKs themselves when no key is passed; removed too, for good measure.
+_SDK_KEY_VARIABLES = ("GOOGLE_API_KEY", "ANTHROPIC_AUTH_TOKEN")
+
+
+@pytest.fixture(autouse=True)
+def _no_developer_settings(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(murshid.settings, "ENV_FILE", None)
+    for name in (*env_names(), *_SDK_KEY_VARIABLES):
+        monkeypatch.delenv(name, raising=False)
 
 
 class FakeSentenceEncoder:

@@ -1,6 +1,6 @@
 """ExtractiveProvider: answers by quoting the retrieved passages verbatim, and nothing else.
 
-A zero-key provider. It needs no key and no network, it is deterministic, and its answer is the
+The zero-key default. It needs no key and no network, it is deterministic, and its answer is the
 passage text the pipeline retrieved, so a visitor without API keys sees what the corpus says
 rather than a placeholder. Every other role behaves like the mock: enrichment returns plausible
 JSON, rewrite is the identity, and the critic passes.
@@ -24,6 +24,7 @@ import time
 from dataclasses import dataclass
 
 from murshid.providers.base import ProviderResponse
+from murshid.providers.factory import DEFAULT_MODEL_IDS
 from murshid.providers.mock import MockProvider, prompt_role
 
 # The one framing an extractive answer uses, once per quote.
@@ -153,7 +154,7 @@ class ExtractiveProvider:
     """Zero-key provider whose answer is the retrieved passages, quoted."""
 
     name = "extractive"
-    model_id = "extractive-1"
+    model_id = DEFAULT_MODEL_IDS["extractive"]
 
     def __init__(self) -> None:
         self._other_roles = MockProvider()

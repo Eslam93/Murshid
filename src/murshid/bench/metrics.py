@@ -11,9 +11,10 @@ Per kickoff §0.6:
   6. Cost per query          — USD from provider token counts
   7. Latency p50             — aggregated across cases
 
-Judges are real LLM calls (default `gemini-3.1-pro-preview` out-of-family per
-§0.6). The sanity swap uses `claude-opus-4-7` for 3 cases to quantify
-self-preference bias.
+Judges are real LLM calls: `BENCH_JUDGE_MODEL`, out of family for the
+Claude and OpenAI answers per §0.6. The sanity swap re-scores 3 cases with
+`BENCH_SANITY_SWAP_JUDGE_MODEL` to quantify self-preference bias. Their
+default model ids are in `murshid.providers.factory`.
 """
 
 from __future__ import annotations

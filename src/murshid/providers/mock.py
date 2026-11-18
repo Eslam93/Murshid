@@ -19,6 +19,7 @@ import time
 from typing import Literal
 
 from murshid.providers.base import ProviderResponse
+from murshid.providers.factory import DEFAULT_MODEL_IDS
 
 PromptRole = Literal["enrichment", "rewrite", "critic", "answer"]
 
@@ -40,7 +41,7 @@ class MockProvider:
     """Zero-key provider for end-to-end pipeline testing."""
 
     name = "mock"
-    model_id = "mock-1"
+    model_id = DEFAULT_MODEL_IDS["mock"]
 
     def is_available(self) -> bool:  # pragma: no cover - trivial
         return True

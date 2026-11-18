@@ -1,7 +1,7 @@
 """OpenAIProvider: OpenAI's Chat Completions API.
 
-Default: `gpt-5.5-2026-04-23`, overridable with `OPENAI_MODEL_ID`; the API key is
-`OPENAI_API_KEY`. Both are read from the environment when they are not passed in.
+The model id and API key come from the provider registry (`murshid.providers.factory`), which
+reads them from the settings (`OPENAI_MODEL_ID`, `OPENAI_API_KEY`).
 
 The SDK client is built once per provider, on the first call, so importing this module never
 imports the SDK. It is built with `max_retries=0`: `retry_call` is the only retry layer, so the
@@ -15,30 +15,18 @@ GPT-5.x note: the chat completions endpoint for the GPT-5 family REQUIRES
 
 from __future__ import annotations
 
-import importlib.util
-import os
 import threading
 import time
 from typing import TYPE_CHECKING, cast
 
 from murshid.providers.base import FinishReason, ProviderResponse, retry_call
+from murshid.providers.factory import DEFAULT_MODEL_IDS, price_for, sdk_installed
 
 if TYPE_CHECKING:
     # The SDK is an optional extra, so it is imported for real only when a call is made.
     import httpx2
     from openai import OpenAI
     from openai.types import CompletionUsage
-
-# Approximate USD per 1M tokens. Pricing for GPT-5.x is not fully published
-# in the same shape as Anthropic's table; these estimates are conservative
-# (treat as upper bounds for cost-log purposes).
-_OPENAI_PRICING: dict[str, tuple[float, float]] = {
-    "gpt-5.5-2026-04-23": (5.00, 15.00),
-    "gpt-5.4-mini-2026-03-17": (1.00, 3.00),
-    "gpt-4.1": (2.00, 8.00),
-    "gpt-4o": (2.50, 10.00),
-}
-_OPENAI_PRICING_FALLBACK = (5.00, 15.00)
 
 # OpenAI `finish_reason` -> the normalised finish reason.
 _FINISH_REASONS: dict[str, FinishReason] = {
@@ -62,22 +50,18 @@ class OpenAIProvider:
         self,
         model_id: str | None = None,
         *,
-        api_key: str | None = None,
+        api_key: str = "",
         http_client: httpx2.Client | None = None,
     ) -> None:
         """`http_client` replaces the SDK's own HTTP client (tests pass a fake transport)."""
-        self.model_id = (
-            model_id or os.environ.get("OPENAI_MODEL_ID", "gpt-5.5-2026-04-23")
-        ).strip()
-        self._api_key = (
-            api_key if api_key is not None else os.environ.get("OPENAI_API_KEY", "")
-        ).strip()
+        self.model_id = (model_id or DEFAULT_MODEL_IDS["openai"]).strip()
+        self._api_key = api_key.strip()
         self._http_client = http_client
         self._client: OpenAI | None = None
         self._client_lock = threading.Lock()
 
     def is_available(self) -> bool:
-        return bool(self._api_key) and importlib.util.find_spec("openai") is not None
+        return bool(self._api_key) and sdk_installed("openai")
 
     def _sdk_client(self) -> OpenAI:
         """The provider's one SDK client, built on first use."""
@@ -130,7 +114,6 @@ class OpenAIProvider:
         )
 
     def cost_estimate_usd(self, response: ProviderResponse) -> float:
-        in_per_mtok, out_per_mtok = _OPENAI_PRICING.get(self.model_id, _OPENAI_PRICING_FALLBACK)
-        return (
-            response.input_tokens * in_per_mtok + response.output_tokens * out_per_mtok
-        ) / 1_000_000
+        return price_for("openai", self.model_id).cost_usd(
+            response.input_tokens, response.output_tokens
+        )

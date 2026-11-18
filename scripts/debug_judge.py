@@ -1,4 +1,14 @@
-"""Quick debug: live judge call to see what Gemini returns."""
+"""Quick debug: one live judge call, to see exactly what the bench judge returns.
+
+The judge is `BENCH_JUDGE_MODEL` (Gemini Flash by default), built through the provider registry
+like the bench builds it. Writes the raw reply, token counts, the finish reason (`length` means
+the output budget ran out) and the JSON parse attempt to `<MURSHID_OUT_DIR>/judge_debug.txt`.
+
+This makes one real, billed call. Nothing in the test suite runs it.
+
+Usage:
+  uv run python scripts/debug_judge.py
+"""
 
 import json
 import sys
@@ -7,14 +17,17 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
-from dotenv import load_dotenv  # noqa: E402
-
-load_dotenv(ROOT / ".env", override=True)
-
 from murshid.bench.metrics import CORRECTNESS_JUDGE_PROMPT_AR, _extract_json  # noqa: E402
-from murshid.providers.gemini import GeminiProvider  # noqa: E402
+from murshid.providers.factory import build_judge  # noqa: E402
+from murshid.settings import SettingsError, get_settings  # noqa: E402
 
-prov = GeminiProvider(model_id="gemini-2.5-flash")
+try:
+    settings = get_settings()
+except SettingsError as e:
+    print(e)
+    sys.exit(2)
+
+prov = build_judge(settings.bench_judge_model, settings)
 
 user_block = """السؤال:
 ما آخر موعد مناسب لتجديد الإقامة إذا كان تاريخ الانتهاء مسجلاً في 20 رمضان 1447هـ، وما الرسوم المتوقعة لسنة واحدة؟
@@ -28,7 +41,7 @@ user_block = """السؤال:
 التقييم بصيغة JSON فقط:"""
 
 out: list[str] = []
-out.append(f"judge: {prov.model_id}, available={prov.is_available()}")
+out.append(f"judge: {prov.name}/{prov.model_id}, available={prov.is_available()}")
 out.append("")
 
 try:
@@ -43,7 +56,8 @@ try:
     out.append("")
     out.append(
         f"tokens_in={resp.input_tokens}, tokens_out={resp.output_tokens}, "
-        f"latency={resp.latency_s:.2f}s, finish={resp.finish_reason}"
+        f"latency={resp.latency_s:.2f}s, finish={resp.finish_reason} "
+        f"(vendor: {resp.raw.get('finish_reason')})"
     )
     out.append("")
     out.append("--- _extract_json attempt ---")
@@ -56,5 +70,7 @@ try:
 except Exception as e:
     out.append(f"GENERATE ERROR: {type(e).__name__}: {e}")
 
-Path(ROOT / "judge_debug.txt").write_text("\n".join(out), encoding="utf-8")
-print("wrote judge_debug.txt")
+output_path = settings.murshid_out_dir / "judge_debug.txt"
+output_path.parent.mkdir(parents=True, exist_ok=True)
+output_path.write_text("\n".join(out), encoding="utf-8")
+print(f"wrote {output_path}")

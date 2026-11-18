@@ -1,56 +1,38 @@
 """GeminiProvider: the Gemini Developer API through the `google-genai` SDK.
 
-Default: `gemini-3.1-pro-preview`, overridable with `GEMINI_MODEL_ID`; the API key is
-`GEMINI_API_KEY` (or `GOOGLE_API_KEY`). Both are read from the environment when they are not
-passed in. Gemini Flash is also the bench's default judge, out of family for the Claude and OpenAI
-answers it scores.
+The model id and API key come from the provider registry (`murshid.providers.factory`), which
+reads them from the settings (`GEMINI_MODEL_ID`, `GEMINI_API_KEY`). Gemini Flash is also the
+bench's default judge, out of family for the Claude and OpenAI answers it scores.
 
 The SDK client is built once per provider, on the first call, so importing this module never
 imports the SDK. Its retries are off (`HttpRetryOptions(attempts=1)`): `retry_call` is the only
 retry layer. Each call passes its own timeout, which the SDK takes in milliseconds.
 
 Gemini 2.5 models count thinking tokens against the output budget, so a call with no cap can
-spend all of `max_tokens` thinking and return no text. For the models listed in
+spend all of `max_tokens` thinking and return no text. For the models the registry lists in
 `GEMINI_THINKING_BUDGET_LIMITS`, thinking is capped at half the output budget. Truncation still
 shows: the finish reason is the candidate's real one (`length` for MAX_TOKENS), not a constant.
 """
 
 from __future__ import annotations
 
-import importlib.metadata
-import os
 import threading
 import time
 from typing import TYPE_CHECKING
 
 from murshid.providers.base import FinishReason, ProviderResponse, retry_call
+from murshid.providers.factory import (
+    DEFAULT_MODEL_IDS,
+    GEMINI_THINKING_BUDGET_LIMITS,
+    price_for,
+    sdk_installed,
+)
 
 if TYPE_CHECKING:
     # The SDK is an optional extra, so it is imported for real only when a call is made.
     import httpx
     from google import genai
     from google.genai import types
-
-# Approximate USD per 1M tokens. Gemini Pro / Flash pricing per Google AI
-# pricing docs (estimates as of 2026-05-22; verify on the AI Studio pricing
-# page before relying on these for accounting).
-_GEMINI_PRICING: dict[str, tuple[float, float]] = {
-    "gemini-3.1-pro-preview": (2.50, 10.00),
-    "gemini-3-flash-preview": (0.30, 2.50),
-    "gemini-2.5-pro": (1.25, 5.00),
-    "gemini-2.5-flash": (0.075, 0.30),
-    "gemini-2.5-flash-lite": (0.05, 0.20),
-}
-_GEMINI_PRICING_FALLBACK = (2.50, 10.00)
-
-# Gemini 2.5 models think by default, and their thinking tokens count against the output budget:
-# with no cap, a judge asked for JSON can spend the whole budget thinking and return nothing.
-# These are the thinking-budget limits each one accepts (Gemini API thinking guide). Gemini 3
-# models take a thinking level instead and are left at their default.
-GEMINI_THINKING_BUDGET_LIMITS: dict[str, tuple[int, int]] = {
-    "gemini-2.5-pro": (128, 32768),
-    "gemini-2.5-flash": (0, 24576),
-}
 
 # Gemini `FinishReason` names -> the normalised finish reason. Anything not listed is `other`.
 _FINISH_REASONS: dict[str, FinishReason] = {
@@ -100,28 +82,18 @@ class GeminiProvider:
         self,
         model_id: str | None = None,
         *,
-        api_key: str | None = None,
+        api_key: str = "",
         http_client: httpx.Client | None = None,
     ) -> None:
         """`http_client` replaces the SDK's own HTTP client (tests pass a fake transport)."""
-        self.model_id = (
-            model_id or os.environ.get("GEMINI_MODEL_ID", "gemini-3.1-pro-preview")
-        ).strip()
-        env_key = os.environ.get("GEMINI_API_KEY", "") or os.environ.get("GOOGLE_API_KEY", "")
-        self._api_key = (api_key if api_key is not None else env_key).strip()
+        self.model_id = (model_id or DEFAULT_MODEL_IDS["gemini"]).strip()
+        self._api_key = api_key.strip()
         self._http_client = http_client
         self._client: genai.Client | None = None
         self._client_lock = threading.Lock()
 
     def is_available(self) -> bool:
-        if not self._api_key:
-            return False
-        try:
-            # Metadata, not an import: looking up google.genai would import the google package.
-            importlib.metadata.version("google-genai")
-        except importlib.metadata.PackageNotFoundError:
-            return False
-        return True
+        return bool(self._api_key) and sdk_installed("gemini")
 
     def _sdk_client(self) -> genai.Client:
         """The provider's one SDK client, built on first use."""
@@ -197,7 +169,6 @@ class GeminiProvider:
         )
 
     def cost_estimate_usd(self, response: ProviderResponse) -> float:
-        in_per_mtok, out_per_mtok = _GEMINI_PRICING.get(self.model_id, _GEMINI_PRICING_FALLBACK)
-        return (
-            response.input_tokens * in_per_mtok + response.output_tokens * out_per_mtok
-        ) / 1_000_000
+        return price_for("gemini", self.model_id).cost_usd(
+            response.input_tokens, response.output_tokens
+        )

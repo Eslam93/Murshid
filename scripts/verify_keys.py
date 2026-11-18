@@ -1,32 +1,52 @@
-"""Verify configured API keys with one minimal call per provider.
+"""Verify configured API keys with one minimal call per paid provider.
 
-Loads `.env`, runs a small generation against each provider's default model,
-and reports success / failure. Never prints the raw key — masks any
+Reads the settings (`.env` or the environment), builds each paid provider through the registry
+(`murshid.providers.factory`), and sends one tiny generation through the same provider class the
+pipeline uses, so the check covers the real request path: client, timeout, retries, response
+parsing. It reports success or failure per provider. It never prints a key, and masks any
 auth-token-shaped string that leaks into an error message.
 
-Usage:
-  python scripts/verify_keys.py                # ping default model per provider
-  python scripts/verify_keys.py --all-models   # also ping each model in the
-                                               # inventory (8 calls, ~$0.01)
+This makes real, billed calls (a few tokens each). Nothing in the test suite runs it.
 
-The --all-models option matches the model dropdown surfaced by scripts/ui.py;
-useful for confirming exactly which model IDs your account/region/quota can
-actually reach before kicking off a paid bench run.
+Usage:
+  uv run python scripts/verify_keys.py                # ping the configured model per provider
+  uv run python scripts/verify_keys.py --all-models   # also ping every offered model
+                                                      # (8 calls, ~$0.01)
+
+The --all-models list is the registry's `OFFERED_MODEL_IDS`, the same models scripts/ui.py offers;
+useful for confirming exactly which model ids your account/region/quota can actually reach before
+kicking off a paid bench run.
 """
 
 from __future__ import annotations
 
 import argparse
-import os
 import re
 import sys
 from pathlib import Path
 
-from dotenv import load_dotenv
-
 ROOT = Path(__file__).resolve().parent.parent
-load_dotenv(ROOT / ".env", override=True)
+sys.path.insert(0, str(ROOT / "src"))
 
+from murshid.providers.factory import (  # noqa: E402
+    KEY_SETTINGS,
+    OFFERED_MODEL_IDS,
+    PAID_KINDS,
+    ProviderKind,
+    api_key,
+    build_provider,
+    configured_model_id,
+)
+from murshid.settings import Settings, SettingsError, get_settings  # noqa: E402
+
+_PING_SYSTEM = "You are a connectivity check."
+_PING_USER = "Reply with just the word OK."
+
+_DISPLAY_NAMES: dict[ProviderKind, str] = {
+    "claude": "Anthropic Claude",
+    "openai": "OpenAI",
+    "gemini": "Google Gemini",
+}
 
 # Any auth-token-shaped string in error messages gets masked before printing.
 _TOKEN_PATTERNS = [
@@ -50,165 +70,51 @@ def _short(s: str, n: int = 240) -> str:
     return s[:n] + "..."
 
 
-# ---------------------------------------------------------------------------
-# Anthropic Claude
-# ---------------------------------------------------------------------------
-
-
-def verify_anthropic(model_id: str | None = None) -> tuple[bool, str]:
-    key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
-    model = (model_id or os.environ.get("ANTHROPIC_MODEL_ID", "claude-sonnet-4-6")).strip()
-    if not key:
-        return False, "no ANTHROPIC_API_KEY set"
+def ping(kind: ProviderKind, model_id: str, settings: Settings) -> tuple[bool, str]:
+    """One minimal call to `model_id` through the provider class. Returns (ok, message)."""
+    if not api_key(kind, settings):
+        return False, f"no {KEY_SETTINGS[kind]} set"
+    provider = build_provider(kind, model_id, settings)
+    if not provider.is_available():
+        return False, "the SDK is not installed: uv sync --extra providers"
     try:
-        import anthropic
-
-        client = anthropic.Anthropic(api_key=key)
-        resp = client.messages.create(
-            model=model,
-            max_tokens=20,
-            messages=[{"role": "user", "content": "Reply with just the word OK."}],
-        )
-        text = "".join(block.text for block in resp.content if hasattr(block, "text")).strip()
-        return True, (
-            f"model={model} | reply={text!r} | "
-            f"tokens_in={resp.usage.input_tokens} tokens_out={resp.usage.output_tokens}"
-        )
+        resp = provider.generate(system=_PING_SYSTEM, user=_PING_USER, max_tokens=20, timeout=30.0)
     except Exception as e:
         return False, f"{type(e).__name__}: {_sanitize(_short(str(e)))}"
-
-
-# ---------------------------------------------------------------------------
-# OpenAI
-# ---------------------------------------------------------------------------
-
-
-def verify_openai(model_id: str | None = None) -> tuple[bool, str]:
-    key = os.environ.get("OPENAI_API_KEY", "").strip()
-    model = (model_id or os.environ.get("OPENAI_MODEL_ID", "gpt-5.5-2026-04-23")).strip()
-    if not key:
-        return False, "no OPENAI_API_KEY set"
-    try:
-        from openai import OpenAI
-
-        client = OpenAI(api_key=key)
-        # GPT-5.x uses `max_completion_tokens` (new responses-API convention).
-        # GPT-4.x style `max_tokens` is rejected by gpt-5.5.
-        resp = client.chat.completions.create(
-            model=model,
-            max_completion_tokens=20,
-            messages=[{"role": "user", "content": "Reply with just the word OK."}],
-        )
-        text = (resp.choices[0].message.content or "").strip()
-        usage = resp.usage
-        return True, (
-            f"model={model} | reply={text!r} | "
-            f"tokens_in={usage.prompt_tokens} tokens_out={usage.completion_tokens}"
-        )
-    except Exception as e:
-        return False, f"{type(e).__name__}: {_sanitize(_short(str(e)))}"
-
-
-# ---------------------------------------------------------------------------
-# Google Gemini
-# ---------------------------------------------------------------------------
-
-
-def _try_gemini_model(key: str, model: str) -> tuple[bool, str]:
-    """One ping against a specific Gemini model, through the provider class the pipeline uses."""
-    from murshid.providers.gemini import GeminiProvider
-
-    resp = GeminiProvider(model, api_key=key).generate(
-        system="You are a connectivity check.",
-        user="Reply with just the word OK.",
-        max_tokens=20,
-        timeout=30.0,
-    )
     return True, (
-        f"model={model} | reply={resp.text.strip()!r} | finish={resp.finish_reason} | "
+        f"model={model_id} | reply={resp.text.strip()!r} | finish={resp.finish_reason} | "
         f"tokens_in={resp.input_tokens} tokens_out={resp.output_tokens}"
     )
 
 
-def verify_gemini(model_id: str | None = None) -> tuple[bool, str]:
-    """Ping a Gemini model. When model_id is None, use the configured default
-    and fall back to Flash if Pro is gated. When model_id is explicit, ping
-    only that model and report whatever the API returns."""
-    key = (
-        os.environ.get("GEMINI_API_KEY", "").strip() or os.environ.get("GOOGLE_API_KEY", "").strip()
-    )
-    if not key:
-        return False, "no GEMINI_API_KEY set"
+def verify(kind: ProviderKind, settings: Settings) -> tuple[bool, str]:
+    """Ping the configured model; for Gemini, fall back to the other offered models.
 
-    if model_id is not None:
-        # Explicit model: no fallback. Report exactly what this model does.
-        try:
-            return _try_gemini_model(key, model_id)
-        except Exception as e:
-            return False, f"{type(e).__name__}: {_sanitize(_short(str(e)))}"
-
-    model = os.environ.get("GEMINI_MODEL_ID", "gemini-3.1-pro-preview").strip()
-    # First try the configured (Pro by default) model.
-    try:
-        return _try_gemini_model(key, model)
-    except Exception as e:
-        primary_err = f"{type(e).__name__}: {_sanitize(_short(str(e)))}"
-
-    # Fallback: Flash variants commonly available on free tier.
-    for fallback_model in ("gemini-3-flash-preview", "gemini-2.5-flash"):
-        try:
-            _ok, msg = _try_gemini_model(key, fallback_model)
-            return True, f"{msg}  [PRIMARY {model} FAILED: {primary_err}]"
-        except Exception:  # noqa: S112 - try the next fallback; the primary error is what we report
+    Gemini Pro is often gated by quota where Flash is not, so a failed default is retried on the
+    registry's other Gemini models, and the default's error is reported alongside.
+    """
+    model = configured_model_id(kind, settings)
+    ok, msg = ping(kind, model, settings)
+    if ok or kind != "gemini" or not api_key(kind, settings):
+        return ok, msg
+    for fallback_model in OFFERED_MODEL_IDS[kind]:
+        if fallback_model == model:
             continue
-
-    return False, primary_err
-
-
-# ---------------------------------------------------------------------------
-# Model inventory (matches scripts/ui.py dropdown — keeps a single source of
-# truth visible to reviewers about exactly which model IDs the project knows
-# how to call).
-# ---------------------------------------------------------------------------
-
-MODEL_INVENTORY: dict[str, list[str]] = {
-    "claude": [
-        "claude-sonnet-4-6",
-        "claude-opus-4-7",
-        "claude-haiku-4-5-20251001",
-    ],
-    "openai": [
-        "gpt-5.5-2026-04-23",
-        "gpt-5.4-mini-2026-03-17",
-    ],
-    "gemini": [
-        "gemini-3.1-pro-preview",
-        "gemini-3-flash-preview",
-        "gemini-2.5-flash",
-    ],
-}
-
-_VERIFY_BY_KIND = {
-    "claude": verify_anthropic,
-    "openai": verify_openai,
-    "gemini": verify_gemini,
-}
+        fallback_ok, fallback_msg = ping(kind, fallback_model, settings)
+        if fallback_ok:
+            return True, f"{fallback_msg}  [PRIMARY {model} FAILED: {msg}]"
+    return False, msg
 
 
-def verify_all_models() -> list[tuple[str, str, bool, str]]:
-    """Ping every model in MODEL_INVENTORY. Returns (kind, model, ok, msg)."""
+def verify_all_models(settings: Settings) -> list[tuple[str, str, bool, str]]:
+    """Ping every offered paid model. Returns (kind, model, ok, msg)."""
     out: list[tuple[str, str, bool, str]] = []
-    for kind, models in MODEL_INVENTORY.items():
-        for m in models:
-            ok, msg = _VERIFY_BY_KIND[kind](model_id=m)
+    for kind in PAID_KINDS:
+        for m in OFFERED_MODEL_IDS[kind]:
+            ok, msg = ping(kind, m, settings)
             print(f"  [{'OK ' if ok else 'FAIL'}] {kind:7s} {m:34s} {_sanitize(_short(msg, 120))}")
             out.append((kind, m, ok, msg))
     return out
-
-
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
 
 
 def main() -> int:
@@ -218,36 +124,37 @@ def main() -> int:
     parser.add_argument(
         "--all-models",
         action="store_true",
-        help="Also ping each model in MODEL_INVENTORY (8 extra calls, ~$0.01).",
+        help="Also ping each offered model (8 extra calls, ~$0.01).",
     )
     args = parser.parse_args()
+
+    try:
+        settings = get_settings()
+    except SettingsError as e:
+        print(e)
+        return 2
 
     print("Verifying configured API keys (no key leakage)...")
     print()
 
-    providers: list[tuple[str, callable]] = [
-        ("Anthropic Claude", verify_anthropic),
-        ("OpenAI", verify_openai),
-        ("Google Gemini", verify_gemini),
-    ]
-
     results: list[tuple[str, bool, str]] = []
-    for name, fn in providers:
-        ok, msg = fn()
+    for kind in PAID_KINDS:
+        name = _DISPLAY_NAMES[kind]
+        ok, msg = verify(kind, settings)
         marker = "OK " if ok else "FAIL"
         print(f"  [{marker}] {name}: {_sanitize(msg)}")
         results.append((name, ok, msg))
 
     print()
-    print("Summary (configured default per provider):")
+    print("Summary (configured model per provider):")
     for name, ok, _ in results:
         print(f"  {name:25s} {'OK' if ok else 'FAILED'}")
 
     if args.all_models:
         print()
-        print("Pinging every model in inventory (matches scripts/ui.py dropdown)...")
+        print("Pinging every offered model (matches scripts/ui.py)...")
         print()
-        all_results = verify_all_models()
+        all_results = verify_all_models(settings)
         print()
         print("Summary (per-model availability):")
         n_ok = sum(1 for _, _, ok, _ in all_results if ok)

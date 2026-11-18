@@ -2,19 +2,23 @@
 
 Runs the 3-question demo or a single ad-hoc question through the full pipeline
 (router → register → rewrite → multi-view hybrid retrieve → generate → critic).
-Writes UTF-8 to `demo_output.txt`; tails minimal status to stdout (Windows
-PowerShell mangles RTL Arabic in stdout — README directs reviewers to open
-the file).
+Writes UTF-8 to `<MURSHID_OUT_DIR>/demo_output.txt` (`out/` by default); tails
+minimal status to stdout (Windows PowerShell mangles RTL Arabic in stdout —
+README directs reviewers to open the file).
 
 Usage:
-  python scripts/demo.py                                    # 3-question suite, mock
-  python scripts/demo.py "<your query>"                     # single query, mock
-  python scripts/demo.py "<your query>" --provider openai   # single query, real openai
-  python scripts/demo.py --provider claude                  # 3-question suite, real claude
+  uv run python scripts/demo.py                                  # 3-question suite
+  uv run python scripts/demo.py "<your query>"                   # single query
+  uv run python scripts/demo.py --provider replay                # recorded real-model answers
+  uv run python scripts/demo.py "<your query>" --provider openai # single query, real openai
+  uv run python scripts/demo.py --provider claude --model <id>   # a specific model
 
-Real providers (claude / openai / gemini) read their API key from `.env`
-(`ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `GEMINI_API_KEY`). Enrichment stays
-on the mock provider so index-build is fast and free.
+The provider defaults to `LLM_PROVIDER` (extractive unless set): it quotes the
+retrieved passages, with no key and no network. `replay` answers the bench
+questions with recorded Claude / OpenAI answers. Paid providers (claude /
+openai / gemini) read their key from the settings (`.env` or the environment:
+`ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `GEMINI_API_KEY`). The index is
+enriched by `METADATA_ENRICHMENT_PROVIDER` (mock, free, by default).
 
 The 3-question suite covers the rubric's required surfaces:
   - MSA, in-corpus (q-001 — Hijri renewal date + fees)
@@ -34,35 +38,15 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from murshid.ingest import build_index  # noqa: E402
 from murshid.pipeline import Answer, answer_question  # noqa: E402
-from murshid.providers.base import LLMProvider  # noqa: E402
-from murshid.providers.mock import MockProvider  # noqa: E402
+from murshid.providers.factory import (  # noqa: E402
+    PROVIDER_KINDS,
+    as_kind,
+    availability_hint,
+    build_enrichment_provider,
+    build_provider,
+)
 from murshid.retrieve import build_bm25_index  # noqa: E402
-
-PROVIDER_CHOICES = ("mock", "claude", "openai", "gemini")
-
-
-def _build_provider(name: str) -> LLMProvider:
-    """Instantiate the named provider. Real providers load API keys from .env."""
-    if name == "mock":
-        return MockProvider()
-    # Lazy import + .env load so mock-mode doesn't need the SDK / dotenv.
-    from dotenv import load_dotenv
-
-    load_dotenv()
-    if name == "claude":
-        from murshid.providers.claude import ClaudeProvider
-
-        return ClaudeProvider()
-    if name == "openai":
-        from murshid.providers.openai import OpenAIProvider
-
-        return OpenAIProvider()
-    if name == "gemini":
-        from murshid.providers.gemini import GeminiProvider
-
-        return GeminiProvider()
-    raise ValueError(f"Unknown provider: {name}. Choices: {PROVIDER_CHOICES}")
-
+from murshid.settings import SettingsError, get_settings  # noqa: E402
 
 DEMO_QUESTIONS = [
     {
@@ -161,6 +145,12 @@ def render_summary(answers: list[tuple[dict, Answer]]) -> str:
 
 
 def main(argv: list[str]) -> int:
+    try:
+        settings = get_settings()
+    except SettingsError as e:
+        print(f"[demo] {e}")
+        return 2
+
     parser = argparse.ArgumentParser(
         prog="demo.py",
         description="Run Murshid against the 3-question suite or a single ad-hoc query.",
@@ -173,11 +163,29 @@ def main(argv: list[str]) -> int:
     )
     parser.add_argument(
         "--provider",
-        choices=PROVIDER_CHOICES,
-        default="mock",
-        help="LLM provider for generation (default: mock, no API key needed).",
+        choices=PROVIDER_KINDS,
+        default=settings.llm_provider,
+        help=(
+            f"LLM provider for generation (default: LLM_PROVIDER, now {settings.llm_provider}; "
+            "extractive and replay need no API key)."
+        ),
+    )
+    parser.add_argument(
+        "--model",
+        default=None,
+        help="Model id for the provider (default: the one the settings choose).",
     )
     args = parser.parse_args(argv[1:])
+
+    try:
+        provider = build_provider(args.provider, args.model, settings)
+    except (OSError, ValueError) as e:
+        print(f"[demo] cannot build the {args.provider} provider: {e}")
+        return 2
+    if not provider.is_available():
+        hint = availability_hint(as_kind(args.provider))
+        print(f"[demo] the {args.provider} provider is not available: {hint}.")
+        return 2
 
     single_query = args.query.strip() if args.query and args.query.strip() else None
     questions: list[dict]
@@ -193,23 +201,17 @@ def main(argv: list[str]) -> int:
     else:
         questions = list(DEMO_QUESTIONS)
 
-    print("[demo] Building index over data/sources.json...")
+    data_dir = settings.murshid_data_dir
+    print(f"[demo] Building index over {data_dir / 'sources.json'}...")
     print("[demo]   (first run downloads BGE-M3 weights ~2.3GB; subsequent runs hit the cache)")
-    # Enrichment stays on Mock — index-build is one-shot, doesn't need real LLM.
-    enrichment_provider = MockProvider()
-    index = build_index(data_dir=ROOT / "data", enrichment_provider=enrichment_provider)
+    index = build_index(data_dir=data_dir, enrichment_provider=build_enrichment_provider(settings))
     print(f"[demo] Dense index: {len(index)} chunks")
 
     print("[demo] Building BM25 sparse index...")
     bm25_index = build_bm25_index(index)
     print("[demo] BM25 index: ready")
 
-    provider = _build_provider(args.provider)
-    print(f"[demo] Generation provider: {args.provider}", end="")
-    if args.provider != "mock":
-        print(f" ({provider.model_id})")
-    else:
-        print()
+    print(f"[demo] Generation provider: {provider.name} ({provider.model_id})")
     print(f"[demo] Running {len(questions)} question(s) through the full pipeline...")
     answers: list[tuple[dict, Answer]] = []
     for q in questions:
@@ -235,10 +237,11 @@ def main(argv: list[str]) -> int:
     for i, (q, a) in enumerate(answers):
         blocks.append(render_question_block(i, q, a))
 
-    output_path = ROOT / "demo_output.txt"
+    output_path = settings.murshid_out_dir / "demo_output.txt"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text("\n".join(blocks), encoding="utf-8")
     print(f"[demo] Output written to: {output_path}")
-    print("[demo] Open demo_output.txt to view the full Arabic output")
+    print(f"[demo] Open {output_path} to view the full Arabic output")
     print("[demo]   (Windows PowerShell mangles RTL Arabic in stdout).")
     return 0
 

@@ -1,0 +1,29 @@
+# Murshid — pinned dependencies
+# Versions verified against the install captured 2026-05-22.
+# Note: BGE-M3 model weights (~2.3GB) download on first ingest run via sentence-transformers.
+
+# Embedding + retrieval
+sentence-transformers==5.5.1
+transformers==5.9.0
+torch==2.12.0
+tokenizers==0.22.2
+huggingface_hub==1.16.1
+rank-bm25==0.2.2
+numpy==2.4.6
+scikit-learn==1.8.0
+
+# LLM provider SDKs (Phase 3+)
+anthropic==0.45.0
+openai==1.65.0
+google-generativeai==0.8.3
+ollama==0.4.7
+
+# Tokenization (for chunk-size accounting)
+tiktoken==0.8.0
+
+# Config / env
+pydantic-settings==2.7.0
+python-dotenv==1.0.1
+
+# Testing
+pytest==9.0.2

@@ -1,0 +1,49 @@
+# Murshid — gitignore
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual envs
+.venv/
+venv/
+env/
+ENV/
+
+# Build artifacts
+build/
+dist/
+*.egg
+
+# Editor / OS
+.vscode/
+.idea/
+.claude/
+.DS_Store
+Thumbs.db
+
+# Local run artifacts
+bench/results-local.md
+*.log
+# demo_output.txt is COMMITTED — it's the canonical review artifact for the
+# Phase-2 demo (see review prompt §3.6). Regenerate with `python scripts/demo.py`.
+
+# Sentence-transformers / HF model cache (only if it lands here)
+.cache/
+models/
+
+# Notebook
+.ipynb_checkpoints/
+*.ipynb

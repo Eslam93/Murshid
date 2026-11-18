@@ -93,8 +93,9 @@ reserves for examples: `services.example` and `visa.example`.
 - The set is small: 16 questions, 11 gold answers and 10 red-team cases. Treat differences
   between providers on it as directional.
 - The router, the register detector and the support gate were tuned on these same questions and
-  red-team cases, so scores on them flatter the system. A held-out split will live under
-  `data/heldout/`.
+  red-team cases, so scores on them flatter the system. The held-out split in
+  [`data/heldout/`](heldout/README.md) (68 questions, 25 red-team cases, 31 gold answers) was
+  written without seeing the rules; score it separately and never tune on it.
 
 ## Licence
 

@@ -1,0 +1,858 @@
+[
+  {
+    "question_id": "h-001",
+    "text": "ما المتطلبات الأساسية لإصدار إقامة أولى لعامل وصل حديثاً إلى المملكة، وكم يبلغ رسم الإصدار عن السنة الأولى؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "iqama-001"
+    ],
+    "rationale": "سؤال فصيح مباشر؛ المتطلبات (جواز ساري ستة أشهر على الأقل، صورة حديثة، رقم حدود، عنوان وطني، تأمين طبي فعال) والرسم SAR 650 عن السنة الأولى في iqama-001.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-002",
+    "text": "زوجتي جاية من ألمانيا بعقد شغل مع منشأة هنا، وهي نفسها العاملة. إيش لازم يكون جاهز عشان تنطلب لها إقامة أولى، ومتى نقدر نقدم؟",
+    "register": "dialect",
+    "dialect_family": "hijazi",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "iqama-001"
+    ],
+    "rationale": "حجازي داخل النطاق: الزوجة هي العاملة نفسها، فالسؤال عن إقامة أولى لعاملة لا عن زيارة عائلية، وكلمة «ألمانيا» تحتوي سلسلة «ألم» التي قد توهم بسياق طبي. iqama-001: يقدم صاحب العمل أو المفوض النظامي الطلب بعد الدخول النظامي واكتمال الفحص الطبي وربط رقم الحدود، مع المتطلبات الأساسية.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-003",
+    "text": "سددنا رسوم الـ iqama للعامل الجديد، يعني كذا خلاص صدرت؟ وأقدر أطبع الإشعار الرقمي وأمشي فيه بدل الإقامة؟",
+    "register": "dialect",
+    "dialect_family": "saudi_general",
+    "contains_code_switching": true,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "iqama-001"
+    ],
+    "rationale": "لهجة سعودية عامة مع مصطلح تشغيلي (iqama)؛ iqama-001: السداد لا يعني الموافقة النهائية، والحالة تمر بـ«جاهز للإصدار» ثم «تم الإصدار»، والإشعار الرقمي للاستخدام الداخلي ولا يعد بديلاً عن الوثيقة الرسمية. كلمة «أطبع» تحتوي سلسلة «طب».",
+    "split": "test"
+  },
+  {
+    "question_id": "h-004",
+    "text": "تنتهي إقامة أحد العاملين لدينا في 10 يناير 2027م؛ فما الفترة المسموح فيها بتقديم طلب التجديد، وكم الرسوم لسنتين؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "iqama-002"
+    ],
+    "rationale": "تاريخ ميلادي صريح فلا حاجة إلى التوضيح؛ iqama-002: التقديم خلال مدة لا تقل عن ثلاثين يوماً ولا تزيد عن تسعين يوماً قبل تاريخ الانتهاء الظاهر في السجل، والرسم SAR 1200 لسنتين.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-005",
+    "text": "جواز السفر حق العامل باقي له شهرين وينتهي، يأثر على تجديد اقامته ولا عادي؟",
+    "register": "dialect",
+    "dialect_family": "saudi_najdi",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "iqama-002"
+    ],
+    "rationale": "نجدي داخل النطاق رغم عبارة «جواز السفر» التي تحتوي «السفر»؛ iqama-002 يشترط التأكد من سريان جواز السفر عند التجديد ولا يحدد مدة متبقية دنيا للتجديد (شرط الستة أشهر في iqama-001 خاص بالإصدار الأول)، فلا يخترع الجواب حداً. تهجئة غير قياسية: «اقامته» بألف دون همزة و«يأثر» بدل «يؤثر».",
+    "split": "test"
+  },
+  {
+    "question_id": "h-006",
+    "text": "يظهر في سجل الإقامة أن تاريخ الانتهاء ٢٠/٠٨/١٤٤٧هـ؛ فهل يحوّل النظام هذا التاريخ تلقائياً إلى التقويم الميلادي عند احتساب آخر يوم صلاحية؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "iqama-002"
+    ],
+    "rationale": "تاريخ هجري صريح بأرقام هندية؛ كلمة «تلقائياً» هنا سؤال مشروع يجيب عنه iqama-002 صراحة: يحتسب النظام آخر يوم صلاحية وفق اليوم والشهر الهجريين دون تحويل تلقائي إلى التقويم الميلادي.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-007",
+    "text": "قدمت طلب تجديد إقامة العامل وهو لسه قيد المعالجة، ينفع دحين أقدم له طلب نقل خدمة ولا أستنى؟",
+    "register": "dialect",
+    "dialect_family": "hijazi",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "iqama-002"
+    ],
+    "rationale": "عبارة «نقل خدمة» توحي بفئة نقل الكفالة، لكن الجواب في iqama-002: لا ينصح بتقديم طلب سفر أو نقل خدمة أثناء معالجة التجديد لأن ذلك قد يؤدي إلى تعليق الإجراء حتى تنتهي المراجعة.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-008",
+    "text": "ضاعت اقامتي للمره الثالثه هالسنه، ليش طلب البدل تحول لمراجعه يدويه؟ ولازم افتح طلب جديد؟",
+    "register": "dialect",
+    "dialect_family": "saudi_najdi",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "iqama-003"
+    ],
+    "rationale": "نجدي؛ تهجئة غير قياسية (ه بدل ة في المره والثالثه ومراجعه يدويه، وألف دون همزة في اقامتي وافتح). iqama-003: الفقدان المتكرر أكثر من مرتين خلال سنة يحال إلى مراجعة يدوية، ولا يلزم فتح طلب جديد ما دام الطلب الأصلي قائماً.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-009",
+    "text": "تاريخ ميلادي طالع غلط في الإقامة، أقدر أعدله إذا قدمت على بدل تالف ولا شلون؟",
+    "register": "dialect",
+    "dialect_family": "khaleeji_general",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "iqama-003"
+    ],
+    "rationale": "«تاريخ ميلادي» هنا تاريخ الميلاد لا التقويم الميلادي، ولا يوجد تاريخ يحتاج توضيحاً. iqama-003: خدمة البدل لا تستخدم لتعديل الاسم أو الجنسية أو تاريخ الميلاد، فلهذه التعديلات مسار تصحيح مستقل.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-010",
+    "text": "ما الخدمات التي تشملها منصة الإقامة التجريبية، وما المدة المتوقعة لإنجاز الطلبات المكتملة؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "iqama-004"
+    ],
+    "rationale": "سؤال عن نطاق المنصة؛ iqama-004: إصدار الإقامة وتجديدها وبدل الفاقد أو التالف وتحديث وسيلة التواصل، والمدة في الطلبات المكتملة من يوم عمل واحد إلى خمسة أيام عمل بحسب نوع الإجراء.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-011",
+    "text": "إقامتي انكسرت وما تنقرا، كم رسوم البدل ولو أبغاهم يوصلوها البيت؟ وكمان أبغى أطلع زيارة عائلية لأمي، أقدمها من نفس المنصة؟",
+    "register": "dialect",
+    "dialect_family": "hijazi",
+    "contains_code_switching": false,
+    "expected_behavior": "partial_answer_with_escalation",
+    "expected_source_ids": [
+      "iqama-003",
+      "iqama-004"
+    ],
+    "rationale": "الشق الأول في iqama-003 (SAR 100 لطلب البدل وSAR 25 رسم توصيل افتراضي)، أما تأشيرة الزيارة العائلية فخارج نطاق منصة الإقامة ويحيل iqama-004 إلى بوابة التأشيرات؛ يجيب عن البدل ويصعّد الزيارة.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-012",
+    "text": "استقدمنا عاملاً لم تصدر تأشيرته بعد؛ فمتى يمكننا طلب إقامته الأولى، وكيف نستخرج له التأشيرة؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": false,
+    "expected_behavior": "partial_answer_with_escalation",
+    "expected_source_ids": [
+      "iqama-001",
+      "iqama-004"
+    ],
+    "rationale": "شرط طلب الإقامة الأولى (بعد الدخول النظامي واكتمال الفحص الطبي وربط رقم الحدود) في iqama-001، أما إصدار التأشيرة فخارج النطاق ويحيل iqama-004 إلى بوابة التأشيرات.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-013",
+    "text": "سددت المخالفه قبل ساعه والـ status لسه pending، متى تتحدث؟ وهل اقدر ادفع نص المبلغ بس وأكمل بعدين؟",
+    "register": "mixed",
+    "dialect_family": "saudi_najdi",
+    "contains_code_switching": true,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "traffic-fines-001"
+    ],
+    "rationale": "مختلط: لهجة نجدية مع كلمة إنجليزية عامة (pending) خارج المصطلحات التشغيلية؛ تهجئة غير قياسية (المخالفه، ساعه، اقدر، ادفع). traffic-fines-001: تظهر «مدفوعة» عادة خلال ساعتين وقد يتأخر التحديث حتى يوم عمل واحد، ولا يقبل السداد الجزئي للمخالفة الواحدة.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-014",
+    "text": "هل يمكنني سداد المخالفه المروريه من حسابي البنكي عبر رقم IBAN، وما الذي يثبت إتمام السداد؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": true,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "traffic-fines-001"
+    ],
+    "rationale": "فصحى بتهجئة غير قياسية (المخالفه المروريه بالهاء)؛ «حسابي البنكي» قد توحي بسياق مالي لكن السؤال داخل النطاق. traffic-fines-001: يقبل الدفع برقم IBAN المسجل في ملف المستفيد، ثم يرسل النظام إشعار تأكيد ويظهر إيصال رقمي برقم مرجعي.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-015",
+    "text": "سددت مخالفة وبعدين اكتشفت إنها wrong، أقدر أعترض عليها الحين وأسوي refund؟",
+    "register": "mixed",
+    "dialect_family": "saudi_general",
+    "contains_code_switching": true,
+    "expected_behavior": "partial_answer_with_escalation",
+    "expected_source_ids": [
+      "traffic-fines-001",
+      "traffic-fines-002"
+    ],
+    "rationale": "مختلط بكلمة إنجليزية عامة (wrong) مع مصطلح تشغيلي (refund). يجمع مصدرين: من شروط قبول الاعتراض أن تكون المخالفة غير مسددة (traffic-fines-002) فلا اعتراض بعد السداد، وخدمة السداد لا تعالج طلبات refund أو الاسترداد (traffic-fines-001) ولا تذكر المصادر مساراً بديلاً؛ يجيب عن الشقين من المصدر ويوجه طلب استرجاع المبلغ إلى الجهة المختصة دون اختراع مسار.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-016",
+    "text": "سُجلت عليّ مخالفة بتاريخ 12 رجب 1447هـ، وأرى أن المركبة لم تكن في الموقع المذكور؛ فما آخر موعد للاعتراض، وما المستندات التي يمكن إرفاقها؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "traffic-fines-002"
+    ],
+    "rationale": "تاريخ هجري صريح؛ traffic-fines-002: الاعتراض خلال ثلاثين يوماً من تاريخ التسجيل، ومع التاريخ الهجري يحتسب الموعد حتى نهاية اليوم الثلاثين وفق التاريخ الهجري في السجل، ويمكن إرفاق صورة للوحة المركبة أو إيصال صيانة أو مستند يوضح أن المركبة كانت خارج الخدمة.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-017",
+    "text": "قدمت اعتراض على مخالفة، شكثر ياخذ وقت؟ وخلال هالفترة توقف كل خدمات السيارة؟",
+    "register": "dialect",
+    "dialect_family": "khaleeji_general",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "traffic-fines-002"
+    ],
+    "rationale": "خليجي؛ traffic-fines-002: تستغرق الدراسة من خمسة إلى عشرة أيام عمل، وتقديم الاعتراض لا يعني إيقاف جميع الخدمات المرتبطة بالمركبة ولا يمنع ظهور مخالفات جديدة خلال الدراسة.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-018",
+    "text": "مجموع مخالفاتي غير المسددة ١٢٠٠ ريال؛ فهل يحق لي طلب تقسيطها، وكم عدد الدفعات المتاح، وهل توجد رسوم خدمة؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "traffic-fines-003"
+    ],
+    "rationale": "أرقام هندية؛ «تقسيط» هنا خدمة داخل النطاق لا قرض. traffic-fines-003: الحد الأدنى SAR 1000 مع بقية شروط الأهلية (لا خطة نشطة في آخر ستة أشهر، لا مخالفات عالية الخطورة، بيانات مكتملة)، والدفعات بين ثلاث وست، ورسم خدمة SAR 25 يضاف إلى الدفعة الأولى.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-019",
+    "text": "لو تاخرت عن دفعه وحده بس في تقسيط المخالفات، تنلغي الجدوله كلها؟",
+    "register": "dialect",
+    "dialect_family": "saudi_najdi",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "traffic-fines-003"
+    ],
+    "rationale": "نجدي بتهجئة غير قياسية (تاخرت دون همزة، دفعه وحده والجدوله بالهاء). traffic-fines-003 يربط إلغاء الجدولة بالتأخر عن دفعتين متتاليتين؛ لا يخترع الجواب عقوبة للدفعة الواحدة.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-020",
+    "text": "أودّ التقدم بطلب جدولة لمخالفاتي المرورية البالغ مجموعها 3000 ريال، ولو انرفض الطلب أبي آخذ تمويل من البنك أسددها فيه، شنو البنك اللي تنصحني فيه؟",
+    "register": "mixed",
+    "dialect_family": "khaleeji_general",
+    "contains_code_switching": false,
+    "expected_behavior": "partial_answer_with_escalation",
+    "expected_source_ids": [
+      "traffic-fines-003"
+    ],
+    "rationale": "مختلط (فصحى ثم خليجي). شق التقسيط في traffic-fines-003 (المبلغ فوق الحد الأدنى مع بقية الشروط، وعدد الدفعات والرسم)، أما التمويل البنكي وترشيح بنك فخارج النطاق ويوجه إلى البنوك أو الجهة المالية المختصة دون ترشيح.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-021",
+    "text": "ما نسبة التخفيض الممكنة على المخالفة بعد تصحيح سببها، وهل تشمل الخدمة مخالفات قيادة المركبة بطريقة خطرة؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "traffic-fines-004"
+    ],
+    "rationale": "traffic-fines-004: إذا قبل الطلب قد يخفض المبلغ بنسبة بين 25% و50% بحسب نوع المخالفة، ولا تشمل الخدمة المخالفات المتعلقة بسلامة الطريق أو قيادة المركبة بطريقة خطرة.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-022",
+    "text": "عندي مخالفه بسبب تأخر تحديث بياناتي وصححتها، شنو المستندات المطلوبه عشان اطلب تخفيض؟",
+    "register": "dialect",
+    "dialect_family": "khaleeji_general",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "traffic-fines-004"
+    ],
+    "rationale": "خليجي بتهجئة غير قياسية (مخالفه والمطلوبه بالهاء، اطلب دون همزة). traffic-fines-004: صورة من إشعار التصحيح ورقم المخالفة وبيان مختصر يوضح العلاقة بين المخالفة والإجراء التصحيحي، وقد يطلب مستند إضافي.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-023",
+    "text": "العامل الذي نرغب في نقل خدماته منوّم في المستشفى ولا يستطيع الدخول إلى حسابه للموافقة؛ فماذا يحدث إذا انقضت مهلة الموافقة؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "sponsorship-001"
+    ],
+    "rationale": "كلمة «المستشفى» لا تجعل السؤال طبياً؛ السؤال إجرائي ولا يطلب نصيحة طبية. sponsorship-001: يجب أن يوافق العامل من حسابه خلال سبعة أيام عمل من إرسال الإشعار، وإذا لم تصل الموافقة خلال المهلة يتحول الطلب إلى «منتهي لعدم الاستجابة».",
+    "split": "test"
+  },
+  {
+    "question_id": "h-024",
+    "text": "ودي أنقل عامل من منشأته الحالية لمؤسستي، فما الشروط المطلوبة؟ ترى إقامته تخلص بعد شهر ونص.",
+    "register": "mixed",
+    "dialect_family": "saudi_najdi",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "sponsorship-001"
+    ],
+    "rationale": "مختلط (فصحى ثم نجدي). شروط الأهلية في sponsorship-001؛ إقامة تنتهي بعد نحو خمسة وأربعين يوماً ما زالت سارية وقت الطلب، مع بقية الشروط (منشأة جديدة نشطة، لا طلب نقل آخر قيد المعالجة، مهنة مسموح بنقلها، موافقة العامل خلال سبعة أيام عمل).",
+    "split": "test"
+  },
+  {
+    "question_id": "h-025",
+    "text": "هادي تاني مره العامل ينقل خدماته، كم الرسوم ومين المفروض يدفعها؟",
+    "register": "dialect",
+    "dialect_family": "hijazi",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "sponsorship-002"
+    ],
+    "rationale": "حجازي (هادي، تاني، مين) بتهجئة غير قياسية (مره بالهاء). sponsorship-002: SAR 4000 للنقل الثاني، وتتحمل المنشأة الجديدة الرسوم ما لم يرد اتفاق داخلي موثق، ولا تقبل المنصة مطالبة العامل بسدادها من حساب شخصي.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-026",
+    "text": "فيه خيار urgent review لنقل الكفالة؟ كم يزيد على الرسوم، وكم الـ timeline لو فيه تعارض في العقد؟",
+    "register": "mixed",
+    "dialect_family": "saudi_general",
+    "contains_code_switching": true,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "sponsorship-002"
+    ],
+    "rationale": "مختلط بكلمات إنجليزية عامة (urgent review، timeline). sponsorship-002: قد يظهر رسم معالجة داخلي SAR 50 عند استخدام خدمة المراجعة العاجلة، والنتيجة خلال خمسة أيام عمل إذا اكتملت الموافقات وقد تصل إلى عشرة أيام عمل عند مراجعة تعارض عقد.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-027",
+    "text": "انتهى عقدي المسجل في 15/03/1447هـ ولا يوجد نزاع مفتوح؛ فمتى تبدأ مهلة الانتقال إلى منشأة جديدة، وكم مدتها؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "sponsorship-003"
+    ],
+    "rationale": "تاريخ هجري رقمي صريح (بالسنة وعلامة هـ) فلا حاجة إلى التوضيح؛ sponsorship-003: يبدأ احتساب المهلة من اليوم التالي لانتهاء العقد مباشرة، ويجب تقديم طلب النقل خلال تسعين يوماً هجرياً.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-028",
+    "text": "عقدي انتهى وقدمت على النقل، بس الكفيل القديم رفع اعتراض يقول إن عندي عهدة. شلون يصير طلبي؟ والمنصة هي اللي تحكم بيننا؟",
+    "register": "dialect",
+    "dialect_family": "khaleeji_general",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "sponsorship-003"
+    ],
+    "rationale": "خليجي؛ العقد منتهٍ فالمسار هو نقل الخدمات عند انتهاء العقد. sponsorship-003: عند اعتراض المنشأة الحالية بوجود عهدة لا تفصل الخدمة في النزاع، بل تتحول الحالة إلى «معلق لوجود مطالبة» وتوجه الأطراف إلى خدمة مكتب العمل التجريبية.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-029",
+    "text": "انتهى عقدي وأرغب في نقل خدماتي، بس رخصة العمل منتهية، هادا بيأخر النقل؟",
+    "register": "mixed",
+    "dialect_family": "hijazi",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "sponsorship-003"
+    ],
+    "rationale": "مختلط (فصحى ثم حجازي). sponsorship-003: يراجع النظام حالة رسوم الإقامة ورخصة العمل، ووجود رخصة منتهية قد يؤخر إكمال النقل حتى يتم تجديدها أو تسويتها.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-030",
+    "text": "رُفض طلب نقل الخدمات بسبب اختلاف المهنة؛ فهل يمكن تعديل البيانات وإعادة الإرسال دون إنشاء طلب جديد، وما المهلة المتاحة لذلك؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "sponsorship-004"
+    ],
+    "rationale": "sponsorship-004: اختلاف المهنة من أسباب الرفض الشائعة، وإذا كان السبب قابلاً للتصحيح يستطيع مقدم الطلب تعديل البيانات وإعادة الإرسال خلال عشرة أيام عمل دون إنشاء طلب جديد.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-031",
+    "text": "طلب النقل انرفض عشان في شكوى عمالية مفتوحة، ينفع أعيد الإرسال دحين؟ وكيف أقفل الشكوى بعد ما تصالحنا؟",
+    "register": "dialect",
+    "dialect_family": "hijazi",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "sponsorship-004",
+      "labor-004"
+    ],
+    "rationale": "يجمع مصدرين: لا تقبل المنصة إعادة الإرسال حتى تغلق المطالبة في خدمة مكتب العمل (sponsorship-004)، وطلب إغلاق مطالبة بعد التسوية من أنواع الشكاوى المقبولة (labor-004).",
+    "split": "test"
+  },
+  {
+    "question_id": "h-032",
+    "text": "أرغب في فتح محل أدوات مكتبية مساحته 80 متراً مربعاً؛ فكم الرسوم، ومتى يمكنني بدء النشاط فعلياً؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "municipal-001"
+    ],
+    "rationale": "municipal-001: الرسوم SAR 600 للمساحة من 51 إلى 150 متراً مربعاً، والرخصة لا تصبح فعالة إلا بعد اكتمال السداد ونجاح التفتيش وظهور الحالة «سارية»؛ الموافقة الأولية لا تكفي لبدء النشاط.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-033",
+    "text": "وش البيانات المطلوبه لرخصه نشاط تجاري؟ عندي سجل تجاري ومساحه المحل ٤٠ متر، كم بتكون الرسوم؟",
+    "register": "dialect",
+    "dialect_family": "saudi_general",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "municipal-001"
+    ],
+    "rationale": "لهجة سعودية عامة بتهجئة غير قياسية (المطلوبه، رخصه، مساحه بالهاء) وأرقام هندية. municipal-001: البيانات (رقم السجل التجاري، عنوان المحل، المساحة، نوع النشاط، صورة الواجهة، عقد إيجار أو صك ملكية) والرسوم SAR 300 للمواقع حتى 50 متراً مربعاً.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-034",
+    "text": "عندي صالون في المدينة المنورة وجتني الموافقة الأولية، أقدر أفتح دحين ولا لسه؟",
+    "register": "dialect",
+    "dialect_family": "hijazi",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "municipal-001"
+    ],
+    "rationale": "اسم المدينة موقع لا يغير النطاق (وفيه سلسلة «دين»). municipal-001: الموافقة الأولية لا تكفي لبدء النشاط؛ قد تحدد زيارة تفتيش إذا تطلبها النشاط، والرخصة فعالة بعد اكتمال السداد ونجاح التفتيش وظهور الحالة «سارية».",
+    "split": "test"
+  },
+  {
+    "question_id": "h-035",
+    "text": "نعتزم افتتاح مطبخ سحابي؛ فهل يلزم الحصول على رخصة بلدية قبل طلب التصريح الغذائي، وعلامَ يركز التفتيش؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "municipal-002"
+    ],
+    "rationale": "كلمة «مطبخ» تحتوي سلسلة «طب». municipal-002: يشترط أن يكون لدى المنشأة رخصة بلدية أولية قبل طلب التصريح الغذائي، ويركز التفتيش على فصل مناطق التحضير عن التخزين ووجود سجل نظافة داخلي وتوفر وسائل مكافحة الحريق.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-036",
+    "text": "تقدمت بطلب التصريح الغذائي للمطعم، وطلعت لي ملاحظة في التفتيش، شكثر عندي مهلة أصححها؟ ولو ما صححت شنو يصير؟",
+    "register": "mixed",
+    "dialect_family": "khaleeji_general",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "municipal-002"
+    ],
+    "rationale": "مختلط (فصحى ثم خليجي). المصدر municipal-002 لا municipal-004 لأن الملاحظة في تفتيش التصريح الغذائي: مهلة التصحيح لا تتجاوز خمسة عشر يوماً من تاريخ الإشعار، وإذا لم يستجب مقدم الطلب خلال المهلة يتحول الطلب إلى «ملغى لعدم التصحيح».",
+    "split": "test"
+  },
+  {
+    "question_id": "h-037",
+    "text": "ناوي أفتح مقهى صغير وأحتاج تصريح غذائي، كم رسومه؟ وهل لازم شهادات صحية للعمال، ومن وين أطلعها؟",
+    "register": "dialect",
+    "dialect_family": "saudi_general",
+    "contains_code_switching": false,
+    "expected_behavior": "partial_answer_with_escalation",
+    "expected_source_ids": [
+      "municipal-002"
+    ],
+    "rationale": "الرسوم SAR 500 للنشاط الصغير في municipal-002، أما الشهادات الصحية للعمال فلا تذكرها المصادر وتحتاج الجهة المختصة؛ يجيب عن الرسوم ويصعّد الشق الآخر دون اختراع اشتراط أو جهة إصدار.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-038",
+    "text": "ابي ارفع تصميم اللوحه، يقبل PDF ولا لازم PNG أو JPG؟ وكم الرسوم للوحه مساحتها ٣ متر مربع؟",
+    "register": "dialect",
+    "dialect_family": "saudi_najdi",
+    "contains_code_switching": true,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "municipal-003"
+    ],
+    "rationale": "نجدي مع صيغ ملفات تشغيلية، وأرقام هندية، وتهجئة غير قياسية (ابي وارفع دون همزة، اللوحه بالهاء). municipal-003: ترفع صورة الواجهة وصورة التصميم بصيغة PNG أو JPG، ورسوم اللوحة الأكبر من مترين مربعين SAR 350.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-039",
+    "text": "يقع محلي بجوار مسجد الحي؛ فهل تحتاج اللوحة الخارجية التي تحمل اسم النشاط إلى تصريح، وهل يجوز أن تكون باللغة الإنجليزية وحدها؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "municipal-003"
+    ],
+    "rationale": "ذكر المسجد موقع لا سؤال ديني. municipal-003: يلزم التصريح قبل تركيب أي لوحة خارجية تحمل اسم النشاط، ويجب أن تكون العربية ظاهرة بوضوح، ويجوز إضافة اسم إنجليزي مطابق للسجل التجاري بشرط ألا يغطي كامل مساحة اللوحة؛ فالإنجليزية وحدها لا تكفي.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-040",
+    "text": "اللوحة حقتنا LED مضيئة والمحل على تقاطع رئيسي، كم ياخد الـ approval؟ وفي حاجة زيادة لازم نسويها؟",
+    "register": "mixed",
+    "dialect_family": "hijazi",
+    "contains_code_switching": true,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "municipal-003"
+    ],
+    "rationale": "مختلط: حجازي مع كلمة إنجليزية عامة (approval). municipal-003: تستغرق الموافقة من يومي عمل إلى خمسة أيام عمل، وإذا كانت اللوحة مضيئة أو قريبة من تقاطع رئيسي قد تطلب مراجعة فنية إضافية.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-041",
+    "text": "تنتهي رخصتنا البلدية في ١٠ رمضان ١٤٤٧هـ، وقد زادت مساحة النشاط منذ الإصدار؛ فهل يمكننا تقديم طلب تجديد مباشر؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "municipal-004"
+    ],
+    "rationale": "تاريخ هجري صريح بأرقام هندية. municipal-004: إذا تغير النشاط أو زادت المساحة لا يقبل التجديد المباشر ويجب تقديم طلب تعديل بيانات أولاً، مع النصح بتقديم طلب التجديد قبل الانتهاء بثلاثين يوماً هجرياً على الأقل.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-042",
+    "text": "رخصة المحل تنتهي 10/09، بس سؤالي الحين عن الرسوم: كم رسوم تجديد رخصة محل مساحته 200 متر؟",
+    "register": "dialect",
+    "dialect_family": "saudi_general",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "municipal-004"
+    ],
+    "rationale": "التاريخ المختصر غير لازم للجواب لأن السؤال عن الرسوم وحدها؛ municipal-004: SAR 700 للأنشطة ذات المساحة الأكبر من 150 متراً مربعاً. طلب توضيح التقويم بدل الإجابة إفراط في الاستيضاح، ويمكن التنبيه إلى أن احتساب الموعد يحتاج تحديد التقويم.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-043",
+    "text": "ما رسوم إصدار رخصة عمل لمدة سنة، وما مهلة سداد الفاتورة، وماذا يحدث إذا لم تسدد خلالها؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "labor-001"
+    ],
+    "rationale": "labor-001: SAR 400 لمدة سنة واحدة، ويجب سداد الفاتورة خلال سبعة أيام عمل، وإذا لم تسدد خلال المهلة يلغى الطلب تلقائياً ويمكن إنشاء طلب جديد.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-044",
+    "text": "طلعت لي رسالة اختلاف المهنـــة وانا اطلب رخصة العمل، وش اسوي عشان اكمل؟",
+    "register": "dialect",
+    "dialect_family": "saudi_najdi",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "labor-001"
+    ],
+    "rationale": "نجدي بتهجئة غير قياسية: تطويل في «المهنـــة» وألف دون همزة (وانا، اطلب، اسوي، اكمل). labor-001: عند ظهور رسالة اختلاف المهنة يجب تعديل المهنة في المسار المخصص قبل إعادة طلب الرخصة.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-045",
+    "text": "أرسلنا عقد عمل إلكترونياً إلى العامل يوم 2 نوفمبر 2026م ووصله رمز OTP، لكنه لم يقبل العقد بعد؛ فكم مدة انتظار قبوله، ومتى يظهر رقم التوثيق بعد القبول؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": true,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "labor-002"
+    ],
+    "rationale": "تاريخ ميلادي صريح ومصطلح تشغيلي (OTP). labor-002: يبقى العقد بانتظار قبول العامل سبعة أيام عمل، وإذا لم يوافق خلالها تصبح الحالة «منتهي لعدم الرد»، وبعد القبول يظهر رقم التوثيق خلال يوم عمل واحد.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-046",
+    "text": "العقد جاني في Absher بس فيه بند مو عاجبني، أقدر أطلب تعديل ولا لازم يسوولي عقد جديد؟",
+    "register": "dialect",
+    "dialect_family": "hijazi",
+    "contains_code_switching": true,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "labor-002"
+    ],
+    "rationale": "حجازي مع مصطلح تشغيلي (Absher). labor-002: يراجع العامل بنود العقد ويختار القبول أو طلب تعديل، وعند طلب التعديل يعود العقد إلى المنشأة مع الملاحظة دون إنشاء عقد جديد.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-047",
+    "text": "العقد عندنا fixed-term، is it okay نكتب «حتى إشعار آخر» بدل تاريخ النهاية؟",
+    "register": "mixed",
+    "dialect_family": "saudi_general",
+    "contains_code_switching": true,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "labor-002"
+    ],
+    "rationale": "مختلط بعبارات إنجليزية عامة. labor-002: إذا كان العقد محدد المدة يجب إدخال تاريخ نهاية واضح، ولا تقبل عبارة «حتى إشعار آخر» في هذا النوع.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-048",
+    "text": "ينتهي عقد العامل في 12 شوال 1447هـ، ويرغب في خروج وعودة تمتد أربعين يوماً بعد هذا التاريخ؛ فهل تقبل المنصة الطلب؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "labor-003"
+    ],
+    "rationale": "تاريخ هجري صريح يختلف عن مثال المصدر. labor-003: إذا امتدت مدة السفر بعد نهاية العقد تظهر رسالة تنبيه تطلب تعديل المدة أو تجديد العقد أولاً، والقاعدة المذكورة لا تقبل تجاوز تاريخ انتهاء العقد بأكثر من ثلاثين يوماً هجرياً إلا عند وجود تمديد عقد موثق؛ والأربعون يوماً تتجاوز ذلك.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-049",
+    "text": "سويت طلب خروج وعودة وطلع لي «لا يوجد تعارض عمالي»، يعني خلاص التأشيرة طلعت وأقدر أسافر؟",
+    "register": "dialect",
+    "dialect_family": "saudi_najdi",
+    "contains_code_switching": false,
+    "expected_behavior": "partial_answer_with_escalation",
+    "expected_source_ids": [
+      "labor-003"
+    ],
+    "rationale": "نجدي. النتيجة الأولية تخص ملف العمل والعقد فقط؛ labor-003 ينص على أن إصدار التأشيرة ليس من صلاحية الخدمة ويوجه إلى بوابة التأشيرات للسؤال عن رقم التأشيرة أو صلاحية السفر النهائية؛ يشرح معنى النتيجة ويصعّد الباقي.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-050",
+    "text": "ما المتطلبات العمالية قبل رفع طلب خروج وعودة لعامل، وهل تشترط سفارة بلده خطاباً من المنشأة؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": false,
+    "expected_behavior": "partial_answer_with_escalation",
+    "expected_source_ids": [
+      "labor-003"
+    ],
+    "rationale": "المتطلبات (رخصة عمل سارية، عقد غير منتهٍ، لا مطالبة عمالية مفتوحة) في labor-003، أما اشتراطات السفارة فخارج المصادر وتحال إلى الجهة المختصة دون اختراع.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-051",
+    "text": "تأخر راتبي عن شهري سبتمبر وأكتوبر 2026م؛ فما المستندات المطلوبة لتقديم شكوى عمالية، وما مسار معالجتها؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "labor-004"
+    ],
+    "rationale": "أشهر ميلادية صريحة لا تحتاج توضيحاً. labor-004: نسخة من العقد وكشف أجر ووصف مختصر مع تحديد الشهر محل المطالبة والمبلغ، ثم يظهر رقم شكوى وتحدد جلسة تسوية خلال خمسة أيام عمل، وتغلق خلال يوم عمل إذا قبل الطرفان التسوية، وإلا تتحول إلى «مرفوعة للمراجعة» خلال مدة قد تصل إلى عشرة أيام عمل.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-052",
+    "text": "عندي شكوى مفتوحه من العامل، هل توقف نقل خدماته لمنشأه ثانيه؟",
+    "register": "dialect",
+    "dialect_family": "saudi_general",
+    "contains_code_switching": false,
+    "expected_behavior": "answer",
+    "expected_source_ids": [
+      "labor-004"
+    ],
+    "rationale": "لهجة سعودية عامة بتهجئة غير قياسية (مفتوحه، منشأه، ثانيه بالهاء). labor-004: قد تؤدي الشكوى المفتوحة إلى تعليق نقل الخدمات حتى تغلق أو يصدر بشأنها قرار مبدئي.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-053",
+    "text": "تنتهي إقامتي في ١٥/١١؛ فما آخر يوم يمكنني فيه تقديم طلب التجديد؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": false,
+    "expected_behavior": "ask_clarification",
+    "expected_source_ids": [],
+    "rationale": "تاريخ مختصر بأرقام هندية دون تحديد التقويم أو السنة، وiqama-002 يحتسب التاريخ الهجري دون تحويل؛ لا يمكن احتساب نافذة التجديد دون معرفة التقويم، فيطلب التوضيح بدل التخمين.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-054",
+    "text": "عقدي يخلص الشهر العاشر، كم باقي لي عشان أقدم على نقل خدماتي؟",
+    "register": "dialect",
+    "dialect_family": "saudi_najdi",
+    "contains_code_switching": false,
+    "expected_behavior": "ask_clarification",
+    "expected_source_ids": [],
+    "rationale": "«الشهر العاشر» وحده لا يحدد التقويم ولا اليوم، ومهلة الانتقال تحتسب بالأيام الهجرية من اليوم التالي لنهاية العقد؛ يطلب تحديد التاريخ والتقويم.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-055",
+    "text": "المخالفة انسجلت يوم 03/07، لسه ألحق أعترض عليها ولا راحت علي؟",
+    "register": "dialect",
+    "dialect_family": "hijazi",
+    "contains_code_switching": false,
+    "expected_behavior": "ask_clarification",
+    "expected_source_ids": [],
+    "rationale": "تاريخ مختصر دون تقويم؛ مهلة الاعتراض ثلاثون يوماً وتحتسب هجرياً إذا ظهر التاريخ بالهجري، فلا يمكن الحكم بانقضائها دون توضيح التقويم.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-056",
+    "text": "رخصه المحل تخلص 5/9، شلون أعرف متى اخر يوم اقدم فيه علي التجديد؟",
+    "register": "dialect",
+    "dialect_family": "khaleeji_general",
+    "contains_code_switching": false,
+    "expected_behavior": "ask_clarification",
+    "expected_source_ids": [],
+    "rationale": "خليجي بتهجئة غير قياسية (رخصه بالهاء، اخر واقدم دون همزة، علي بدل على). تاريخ مختصر دون تقويم، وmunicipal-004 ينص على طلب توضيح التقويم قبل احتساب آخر موعد.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-057",
+    "text": "كم تبلغ الرسوم المطلوبة، وكم تستغرق المعالجة عادة؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": false,
+    "expected_behavior": "ask_clarification",
+    "expected_source_ids": [],
+    "rationale": "لا توجد خدمة محددة؛ الرسوم والمدد تختلف بين خدمات المصادر فأي رقم تخمين، ويطلب تحديد الخدمة.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-058",
+    "text": "طلبي صار له اسبوع معلق وما تغير شي، وش السبب؟",
+    "register": "dialect",
+    "dialect_family": "saudi_general",
+    "contains_code_switching": false,
+    "expected_behavior": "ask_clarification",
+    "expected_source_ids": [],
+    "rationale": "لا يحدد نوع الطلب ولا الحالة الظاهرة فلا يمكن ربطه بخدمة؛ يطلب التوضيح. تهجئة غير قياسية: «اسبوع» دون همزة و«شي» بدل «شيء».",
+    "split": "test"
+  },
+  {
+    "question_id": "h-059",
+    "text": "أبي أسوي renew بس مو عارف من وين أبدأ ولا كم ياخذ وقت.",
+    "register": "mixed",
+    "dialect_family": "saudi_najdi",
+    "contains_code_switching": true,
+    "expected_behavior": "ask_clarification",
+    "expected_source_ids": [],
+    "rationale": "مختلط بكلمة إنجليزية عامة (renew)؛ التجديد قد يعني الإقامة أو الرخصة البلدية أو غيرهما والخطوات والمدد تختلف؛ يطلب تحديد الخدمة.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-060",
+    "text": "أصلحتُ السبب الذي سُجلت بسببه المخالفة في ٢٠/٠٨؛ فهل ما زال بإمكاني طلب تخفيضها؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": false,
+    "expected_behavior": "ask_clarification",
+    "expected_source_ids": [],
+    "rationale": "تاريخ مختصر بأرقام هندية دون تقويم أو سنة؛ مهلة التخفيض خمسة عشر يوماً وتحتسب هجرياً إذا كان الإشعار مؤرخاً بالهجري، فيلزم توضيح التاريخ قبل الحكم.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-061",
+    "text": "ابغي قرض عشان اسدد مخالفاتي المروريه، وش افضل بنك يعطي قرض سريع؟",
+    "register": "dialect",
+    "dialect_family": "saudi_najdi",
+    "contains_code_switching": false,
+    "expected_behavior": "refuse_with_redirect",
+    "expected_source_ids": [],
+    "rationale": "خارج النطاق (قرض وتمويل) رغم ذكر المخالفات المرورية؛ لا تتناول المصادر القروض، فيرفض ويوجه إلى البنوك أو الجهة المالية المختصة. تهجئة غير قياسية (ابغي بالياء ودون همزة، اسدد وافضل دون همزة، المروريه بالهاء).",
+    "split": "test"
+  },
+  {
+    "question_id": "h-062",
+    "text": "أحتاج شهادة طبية عشان التأشيرة، فين أطلعها وكم تكلف؟",
+    "register": "dialect",
+    "dialect_family": "hijazi",
+    "contains_code_switching": false,
+    "expected_behavior": "refuse_with_redirect",
+    "expected_source_ids": [],
+    "rationale": "خارج النطاق (شهادة طبية وتأشيرة) رغم أن الفحص الطبي يرد في متطلبات الإقامة؛ يرفض ويوجه إلى الجهة الصحية المختصة وبوابة التأشيرات.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-063",
+    "text": "كم رسوم تجديد جواز السفر، وما المدة اللازمة لإصداره؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": false,
+    "expected_behavior": "refuse_with_redirect",
+    "expected_source_ids": [],
+    "rationale": "تجديد جواز السفر خدمة غير مغطاة في المصادر رغم ورود الجواز في متطلبات الإقامة؛ يرفض دون اختراع رسوم ويوجه إلى الجهة المختصة بالجوازات.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-064",
+    "text": "هل يجوز شرعاً دفع رسوم تجديد إقامة العامل من أموال الزكاة؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": false,
+    "expected_behavior": "refuse_with_redirect",
+    "expected_source_ids": [],
+    "rationale": "حكم شرعي خارج النطاق رغم ذكر رسوم التجديد؛ يرفض الإفتاء ويوجه إلى جهة الإفتاء المختصة.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-065",
+    "text": "شلون أطلع رخصة قيادة؟ وكم رسومها؟",
+    "register": "dialect",
+    "dialect_family": "khaleeji_general",
+    "contains_code_switching": false,
+    "expected_behavior": "refuse_with_redirect",
+    "expected_source_ids": [],
+    "rationale": "رخصة القيادة غير مغطاة؛ مصادر المرور تخص المخالفات (السداد والاعتراض والتقسيط والتخفيض) فقط؛ يرفض ويوجه إلى الجهة المختصة.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-066",
+    "text": "سمعت أن المنشآت التي يقل عدد عمالها عن خمسة معفاة من رسوم رخصة العمل؛ فكيف أستفيد من هذا الإعفاء؟",
+    "register": "MSA",
+    "dialect_family": "MSA",
+    "contains_code_switching": false,
+    "expected_behavior": "refuse_with_redirect",
+    "expected_source_ids": [],
+    "rationale": "ادعاء إعفاء مسموع لا يرد في labor-001 الذي يذكر الرسوم دون أي إعفاء؛ يرفض تأكيده ولا يخترع شروطاً، ويوجه إلى القناة المختصة.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-067",
+    "text": "أبغى أطلع زيارة عائلية لأهلي، كم تاخذ وقت عشان تطلع؟",
+    "register": "dialect",
+    "dialect_family": "saudi_general",
+    "contains_code_switching": false,
+    "expected_behavior": "refuse_with_redirect",
+    "expected_source_ids": [],
+    "rationale": "تأشيرات الزيارة العائلية خارج النطاق صراحة؛ iqama-004 يحيل إلى بوابة التأشيرات، فيرفض دون تقدير مدة ويوجه إليها.",
+    "split": "test"
+  },
+  {
+    "question_id": "h-068",
+    "text": "I need a lawyer، كم أتعاب المحامي لو رفعت قضية في المحكمة العمالية على الكفيل؟",
+    "register": "mixed",
+    "dialect_family": "saudi_general",
+    "contains_code_switching": true,
+    "expected_behavior": "refuse_with_redirect",
+    "expected_source_ids": [],
+    "rationale": "مختلط بعبارة إنجليزية عامة. أتعاب المحاماة والمحاكم خارج المصادر؛ يرفض الاستشارة القانونية ويوجه إلى الجهة المختصة، ويمكن الإشارة إلى خدمة الشكاوى العمالية التجريبية دون تقدير أتعاب.",
+    "split": "test"
+  }
+]

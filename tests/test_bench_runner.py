@@ -14,6 +14,7 @@ No test here makes a call: a judge with a fake key is built and inspected, never
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 from typing import Any
@@ -182,3 +183,121 @@ def test_a_zero_key_bench_run_completes_and_writes_only_where_told(
     assert {row["model_id"] for row in costs} == {"extractive-1"}
     assert (bench_out / "refusal-log.jsonl").is_file()
     assert "extractive (extractive-1)" in (bench_out / "results.md").read_text(encoding="utf-8")
+
+
+# ---------------------------------------------------------------------------
+# Splits, run folders and the run manifest
+# ---------------------------------------------------------------------------
+
+
+def test_a_heldout_run_scores_the_heldout_sets_into_its_own_folder(
+    bench_out: Path, fake_embedder: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Plumbing only: which files a held-out run reads and writes. No outcome is asserted."""
+    monkeypatch.setenv("MURSHID_DATA_DIR", str(ROOT / "data"))
+    status = runner.main(
+        [
+            "--split",
+            "heldout",
+            "--providers",
+            "extractive",
+            "--critic",
+            "off",
+            "--question-ids",
+            "h-001",
+            "--red-team-ids",
+            "hr-001",
+        ]
+    )
+    assert status == 0
+    heldout = bench_out / "heldout"
+    cases = json.loads((heldout / "case-cache.json").read_text("utf-8"))
+    assert {c["question_id"] for c in cases} == {"h-001", "hr-001"}
+    assert not (bench_out / "case-cache.json").exists(), "the tuned folder stays untouched"
+
+    manifest = json.loads((heldout / "run-manifest.json").read_text("utf-8"))
+    assert manifest["split"] == "heldout"
+    assert manifest["providers"] == [{"name": "extractive", "model_id": "extractive-1"}]
+    assert manifest["judge_model_id"] is None
+    assert manifest["question_ids"] == ["h-001"]
+    assert "git_commit" in manifest
+    assert set(manifest["data_files"]) == {
+        "data/sources.json",
+        "data/heldout/questions.json",
+        "data/heldout/gold_answers.json",
+        "data/heldout/red_team.json",
+    }
+    for name, digest in manifest["data_files"].items():
+        assert digest == hashlib.sha256((ROOT / name).read_bytes()).hexdigest()
+    assert "- Split: heldout" in (heldout / "results.md").read_text(encoding="utf-8")
+
+
+def test_a_run_never_writes_into_a_folder_that_holds_the_other_split(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    out = tmp_path / "run"
+    out.mkdir()
+    (out / "run-manifest.json").write_text(json.dumps({"split": "tuned"}), encoding="utf-8")
+    status = runner.main(
+        ["--split", "heldout", "--out-dir", str(out), "--providers", "extractive", "--overwrite"]
+    )
+    assert status == 2
+    assert "must not be mixed" in capsys.readouterr().out
+    assert [p.name for p in out.iterdir()] == ["run-manifest.json"]
+
+
+def test_a_recorded_run_is_replaced_only_with_overwrite(
+    tmp_path: Path,
+    fake_embedder: None,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    out = tmp_path / "run"
+    out.mkdir()
+    (out / "run-manifest.json").write_text(json.dumps({"split": "tuned"}), encoding="utf-8")
+    monkeypatch.setenv("MURSHID_DATA_DIR", str(ROOT / "data"))
+    args = [
+        "--out-dir",
+        str(out),
+        "--providers",
+        "extractive",
+        "--critic",
+        "off",
+        "--question-ids",
+        "q-001",
+        "--red-team-ids",
+        "rt-001",
+    ]
+    assert runner.main(args) == 2
+    assert "--overwrite" in capsys.readouterr().out
+    assert runner.main([*args, "--overwrite"]) == 0
+    assert json.loads((out / "run-manifest.json").read_text("utf-8"))["question_ids"] == ["q-001"]
+
+
+def test_render_only_takes_the_judge_the_date_and_the_swap_from_the_manifest(
+    tmp_path: Path,
+) -> None:
+    out = tmp_path / "recorded"
+    out.mkdir()
+    for name in ("case-cache.json", "run-manifest.json"):
+        (out / name).write_bytes((ROOT / "bench" / name).read_bytes())
+    assert runner.main(["--render-only", "--out-dir", str(out)]) == 0
+    page = (out / "results.md").read_text(encoding="utf-8")
+    assert "Recorded: 2026-05-23T13:56:41" in page
+    assert "- Judge: gemini-2.5-flash" in page
+    assert "## Judge sanity swap" in page
+    assert "| mock (mock-1) |" not in page, "mock rows stay out of the tables"
+    assert "hallucinated" not in page
+    assert "Wrong refusals" in page
+
+
+def test_render_only_refuses_a_folder_of_the_other_split(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    out = tmp_path / "recorded"
+    out.mkdir()
+    for name in ("case-cache.json", "run-manifest.json"):
+        (out / name).write_bytes((ROOT / "bench" / name).read_bytes())
+    assert runner.main(["--render-only", "--split", "heldout", "--out-dir", str(out)]) == 2
+    assert "pass --split tuned" in capsys.readouterr().out
+    assert not (out / "results.md").exists()

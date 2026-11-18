@@ -192,7 +192,7 @@ and is the authoritative one.
 | `providers/mock.py` | `MockProvider` (kind `mock`) | A test double: a fixed placeholder answer, identity rewrite, a passing critic. |
 | `providers/claude.py`, `openai.py`, `gemini.py` | Paid providers | Claude via `anthropic` (default `claude-sonnet-4-6`); OpenAI via `openai` (default `gpt-5.5-2026-04-23`, sent `max_completion_tokens`, which GPT-5.x requires); Gemini via `google-genai` (default `gemini-3.1-pro-preview`; Gemini 2.5 thinking capped at half the output budget). One SDK client per provider, built on first use; no SDK is imported until a call is made. |
 | `bench/metrics.py` | `evaluate_case`, `evaluate_red_team_case`, `aggregate`, `dump_cases` / `load_cases` | Per case: recall@5 (gold `quoted_passage` found in the retrieved passages), correctness + register (judge JSON with matched, missing and irrelevant facts and 0-3 scores), faithfulness (a second judge call), citation accuracy (gold passages quoted verbatim in the answer), behavior match, cost, latency. Refusal tone (0-3) for non-answer behaviors; for red-team cases a rubric judge reads the case's `evaluation_notes` and its pass requires a behavior match. Recall and citation accuracy skip cases expected to short-circuit. Critic-gated refusals are counted by cause. |
-| `bench/runner.py` | `python -m murshid.bench [flags]` | `--providers`, `--critic`, `--mode {full,red_team,standard}`, `--question-ids` / `--red-team-ids`, `--no-sanity-swap`, `--render-only` (re-render from `bench/case-cache.json` with no model call). Writes `bench/results.md`, `bench/cost-log.jsonl`, `bench/refusal-log.jsonl` and `bench/case-cache.json`. The sanity swap re-scores the same predicted answer with a second judge. |
+| `bench/runner.py` | `python -m murshid.bench [flags]` | `--split {tuned,heldout}` (one split per run, each in its own folder: `bench/` or `bench/heldout/`, or `--out-dir`), `--providers`, `--critic`, `--mode {full,red_team,standard}`, `--question-ids` / `--red-team-ids`, `--no-sanity-swap`, `--overwrite`, `--render-only` (re-render from the folder's case cache and manifest with no model call). Writes `results.md`, `case-cache.json`, `cost-log.jsonl`, `refusal-log.jsonl` and `run-manifest.json` (split, commit, model ids, dates, data-file hashes). Refuses a folder holding a run of the other split, and replaces a recorded run only with `--overwrite`. The results page leaves the mock provider out of its tables. The sanity swap re-scores the same predicted answer with a second judge. |
 
 ---
 
@@ -285,8 +285,9 @@ support it. An earlier run (`bench/archive/results-phase3-snapshot.md`, 2026-05-
 such facts per answer for Claude and 1.00 for OpenAI; after the system prompt gained the rule to
 answer only what was asked, both measure 1.09.
 
-The mock rows in `bench/results.md` score fixed placeholder answers. Their behavior column is the
-rules acting alone (26 / 26); their quality columns mean nothing.
+`bench/results.md` leaves the mock provider out of its tables: its answer is a fixed
+placeholder, so its quality scores mean nothing. Its behavior is the rules acting alone, and
+there the rules took the expected behavior in all 52 mock cells (26 items × 2 critic modes).
 
 **The critic, measured.** With the critic on, behavior fell to 17 / 26 for Claude and 24 / 26
 for OpenAI. In the 52 critic-on cells of the two real providers the critic refused 11 times, and

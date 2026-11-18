@@ -782,7 +782,9 @@ def dump_cases(path: Path, cases: list[CaseResult]) -> None:
     """
     payload = [asdict(c) for c in cases]
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8", newline="\n"
+    )
 
 
 def load_cases(path: Path) -> list[CaseResult]:

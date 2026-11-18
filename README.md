@@ -112,9 +112,14 @@ uv run python -m murshid.bench --providers mock --critic off --no-sanity-swap
 
 A bench run that reaches a paid provider or judge spends real money: its default providers are
 `mock,claude,openai`, and the judge is called whenever a judge's key is set. A provider or judge
-without a key is skipped. A run writes `bench/results.md`, `bench/case-cache.json`,
-`bench/cost-log.jsonl` and `bench/refusal-log.jsonl`, replacing the recorded ones; restore them
-with git if that was not the point.
+without a key is skipped.
+
+A run scores one split: `--split tuned` (the default, `data/`) or `--split heldout`
+(`data/heldout/`). Each split writes to its own folder, `bench/` or `bench/heldout/` unless
+`--out-dir` names another, so the two are never pooled. A run writes `results.md`,
+`case-cache.json`, `cost-log.jsonl`, `refusal-log.jsonl` and `run-manifest.json` (the split, the
+commit, the model ids, the dates and the data files' hashes). It refuses a folder that holds a run
+of the other split, and replaces a recorded run only with `--overwrite`.
 
 ## Repository layout
 

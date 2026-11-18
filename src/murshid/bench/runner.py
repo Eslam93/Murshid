@@ -24,20 +24,35 @@ Providers and judges come from the provider registry (`murshid.providers.factory
 settings (`murshid.settings`): the judge is `BENCH_JUDGE_MODEL`, the data is read from
 `MURSHID_DATA_DIR`, and the index is enriched by `METADATA_ENRICHMENT_PROVIDER`.
 
-Outputs:
-  - `bench/results.md`           — aggregate + per-case results
-  - `bench/cost-log.jsonl`       — per-call token usage / cost (answer-call only)
-  - `bench/refusal-log.jsonl`    — per refuse/escalate/clarify response trace
-  - `bench/case-cache.json`      — per-case results for `--render-only` re-renders
+Splits: `--split tuned` (the default) scores the question sets in `data/`, which the rules were
+tuned on; `--split heldout` scores `data/heldout/`, which they never saw. A run scores one split,
+and each split writes to its own folder, so the two are never pooled: `bench/` for tuned and
+`bench/heldout/` for held-out, unless `--out-dir` names another. A run refuses to write into a
+folder that holds a run of the other split, and into any folder that holds a run at all unless
+`--overwrite` is given.
+
+Outputs, in the run's folder:
+  - `results.md`         — aggregate + per-case results
+  - `cost-log.jsonl`     — per-call token usage / cost (answer-call only)
+  - `refusal-log.jsonl`  — per refuse/escalate/clarify response trace
+  - `case-cache.json`    — per-case results for `--render-only` re-renders
+  - `run-manifest.json`  — the split, the commit, the model ids, the dates and the data files'
+                           sha256, so a reader can tell what produced the numbers
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
+import importlib.metadata
 import json
+import platform
+import subprocess
 import sys
 import time
 from collections.abc import Sequence
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, NotRequired, Protocol, TypedDict
 
@@ -78,6 +93,56 @@ COST_LOG_PATH = BENCH_DIR / "cost-log.jsonl"
 REFUSAL_LOG_PATH = BENCH_DIR / "refusal-log.jsonl"
 RESULTS_MD_PATH = BENCH_DIR / "results.md"
 CASE_CACHE_PATH = BENCH_DIR / "case-cache.json"
+MANIFEST_NAME = "run-manifest.json"
+
+# The question sets a run can score: the folder under the data directory that holds each.
+SPLITS: dict[str, str] = {"tuned": "", "heldout": "heldout"}
+# How the results page names each split.
+SPLIT_LABELS: dict[str, str] = {
+    "tuned": "tuned (`data/`, the items the rules were tuned on)",
+    "heldout": "heldout (`data/heldout/`, items the rules never saw)",
+}
+# What `ingest.build_index` embeds the corpus with.
+EMBEDDER_MODEL_ID = "BAAI/bge-m3"
+
+
+@dataclass(frozen=True)
+class RunPaths:
+    """Where one bench run writes its results, case cache, logs and manifest."""
+
+    out_dir: Path
+    results_md: Path
+    case_cache: Path
+    cost_log: Path
+    refusal_log: Path
+    manifest: Path
+
+
+def run_paths(split: str, out_dir: Path | None = None) -> RunPaths:
+    """A run's files: under `out_dir` if given, else `bench/` (tuned) or `bench/heldout/`."""
+    if out_dir is None and split == "tuned":
+        return RunPaths(
+            out_dir=BENCH_DIR,
+            results_md=RESULTS_MD_PATH,
+            case_cache=CASE_CACHE_PATH,
+            cost_log=COST_LOG_PATH,
+            refusal_log=REFUSAL_LOG_PATH,
+            manifest=BENCH_DIR / MANIFEST_NAME,
+        )
+    base = out_dir if out_dir is not None else BENCH_DIR / SPLITS[split]
+    return RunPaths(
+        out_dir=base,
+        results_md=base / "results.md",
+        case_cache=base / "case-cache.json",
+        cost_log=base / "cost-log.jsonl",
+        refusal_log=base / "refusal-log.jsonl",
+        manifest=base / MANIFEST_NAME,
+    )
+
+
+def split_data_dir(data_dir: Path, split: str) -> Path:
+    """The folder that holds a split's questions, gold answers and red-team cases."""
+    return data_dir / SPLITS[split] if SPLITS[split] else data_dir
 
 
 # ---------------------------------------------------------------------------
@@ -168,9 +233,11 @@ def _log_cost(
     kind: str,
     response_like: _TokenUsage,
     cost_usd: float,
+    *,
+    path: Path,
 ) -> None:
     _append_jsonl(
-        COST_LOG_PATH,
+        path,
         {
             "ts": _now_iso(),
             "provider": provider.name,
@@ -191,8 +258,9 @@ def _log_refusal(
     critic_mode: str,
     *,
     expected_behavior: str = "",
+    path: Path,
 ) -> None:
-    """Append a non-answer trace row to bench/refusal-log.jsonl.
+    """Append a non-answer trace row to the run's refusal-log.jsonl.
 
     Each row carries `expected_behavior` and `behavior_matched`, so a row
     can be audited without rejoining `bench/results.md`.
@@ -200,7 +268,7 @@ def _log_refusal(
     if answer.behavior_taken == "answer":
         return  # only log non-answers
     _append_jsonl(
-        REFUSAL_LOG_PATH,
+        path,
         {
             "ts": _now_iso(),
             "provider": provider_name,
@@ -242,6 +310,7 @@ def _run_one(
     index: Index,
     bm25_index: BM25Index | None,
     critic_mode: str,
+    paths: RunPaths,
 ) -> CaseResult:
     """Run one (provider, critic_mode) on one question + evaluate."""
     critic_enabled = critic_mode == "on"
@@ -289,6 +358,7 @@ def _run_one(
             "latency_s": answer.latency_s,
         },
         cost_usd=answer_cost,
+        path=paths.cost_log,
     )
 
     _log_refusal(
@@ -296,6 +366,7 @@ def _run_one(
         provider.name,
         critic_mode,
         expected_behavior=question.get("expected_behavior", "answer"),
+        path=paths.refusal_log,
     )
 
     # Evaluate against gold (judge calls happen inside).
@@ -342,6 +413,7 @@ def _run_one_red_team(
     index: Index,
     bm25_index: BM25Index | None,
     critic_mode: str,
+    paths: RunPaths,
 ) -> CaseResult:
     """Run one red-team case through (provider, critic_mode) + score it."""
     critic_enabled = critic_mode == "on"
@@ -391,12 +463,14 @@ def _run_one_red_team(
             "latency_s": answer.latency_s,
         },
         cost_usd=answer_cost,
+        path=paths.cost_log,
     )
     _log_refusal(
         answer,
         provider.name,
         critic_mode,
         expected_behavior=case_data.get("expected_behavior", "refuse_with_redirect"),
+        path=paths.refusal_log,
     )
 
     if judge is None:
@@ -624,22 +698,55 @@ def render_results_md(
     per_case_standard: list[CaseResult],
     per_case_red_team: list[CaseResult],
     mode: str = "full",
+    split: str = "tuned",
+    recorded_at: str | None = None,
+    judge_model_id: str | None = None,
+    rendered_from_cache: bool = False,
 ) -> str:
+    """The results page of one run. `judge_model_id` names the judge when `judge` is None,
+    as when `--render-only` rebuilds the page from the case cache and the run manifest."""
+    # Mock answers are a fixed placeholder, so mock rows would read as a provider's results.
+    # The tables leave them out; one line reports what the rules alone did with mock.
+    mock_cases = [c for c in per_case_standard + per_case_red_team if c.provider_name == "mock"]
+    aggregates_standard = [a for a in aggregates_standard if a.provider_name != "mock"]
+    aggregates_red_team = [a for a in aggregates_red_team if a.provider_name != "mock"]
+    per_case_standard = [c for c in per_case_standard if c.provider_name != "mock"]
+    per_case_red_team = [c for c in per_case_red_team if c.provider_name != "mock"]
+    judge_label = judge.model_id if judge else judge_model_id
+    n_questions = len({c.question_id for c in per_case_standard + mock_cases if not c.is_red_team})
+    n_gold = len({c.question_id for c in per_case_standard + mock_cases if c.has_gold})
+    n_red_team = len({c.question_id for c in per_case_red_team + mock_cases if c.is_red_team})
+
     lines: list[str] = []
     lines.append("# Murshid — bench results")
     lines.append("")
-    lines.append(f"Generated: {_now_iso()}")
+    if rendered_from_cache:
+        lines.append(
+            f"Recorded: {recorded_at or 'not recorded'}. Rendered again from the case cache, "
+            "with no model call."
+        )
+    else:
+        lines.append(f"Recorded: {recorded_at or _now_iso()}")
     lines.append("")
     lines.append("## Configuration")
     lines.append("")
+    lines.append(f"- Split: {SPLIT_LABELS.get(split, split)}")
     lines.append(
         f"- Providers: {', '.join(f'{p.name} ({p.model_id})' for p in providers) or '(none)'}"
     )
-    lines.append(f"- Judge: {judge.model_id if judge else '(none — judge-scored metrics SKIPPED)'}")
+    lines.append(f"- Judge: {judge_label or '(none — judge-scored metrics SKIPPED)'}")
     lines.append("- Critic modes: off, on (two passes per provider)")
-    lines.append("- Standard set: 16 questions (11 with gold), Red-team: 10 cases")
-    lines.append("- Cost log: `bench/cost-log.jsonl`")
-    lines.append("- Refusal log: `bench/refusal-log.jsonl`")
+    lines.append(
+        f"- Questions: {n_questions} ({n_gold} with a gold answer); red-team cases: {n_red_team}"
+    )
+    if mock_cases:
+        matched = sum(c.behavior_match for c in mock_cases)
+        lines.append(
+            "- Mock provider: left out of the tables below, because its answer is a fixed "
+            f"placeholder. With it, the rules alone took the expected behavior in {matched} of "
+            f"{len(mock_cases)} cells."
+        )
+    lines.append("- Run manifest, cost log and refusal log: in this file's folder")
     lines.append("")
     if mode == "red_team":
         lines.append("## Mode: red-team-only re-run")
@@ -687,7 +794,7 @@ def render_results_md(
         lines.append("## Fact-count breakdown (correctness diagnostic per ADR 2)")
         lines.append("")
         lines.append(
-            "| Provider | Critic | Avg matched facts | Avg missing facts | Avg irrelevant (hallucinated) facts |"
+            "| Provider | Critic | Avg matched facts | Avg missing facts | Avg facts not in gold |"
         )
         lines.append("| --- | --- | ---:| ---:| ---:|")
         for a in aggregates_standard:
@@ -695,6 +802,12 @@ def render_results_md(
                 f"| {a.provider_name} ({a.provider_model_id}) | {a.critic_mode} | "
                 f"{_fmt(a.avg_matched_facts, 2)} | {_fmt(a.avg_missing_facts, 2)} | {_fmt(a.avg_irrelevant_facts, 2)} |"
             )
+        lines.append("")
+        lines.append(
+            "Facts not in gold are facts in an answer that the gold answer lacks (the judge's "
+            "`irrelevant_facts`): extra detail, not necessarily invented, since the sources may "
+            "support it."
+        )
         lines.append("")
 
     # Critic refusal-cause breakdown.
@@ -712,25 +825,38 @@ def render_results_md(
             "Splits the `refuse_with_redirect` count for critic=on rows by WHY the gate fired:"
         )
         lines.append("")
+        lines.append("- **Critic invalid:** the critic call itself failed, which refuses.")
         lines.append(
-            "- **Critic invalid:** critic itself errored (harness fragility, NOT a real safety catch)."
+            "- **Grounded=false:** the critic judged the answer ungrounded, which refuses."
         )
         lines.append(
-            "- **Grounded=false:** critic returned a real verdict that the answer was ungrounded."
+            "- **Wrong refusals:** of those refusals, the ones where the case expected another "
+            "behavior. A critic refusal is a catch only when the case expected a refusal."
         )
         lines.append(
             "- **Register-only logs:** answer shipped, register slip logged on the Answer envelope (not a refusal)."
         )
         lines.append("")
         lines.append(
-            "| Provider | Scope | Critic | Refuses (critic invalid) | Refuses (grounded=false) | Logged (register-only) |"
+            "| Provider | Scope | Critic | Refuses (critic invalid) | Refuses (grounded=false) | Wrong refusals | Logged (register-only) |"
         )
-        lines.append("| --- | --- | --- | ---:| ---:| ---:|")
+        lines.append("| --- | --- | --- | ---:| ---:| ---:| ---:|")
         for a in all_aggs_for_critic:
             scope = "rt" if a.n_red_team else "std"
+            scoped = per_case_red_team if a.n_red_team else per_case_standard
+            wrong = sum(
+                1
+                for c in scoped
+                if c.provider_name == a.provider_name
+                and c.critic_mode == a.critic_mode
+                and c.behavior_taken == "refuse_with_redirect"
+                and (not c.critic_valid or not c.critic_grounded)
+                and not c.behavior_match
+            )
             lines.append(
                 f"| {a.provider_name} ({a.provider_model_id}) | {scope} | {a.critic_mode} | "
-                f"{a.n_critic_invalid_refuses} | {a.n_grounded_false_refuses} | {a.n_register_only_logs} |"
+                f"{a.n_critic_invalid_refuses} | {a.n_grounded_false_refuses} | {wrong} | "
+                f"{a.n_register_only_logs} |"
             )
         lines.append("")
 
@@ -817,7 +943,8 @@ def render_results_md(
     if aggregates_standard:
         lines.append("## Verdict")
         lines.append("")
-        real = [a for a in aggregates_standard if a.provider_name != "mock"]
+        # Only a judged row can be compared on quality; mock rows are already out.
+        real = [a for a in aggregates_standard if a.correctness_mean is not None]
         if real:
 
             def score(a: AggregateMetrics) -> float:
@@ -828,22 +955,23 @@ def render_results_md(
 
             best = max(real, key=score)
             lines.append(
-                f"Provisional production default: **{best.provider_name} ({best.provider_model_id})** "
+                f"Best by the bench's score (3 × behavior + correctness + faithfulness − facts not "
+                f"in gold): **{best.provider_name} ({best.provider_model_id})** "
                 f"in `critic={best.critic_mode}` mode. "
                 f"Behavior match {_fmt(best.behavior_match_rate)}, correctness {_fmt(best.correctness_mean, 2)} / 3, "
                 f"faithfulness {_fmt(best.faithfulness_mean, 2)} / 3, "
-                f"avg {_fmt(best.avg_irrelevant_facts, 2)} hallucinated facts per question, "
+                f"avg {_fmt(best.avg_irrelevant_facts, 2)} facts not in the gold answer per question, "
                 f"refusal tone {_fmt(best.refusal_tone_mean, 2)} / 3, "
                 f"answer cost {_fmt(best.total_cost_usd, 4)} USD across {best.n_cases} cases "
                 f"(see Answer-cost-column footnote above for what's included vs not)."
             )
         else:
-            lines.append(
-                "Only the mock provider ran. No verdict — see provider-availability notes above."
-            )
+            lines.append("No verdict: no answer in this run was judged.")
         lines.append("")
         lines.append(
-            "Statistical caveat (ADR 2): correctness / faithfulness aggregates use n ≤ 11 gold answers per provider × critic_mode. Red-team uses n=10 cases. Treat differences ≤ 0.3 as directional, not significant."
+            f"Statistical caveat (ADR 2): correctness / faithfulness aggregates use n ≤ {n_gold} "
+            f"gold answers per provider × critic_mode, and the red-team rubric n = {n_red_team} "
+            "cases. Treat differences ≤ 0.3 as directional, not significant."
         )
         lines.append("")
 
@@ -904,7 +1032,7 @@ def render_results_md(
         lines.append("")
         lines.append(
             "Rows where `behavior_taken=error` (provider call raised). "
-            "Full exception text in `bench/case-cache.json`; truncated here for readability."
+            "Full exception text in the run's `case-cache.json`; truncated here for readability."
         )
         lines.append("")
         lines.append("| Case | Provider | Critic | Exception |")
@@ -916,6 +1044,102 @@ def render_results_md(
             lines.append(f"| {c.question_id} | {c.provider_name} | {c.critic_mode} | `{err}` |")
         lines.append("")
     return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Run manifest
+# ---------------------------------------------------------------------------
+
+
+def _utc_now() -> str:
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _git(*args: str) -> str | None:
+    """`git <args>` in this checkout, or None when git or the repository is not there."""
+    try:
+        done = subprocess.run(  # noqa: S603 - fixed arguments, no shell
+            ["git", "-C", str(ROOT), *args],  # noqa: S607 - git from PATH, as a developer runs it
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return done.stdout.strip()
+
+
+def _murshid_version() -> str | None:
+    try:
+        return importlib.metadata.version("murshid")
+    except importlib.metadata.PackageNotFoundError:
+        return None
+
+
+def _display_path(path: Path) -> str:
+    """`path` relative to the repository root when it is inside it, with forward slashes."""
+    try:
+        return path.resolve().relative_to(ROOT).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
+def read_manifest(path: Path) -> dict[str, Any]:
+    """A run's manifest, or {} when the folder has none."""
+    if not path.exists():
+        return {}
+    manifest: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
+    return manifest
+
+
+def build_manifest(
+    *,
+    split: str,
+    mode: str,
+    started_at: str,
+    finished_at: str,
+    providers: Sequence[_ProviderLabel],
+    critic_modes: list[str],
+    judge: LLMProvider | None,
+    sanity_swap_judge_model_id: str | None,
+    settings: Settings,
+    data_files: list[Path],
+    question_ids: set[str],
+    red_team_ids: set[str],
+    n_cases: int,
+    sanity_swap: SanitySwapReport | None,
+) -> dict[str, Any]:
+    """What produced a run's numbers: the split, the code, the models, the dates, the data."""
+    commit = _git("rev-parse", "HEAD")
+    status = _git("status", "--porcelain", "--untracked-files=no") if commit else None
+    return {
+        "schema_version": 1,
+        "split": split,
+        "mode": mode,
+        "started_at": started_at,
+        "finished_at": finished_at,
+        "git_commit": commit,
+        "git_dirty": None if status is None else status != "",
+        "murshid_version": _murshid_version(),
+        "python_version": platform.python_version(),
+        "providers": [{"name": p.name, "model_id": p.model_id} for p in providers],
+        "critic_modes": critic_modes,
+        "judge_model_id": judge.model_id if judge else None,
+        "sanity_swap_judge_model_id": sanity_swap_judge_model_id,
+        "enrichment": {
+            "provider": settings.metadata_enrichment_provider,
+            "model_id": settings.metadata_enrichment_model_id,
+        },
+        "embedder_model_id": EMBEDDER_MODEL_ID,
+        "question_ids": sorted(question_ids) or "all",
+        "red_team_ids": sorted(red_team_ids) or "all",
+        "data_files": {
+            _display_path(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in data_files
+        },
+        "n_cases": n_cases,
+        "sanity_swap": sanity_swap,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -948,7 +1172,7 @@ def main(argv: list[str] | None = None) -> int:
             "Which bench loops to run. "
             "full (default): standard set + red-team + sanity-swap. "
             "red_team: skip standard, run red-team + 3-question minimal predictions "
-            "for sanity-swap. Snapshots existing results.md to results-phase3-snapshot.md. "
+            "for sanity-swap. Snapshots the folder's results.md to archive/results-phase3-snapshot.md. "
             "standard: the standard set only; no red-team scoring."
         ),
     )
@@ -956,27 +1180,46 @@ def main(argv: list[str] | None = None) -> int:
         "--render-only",
         action="store_true",
         help=(
-            "Re-render bench/results.md from bench/case-cache.json without running "
-            "any pipeline / judge / sanity-swap calls. Lets new aggregate logic or "
-            "renderer fixes apply to existing bench data without paying for another "
-            "run. Errors if no cache exists."
+            "Re-render the run folder's results.md from its case-cache.json and "
+            "run-manifest.json without running any pipeline / judge / sanity-swap calls. "
+            "Lets new aggregate logic or renderer fixes apply to existing bench data "
+            "without paying for another run. Errors if no cache exists."
         ),
+    )
+    parser.add_argument(
+        "--split",
+        default="tuned",
+        choices=list(SPLITS),
+        help=(
+            "Which question sets to score: tuned (data/, the items the rules were tuned on; "
+            "the default) or heldout (data/heldout/, which the rules never saw). A run scores "
+            "one split, and each split writes to its own folder."
+        ),
+    )
+    parser.add_argument(
+        "--out-dir",
+        type=Path,
+        default=None,
+        help="The run's folder. Default: bench/ for tuned, bench/heldout/ for heldout.",
+    )
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Replace the run already in the folder. A run of the other split is never replaced.",
     )
     parser.add_argument(
         "--question-ids",
         default="",
         help=(
-            "Comma-separated question IDs to filter the standard set. "
-            "Empty = all 16 questions. Lets a small focused bench refresh only "
+            "Comma-separated question IDs to filter the split's questions. "
+            "Empty = all of them. Lets a small focused bench refresh only "
             "the cases you need without paying for the full set."
         ),
     )
     parser.add_argument(
         "--red-team-ids",
         default="",
-        help=(
-            "Comma-separated red-team case IDs to filter the red-team set. Empty = all 10 cases."
-        ),
+        help=("Comma-separated red-team case IDs to filter the split's red-team set. Empty = all."),
     )
     args = parser.parse_args(argv)
 
@@ -986,24 +1229,36 @@ def main(argv: list[str] | None = None) -> int:
         print(f"[bench] {e}")
         return 2
 
+    split: str = args.split
+    paths = run_paths(split, args.out_dir)
+
     # ---------------------------------------------------------------
     # Render-only mode — early exit
     # ---------------------------------------------------------------
     if args.render_only:
-        if not CASE_CACHE_PATH.exists():
+        if not paths.case_cache.exists():
             print(
-                f"[bench] --render-only: no case cache at {CASE_CACHE_PATH}. "
+                f"[bench] --render-only: no case cache at {paths.case_cache}. "
                 "Run the bench at least once first so the cache is created."
             )
             return 1
-        print(f"[bench] --render-only: loading {CASE_CACHE_PATH}")
-        cached = load_cases(CASE_CACHE_PATH)
+        manifest = read_manifest(paths.manifest)
+        if manifest and manifest.get("split") != split:
+            print(
+                f"[bench] --render-only: {paths.out_dir} holds a {manifest.get('split')} run; "
+                f"pass --split {manifest.get('split')}."
+            )
+            return 2
+        print(f"[bench] --render-only: loading {paths.case_cache}")
+        cached = load_cases(paths.case_cache)
         cached_standard = [c for c in cached if not c.is_red_team]
         cached_red_team = [c for c in cached if c.is_red_team]
 
-        # Re-aggregate by (provider, critic_mode) for each scope.
+        # Re-aggregate by (provider, critic_mode) for each scope, in the order the run ran them.
         def _by_pc(cs: list[CaseResult]) -> list[AggregateMetrics]:
-            pairs = sorted({(c.provider_name, c.provider_model_id, c.critic_mode) for c in cs})
+            pairs = list(
+                dict.fromkeys((c.provider_name, c.provider_model_id, c.critic_mode) for c in cs)
+            )
             return [
                 aggregate([c for c in cs if c.provider_name == n and c.critic_mode == m])
                 for (n, _mid, m) in pairs
@@ -1017,7 +1272,7 @@ def main(argv: list[str] | None = None) -> int:
             def __init__(self, name: str, model_id: str) -> None:
                 self.name, self.model_id = name, model_id
 
-        provider_pairs = sorted({(c.provider_name, c.provider_model_id) for c in cached})
+        provider_pairs = list(dict.fromkeys((c.provider_name, c.provider_model_id) for c in cached))
         stub_providers = [_StubProvider(n, m) for n, m in provider_pairs]
 
         # Mode is inferred from the cache contents.
@@ -1032,20 +1287,23 @@ def main(argv: list[str] | None = None) -> int:
         if cached_red_team and len(cached_standard) <= 3:
             inferred_mode = "red_team"
 
+        # The judge, the sanity swap and the date are not in the case cache; the manifest has them.
         md = render_results_md(
             providers=stub_providers,
-            judge=None,  # judge model name isn't preserved in cache; the existing
-            # results.md "Configuration" line is overwritten by the
-            # render — accept the loss for render-only re-runs.
+            judge=None,
+            judge_model_id=manifest.get("judge_model_id"),
             aggregates_standard=re_aggs_std if inferred_mode != "red_team" else [],
             aggregates_red_team=re_aggs_rt,
-            sanity_swap=None,
+            sanity_swap=manifest.get("sanity_swap"),
             per_case_standard=cached_standard if inferred_mode != "red_team" else [],
             per_case_red_team=cached_red_team,
             mode=inferred_mode,
+            split=split,
+            recorded_at=manifest.get("started_at"),
+            rendered_from_cache=True,
         )
-        RESULTS_MD_PATH.write_text(md, encoding="utf-8")
-        print(f"[bench] re-rendered {RESULTS_MD_PATH} (no LLM calls made)")
+        paths.results_md.write_text(md, encoding="utf-8", newline="\n")
+        print(f"[bench] re-rendered {paths.results_md} (no LLM calls made)")
         return 0
 
     provider_names = [n.strip() for n in args.providers.split(",") if n.strip()]
@@ -1054,9 +1312,25 @@ def main(argv: list[str] | None = None) -> int:
         critic_modes = ["on", "off"]
     mode = args.mode
 
-    # Reset bench logs.
-    BENCH_DIR.mkdir(parents=True, exist_ok=True)
-    for p in (COST_LOG_PATH, REFUSAL_LOG_PATH):
+    # One split per folder, never pooled; and a recorded run is replaced only on request.
+    recorded = read_manifest(paths.manifest)
+    if recorded and recorded.get("split") != split:
+        print(
+            f"[bench] {paths.out_dir} holds a {recorded.get('split')} run, and a {split} run "
+            "must not be mixed with it. Pass another --out-dir."
+        )
+        return 2
+    if (recorded or paths.case_cache.exists()) and not args.overwrite:
+        print(
+            f"[bench] {paths.out_dir} already holds a recorded run. Pass another --out-dir for "
+            "a new run, or --overwrite to replace this one."
+        )
+        return 2
+    started_at = _utc_now()
+
+    # Reset the run's logs.
+    paths.out_dir.mkdir(parents=True, exist_ok=True)
+    for p in (paths.cost_log, paths.refusal_log):
         if p.exists():
             p.unlink()
 
@@ -1064,13 +1338,14 @@ def main(argv: list[str] | None = None) -> int:
     # tables are preserved verbatim while the new red-team + sanity-swap data
     # gets written to results.md. The snapshot is the audit trail for the
     # standard verdict — the new results.md will reference it inline.
-    if mode == "red_team" and RESULTS_MD_PATH.exists():
-        archive_dir = BENCH_DIR / "archive"
+    if mode == "red_team" and paths.results_md.exists():
+        archive_dir = paths.out_dir / "archive"
         archive_dir.mkdir(exist_ok=True)
         snapshot_path = archive_dir / "results-phase3-snapshot.md"
         snapshot_path.write_text(
-            RESULTS_MD_PATH.read_text(encoding="utf-8"),
+            paths.results_md.read_text(encoding="utf-8"),
             encoding="utf-8",
+            newline="\n",
         )
         print(f"[bench] snapshotted existing results.md -> {snapshot_path}")
 
@@ -1084,18 +1359,21 @@ def main(argv: list[str] | None = None) -> int:
 
     # Build index + bm25 once. Enrichment uses METADATA_ENRICHMENT_PROVIDER (mock by default, to
     # keep cost at zero; a cheap real model is one setting away).
+    # The corpus is the same for every split; the question sets are the split's.
     data_dir = settings.murshid_data_dir
+    sets_dir = split_data_dir(data_dir, split)
+    print(f"[bench] split: {split} (question sets from {sets_dir})")
     print("[bench] building dense + BM25 indices...")
     index = build_index(data_dir, build_enrichment_provider(settings))
     bm25_index = build_bm25_index(index)
     print(f"[bench] index ready ({len(index)} chunks)")
 
     # Load data.
-    with (data_dir / "questions.json").open(encoding="utf-8") as f:
+    with (sets_dir / "questions.json").open(encoding="utf-8") as f:
         questions: list[Question] = json.load(f)
-    with (data_dir / "gold_answers.json").open(encoding="utf-8") as f:
+    with (sets_dir / "gold_answers.json").open(encoding="utf-8") as f:
         gold_list: list[GoldAnswer] = json.load(f)
-    with (data_dir / "red_team.json").open(encoding="utf-8") as f:
+    with (sets_dir / "red_team.json").open(encoding="utf-8") as f:
         red_team: list[RedTeamCase] = json.load(f)
     questions_by_id = {q["question_id"]: q for q in questions}
     golds_by_id = {g["question_id"]: g for g in gold_list}
@@ -1134,6 +1412,7 @@ def main(argv: list[str] | None = None) -> int:
                         index=index,
                         bm25_index=bm25_index,
                         critic_mode=critic_mode,
+                        paths=paths,
                     )
                     standard_cases.append(case)
     elif mode == "red_team" and not args.no_sanity_swap:
@@ -1166,6 +1445,7 @@ def main(argv: list[str] | None = None) -> int:
                     index=index,
                     bm25_index=bm25_index,
                     critic_mode=SANITY_SWAP_CRITIC_MODE,
+                    paths=paths,
                 )
                 standard_cases.append(case)
         else:
@@ -1195,6 +1475,7 @@ def main(argv: list[str] | None = None) -> int:
                         index=index,
                         bm25_index=bm25_index,
                         critic_mode=critic_mode,
+                        paths=paths,
                     )
                     red_team_cases.append(case)
 
@@ -1229,9 +1510,11 @@ def main(argv: list[str] | None = None) -> int:
     # Sanity swap: scores the SAME predicted answer with two
     # judges. Uses only standard cases (which have gold answers).
     sanity_swap: SanitySwapReport | None = None
+    swap_judge_model_id: str | None = None
     if not args.no_sanity_swap and judge is not None:
         swap_judge = select_swap_judge(settings)
         if swap_judge is not None:
+            swap_judge_model_id = swap_judge.model_id
             print(f"[bench] running judge sanity swap ({swap_judge.model_id})...")
             sanity_swap = run_judge_sanity_swap(
                 primary_judge=judge,
@@ -1243,8 +1526,8 @@ def main(argv: list[str] | None = None) -> int:
 
     # Dump case data to disk so `--render-only` can re-apply renderer / aggregate
     # fixes without paying for another bench run.
-    dump_cases(CASE_CACHE_PATH, all_cases)
-    print(f"[bench] case cache:         {CASE_CACHE_PATH}")
+    dump_cases(paths.case_cache, all_cases)
+    print(f"[bench] case cache:         {paths.case_cache}")
 
     # Render + write.
     md = render_results_md(
@@ -1256,11 +1539,35 @@ def main(argv: list[str] | None = None) -> int:
         per_case_standard=standard_cases if mode != "red_team" else [],
         per_case_red_team=red_team_cases,
         mode=mode,
+        split=split,
+        recorded_at=started_at,
     )
-    RESULTS_MD_PATH.write_text(md, encoding="utf-8")
-    print(f"[bench] results written to: {RESULTS_MD_PATH}")
-    print(f"[bench] cost log:           {COST_LOG_PATH}")
-    print(f"[bench] refusal log:        {REFUSAL_LOG_PATH}")
+    paths.results_md.write_text(md, encoding="utf-8", newline="\n")
+
+    manifest = build_manifest(
+        split=split,
+        mode=mode,
+        started_at=started_at,
+        finished_at=_utc_now(),
+        providers=providers,
+        critic_modes=critic_modes,
+        judge=judge,
+        sanity_swap_judge_model_id=swap_judge_model_id,
+        settings=settings,
+        data_files=[data_dir / "sources.json"]
+        + [sets_dir / name for name in ("questions.json", "gold_answers.json", "red_team.json")],
+        question_ids=q_filter,
+        red_team_ids=rt_filter,
+        n_cases=len(all_cases),
+        sanity_swap=sanity_swap,
+    )
+    paths.manifest.write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n"
+    )
+    print(f"[bench] results written to: {paths.results_md}")
+    print(f"[bench] cost log:           {paths.cost_log}")
+    print(f"[bench] refusal log:        {paths.refusal_log}")
+    print(f"[bench] run manifest:       {paths.manifest}")
     return 0
 
 

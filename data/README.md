@@ -97,7 +97,6 @@ reserves for examples: `services.example` and `visa.example`.
   [`data/heldout/`](heldout/README.md) (68 questions, 25 red-team cases, 31 gold answers) was
   written without seeing the rules; score it separately and never tune on it.
 
-## Licence
+## License
 
-No licence is stated for these files yet: the MIT licence in [LICENSE](../LICENSE) covers the
-code. Who holds the rights to the corpus and the evaluation sets is being confirmed.
+The data is released under the repository's [MIT license](../LICENSE).

@@ -198,5 +198,5 @@ of the other split, and replaces a recorded run only with `--overwrite`.
 
 ## Licence
 
-The code is released under the [MIT licence](LICENSE). The files in `data/` carry no licence
-statement yet.
+Released under the [MIT licence](LICENSE): the code, the synthetic data in `data/` and the
+recorded bench runs.

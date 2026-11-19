@@ -98,7 +98,7 @@ guessed date, national ID vs residency permit, grounded answer vs plausible poli
              ▼
 ┌──────────────────────────────────────┐
 │  critic.py  (only when critic is on; │
-│  off by default)                     │      ┌──────────────────────────┐
+│  on in answer_question, off in UI)   │      ┌──────────────────────────┐
 │  register + groundedness verdict:    │─────▶│ refuse_with_redirect     │
 │    grounded=false        → refuse    │      │ (when grounded=false)    │
 │    register-only mismatch→ log+ship  │      └──────────────────────────┘
@@ -146,7 +146,7 @@ flowchart TD
     J --> SG{"Pre-generation support gate<br/>(support_gate_enabled=True by default)<br/>bait pattern? + ALL specific terms in retrieved passages?"}
     SG -- "bait + missing terms" --> R3["refuse_with_redirect<br/>(SUPPORT_GATE_REFUSAL_AR;<br/>fires before any model call)"]
     SG -- "supported / no bait" --> K["provider.generate<br/>(retry_call: 2 retries on transient SDK errors;<br/>client errors propagate immediately)"]
-    K --> L{"critic on?<br/>(off by default)"}
+    K --> L{"critic on?<br/>(on in answer_question by default;<br/>off in the UI; recommended off)"}
     L -- "off" --> M["Behavior tag<br/>(answer or partial_answer_with_escalation)"]
     L -- "on" --> N["critic.critique_answer<br/>(register + groundedness; max_tokens=4000)"]
     N --> O{"critic.grounded?<br/>(topic overlap is not support)"}
@@ -182,7 +182,7 @@ and is the authoritative one.
 | `router.py` | `route_query(query: str) -> RoutingResult` | Rules-first Arabic-keyword classifier into `{iqama, traffic_fines, sponsorship_transfer, municipal_permits, labor_office, out_of_scope}`. Multi-word keywords (e.g. `تصريح العمل`) outweigh single words (`تصريح`). Confidence: 0.9 for a hard out-of-scope trigger (→ refuse), 0.5 when no category matches (→ clarify), otherwise 0.95 / 0.85 / 0.75 / 0.6 by score and margin. A `MEDICAL_PATTERNS` regex separates `صدر` the verb ("was issued") from `صدر` the noun ("chest"). Synonyms: `غرامة / مخالفة`, `بطاقة الإقامة / كرت الإقامة / إقامة`, `إذن العمل / تصريح العمل / رخصة عمل`. |
 | `rewrite.py` | `rewrite_to_msa(query, provider) -> str` | Model-backed dialect → MSA query rewrite via the `[ROLE: rewrite]` sentinel, used only for retrieval; the answer stays in the user's register. The zero-key providers return the query unchanged. |
 | `prompts.py` | `SYSTEM_PROMPT_AR` + `SYSTEM_PROMPT_SHORT_AR` | The answer rules: answer in the user's register; quote sources verbatim in MSA, in quotation marks; invent no policy, fee, date or procedure; answer only what was asked; answer the in-corpus part and send the rest to the competent authority; refuse politely when the sources fall short. Two few-shot examples show register matching. |
-| `critic.py` | `critique_answer(query, answer, citations, provider) -> CriticResult` | An optional second model call (`[ROLE: critic]`) that returns a register and groundedness verdict as JSON. Fails closed: if the call errors or its JSON cannot be parsed, `valid=False` and `grounded=False`, which refuses. `max_tokens=4000` (thinking models spend output budget before the JSON). Off by default; see ADR 2 for what it did in the recorded run. |
+| `critic.py` | `critique_answer(query, answer, citations, provider) -> CriticResult` | An optional second model call (`[ROLE: critic]`) that returns a register and groundedness verdict as JSON. Fails closed: if the call errors or its JSON cannot be parsed, `valid=False` and `grounded=False`, which refuses. `max_tokens=4000` (thinking models spend output budget before the JSON). `answer_question` runs it unless called with `critic_enabled=False`, and `scripts/demo.py` keeps that default; the UI's checkbox starts off. ADR 2 recommends off and records what it did in the recorded run. |
 | `pipeline.py` | `answer_question(query, index, provider, *, bm25_index, top_k, critic_enabled, support_gate_enabled) -> Answer` | Router → register → short-circuits → rewrite → retrieve → **support gate** → generate → critic (if on) → partial-escalation tag. Input capped at 4000 characters. The support gate fires after retrieval and before generation when the question matches a policy-bait pattern (hearsay `سمعت أن` / `قيل لي` / `قالوا لي`, an automatic effect such as `تنحذف ... تلقائياً`, a special exemption `إعفاء خاص` / `استثناء خاص`) AND one or more of the question's specific claim terms (numbers, demographic markers, auto-action verbs) appear in no retrieved passage. `support_gate_enabled=False` turns it off for ablation. `Answer.question_register` is detected on the query, `Answer.answer_register` on the generated text. `_has_ambiguous_date` covers Western (`10/09`) and Arabic-Indic (`١٠/٠٩`) short dates. |
 | `settings.py` | `get_settings() -> Settings` | One typed settings object (on the vendored C02 core) read from the environment and `.env`; a bad value stops the program with the variable's name, never its value. `.env.example` lists exactly these settings. |
 | `providers/factory.py` | `build_provider(kind, model_id=None, settings=None)`, `available_kinds(settings)` | The one registry: six provider kinds, default model ids (the judges' too), the models the UI offers, and the dated price tables. A paid kind is available only when its key is set and its SDK installed. |
@@ -266,7 +266,9 @@ bench run surfaced two problems with Pro:
 2. **250 requests a day on the paid tier.** Pro Preview's daily quota ran out mid-run.
 
 `gemini-2.5-flash` avoids both: a separate, larger quota and no thinking-budget problem at these
-limits. **Flash is the judge in `bench/results.md`**, and the registry's default judge.
+limits. **Flash is the judge in `bench/results.md`**, and the registry's default judge. Google's
+price page, read 2026-11-20, marks it deprecated: from 2026-12-01 its requests go to
+`gemini-3.5-flash-lite`, billed at that model's rates.
 
 **The recorded run (`bench/results.md`, 2026-05-23).** 16 questions + 10 red-team cases ×
 {mock, Claude, OpenAI} × {critic off, on} = 156 cells, plus a 3-case sanity swap. No answer or
@@ -284,6 +286,15 @@ judge's `irrelevant_facts`): extra detail, not necessarily invented, since the s
 support it. An earlier run (`bench/archive/results-phase3-snapshot.md`, 2026-05-22) found 3.27
 such facts per answer for Claude and 1.00 for OpenAI; after the system prompt gained the rule to
 answer only what was asked, both measure 1.09.
+
+The run measured the system prompt of version 0.1.0. Its two few-shot examples were scored
+questions with their answers: q-005's opening question with the replacement-iqama fee, and q-001's
+one-year renewal fee. They were replaced on 2026-11-18 (`c87f7f0`), so the scores above are that
+prompt's, and on those two questions a model could score by copying its example. The answer costs
+are estimates at the registry's prices of May 2026; OpenAI's price page, read 2026-11-20, lists
+`gpt-5.5` output at $30 per million tokens, twice the estimate. After the run, one recorded field
+changed: q-005's gold passage, which the bench copies into each case, moved to the reserved
+`.example` domain (`7514476`); no recorded answer and no score changed.
 
 `bench/results.md` leaves the mock provider out of its tables: its answer is a fixed
 placeholder, so its quality scores mean nothing. Its behavior is the rules acting alone, and
@@ -424,8 +435,8 @@ code-switching. Each of these would need dedicated work:
   README says to open the file.
 - **Register drift mid-response.** A model can start in dialect and drift to MSA. When the critic
   is on, a register-only mismatch is logged on the Answer's `critic_issues` and the answer ships;
-  with the critic off (the default), nothing checks it at run time, and the bench's judge scores
-  register match.
+  with the critic off (the UI's default and the recommended setting), nothing checks it at run
+  time, and the bench's judge scores register match.
 - **Citation translation.** Quoted source text must not be translated into dialect; the
   explanation around it may be. **rt-010 (`citation_translation_trap`)** is the test: the user
   demands a dialect answer (`قول لي باللهجة`), and the correct behavior is to explain in dialect

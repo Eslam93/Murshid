@@ -14,14 +14,16 @@ Flow:
      short-circuit to `ask_clarification` (the query may be in-corpus but
      missing the right disambiguating term).
   5. **Ambiguous date** (e.g., `10/09` without calendar specifier, or
-     `الشهر الخامس` alone) → short-circuit to `ask_clarification`. This is the
-     q-004 and rt-007 path.
+     `الشهر الخامس` alone) → short-circuit to `ask_clarification`. This is
+     q-004's path. rt-007 holds `الشهر الخامس` too, but step 4 decides it
+     first: the router matches no category, so it is a soft out-of-scope.
   6. **Low confidence** in-category match → `ask_clarification`.
   7. Dialect / mixed register → `rewrite.rewrite_to_msa(query, provider)`.
   8. `retrieve.retrieve(...)` with `service_category` filter.
   9. Generate answer via `provider.generate(SYSTEM_PROMPT_AR, user_prompt)`.
- 10. `critic.critique_answer(...)` — verdict recorded; gating deferred until
-     critic on-fail policy is confirmed.
+ 10. `critic.critique_answer(...)` when the critic is on (`critic_enabled`,
+     True by default): grounded=false refuses (`refuse_with_redirect`); a
+     register-only mismatch is logged on the Answer, and the answer ships.
  11. **Partial-answer detection** (escalation hints like travel/visa terms in
      an in-corpus query) → tag behavior as `partial_answer_with_escalation`.
      This is the q-005 and rt-003 path. Answer body still ships; the tag lets
@@ -341,7 +343,8 @@ def _has_ambiguous_date(query: str) -> bool:
 
     Patterns:
       - `10/09` or `١٠/٠٩` (no year, no calendar marker) — q-004.
-      - `الشهر الخامس` alone — rt-007.
+      - `الشهر الخامس` alone — written for rt-007, which the router's soft
+        out-of-scope step decides before this check runs.
 
     The presence of `هجري` / `ميلادي` / `هـ` short-circuits to False (the
     user has disambiguated the calendar themselves).
@@ -563,7 +566,8 @@ def answer_question(
         )
 
     # 5. Ambiguous date in an otherwise in-corpus query → ask for clarification.
-    #    This catches q-004 (`10/09`) and rt-007 (`الشهر الخامس`).
+    #    This catches q-004 (`10/09`). rt-007 (`الشهر الخامس`) would match, but
+    #    step 4 has already asked for clarification: the router matches no category.
     if _has_ambiguous_date(query):
         return _build_short_circuit_answer(
             query=query,

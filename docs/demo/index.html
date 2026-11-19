@@ -81,6 +81,11 @@ project's bench and is shown as it was saved. Nothing on this page calls a model
 is not official guidance.</p>
 <p><b>These are the items the rules were tuned on</b> (16 questions and 10 red-team cases), so the
 behavior column shows fit, not how the rules do on questions they never saw.</p>
+<p><b>The answers came from an earlier system prompt.</b> Its two examples were scored questions
+with their answers (q-001's renewal fee and q-005's replacement fee); they were replaced on
+2026-11-18. After the run, one recorded field changed: q-005's gold passage, which the bench
+copies into each case, moved to the reserved <code>.example</code> domain. No answer and no score
+changed.</p>
 </div>
 
 <h2>Behavior matches, by provider and critic mode</h2>

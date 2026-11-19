@@ -53,6 +53,7 @@ def test_the_page_says_it_shows_recorded_synthetic_data() -> None:
     assert "recorded on 2026-05-23" in page
     assert "The corpus is synthetic." in page
     assert "the items the rules were tuned on" in page
+    assert "The answers came from an earlier system prompt." in page
 
 
 def test_the_page_runs_no_script_and_fetches_nothing() -> None:

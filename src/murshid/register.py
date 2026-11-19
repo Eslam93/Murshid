@@ -16,9 +16,8 @@ Allowlisted English domain tokens (`iqama`, `OTP`, `IBAN`, ...) do NOT flip
 register; they set `contains_code_switching=true` only. This is the catch
 that distinguishes domain-code-switching from conversational mixing.
 
-LLM zero-shot fallback for low-confidence cases is supported via the optional
-`provider` argument but defaults off — rules cover the demo corpus
-cleanly.
+There is no model fallback: `detect_register` uses these rules alone and takes
+no provider.
 """
 
 from __future__ import annotations

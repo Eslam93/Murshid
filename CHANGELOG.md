@@ -31,8 +31,14 @@ All notable changes to Murshid are recorded in this file. The format is based on
   retries off, so `retry_call` is the only retry layer.
 - The corpus's example web addresses moved to the reserved `.example` domain.
 - The docs now say what the code does and what the recorded run shows: three providers ran, the
-  critic is off by default and only removed correct answers in that run, and the judge's extra
+  critic is recommended off (it only removed correct answers in that run), and the judge's extra
   facts are "facts not in the gold answer", not hallucinations.
+- Docs, docstrings and comments that claimed more than the code: `answer_question` runs the
+  critic by default (the UI does not); the one date rule asks for clarification and `hijri.py` is
+  used by tests only (34 of them); the router and the register detector have no model fallback;
+  rt-007 is decided by the router, not the date rule; eight of the 20 label-checked items are
+  misses; and the recorded run's scores come from the prompt whose examples held two scored
+  answers.
 - The results page leaves the mock provider out of its tables.
 - A run manifest's commit and dirty flag are read when the run starts, not after the run has
   written its results into tracked files.

@@ -23,8 +23,9 @@ but it is also the verb "was issued" in government Arabic (e.g.,
 `صدر التصريح البلدي`). Medical detection now requires the bigram pattern
 `(ألم|وجع) صدر` to avoid false positives on issuance verbs.
 
-LLM fallback for low-confidence cases is supported but defaults off — rules
-cover all 16 standard questions in `data/questions.json` cleanly.
+There is no model fallback: the rules alone route, and the pipeline asks for
+clarification on a low-confidence match. They take the expected behavior on all
+26 tuned items and on 62 of the 93 held-out items (`bench/rules-only/REPORT.md`).
 """
 
 from __future__ import annotations

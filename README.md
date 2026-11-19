@@ -18,8 +18,9 @@ answer, answer in part and escalate, refuse, or ask for clarification.
   as `OTP` or `Absher` do not count as code-switching.
 - **Retrieves** from 20 documents (84 chunks) with BM25 and BGE-M3 embeddings over three views of
   the question (as typed, lightly normalised, rewritten to MSA), fused by reciprocal rank.
-- **Decides the behavior by rules:** refuses on out-of-scope triggers; asks for clarification on an
-  ambiguous date or an unrecognised service; refuses policy-bait questions ("I heard that…",
+- **Decides the behavior by rules:** refuses on out-of-scope triggers; asks for clarification on a
+  short date that names no calendar (such as `10/09`) or an unrecognised service; refuses
+  policy-bait questions ("I heard that…",
   "is there a special exemption…") whose specific terms no retrieved passage contains, before the
   model is called; and tags a partial answer with escalation when a question mixes an in-scope
   part with travel or visa matters.
@@ -29,8 +30,11 @@ answer, answer in part and escalate, refuse, or ask for clarification.
 - **Benchmarks** providers with a structured-output judge: behavior match, recall, correctness,
   faithfulness, citation accuracy, refusal tone, and a rubric for each red-team case.
 
-An optional critic, a second model call that checks the answer's grounding, exists but is off by
-default: in the recorded run it refused 11 correct answers and caught no wrong one
+An optional critic, a second model call, checks the answer's grounding and refuses an answer it
+finds ungrounded. `answer_question` runs it unless called with `critic_enabled=False`, and
+`scripts/demo.py` keeps that default; the UI's critic checkbox starts off, and the bench runs the
+modes `--critic` names (both, by default). The recommended setting is off: in the recorded run the
+critic refused 11 correct answers and caught no wrong one
 ([ADR 2](docs/ARCHITECTURE.md#5-adr-2--llm-provider-strategy)).
 
 ## Results so far
@@ -54,7 +58,8 @@ and has no trigger for it. The
 support gate, written against two bait questions, fired on none of the 93 items, including the
 three bait questions among them. [bench/rules-only/REPORT.md](bench/rules-only/REPORT.md) has the
 table of expected against taken behavior and every miss. The held-out labels were written by an AI
-agent; a second reading of 20 sampled labels agreed with 19 and found one borderline.
+agent, and no person has checked them; a second AI reading of 20 sampled labels agreed with 19 and
+found one borderline.
 
 **Answer quality on the tuned items**, from the recorded run in [bench/results.md](bench/results.md)
 (2026-05-23), judged by Gemini 2.5 Flash:
@@ -64,8 +69,13 @@ agent; a second reading of 20 sampled labels agreed with 19 and found one border
 | OpenAI `gpt-5.5-2026-04-23` | 26 / 26 | 2.18 | 2.55 | 0.48 |
 | Claude `claude-sonnet-4-6` | 26 / 26 | 2.09 | 2.45 | 0.33 |
 
-The quality scores rest on 11 gold answers, so differences under 0.3 are directional. Answer
-quality on the held-out items needs paid model runs and has not been measured yet.
+The quality scores rest on 11 gold answers, so differences under 0.3 are directional. They are
+scores for the system prompt of version 0.1.0, whose two examples were scored questions with
+their answers (q-001's renewal fee and q-005's replacement fee); the examples were replaced on
+2026-11-18 (`c87f7f0`). After the run, one recorded field changed: q-005's gold passage, which
+the bench copies into each case, moved to the reserved `.example` domain (`7514476`); no answer
+and no score changed. Answer quality on the held-out items needs paid model runs and has not been
+measured yet.
 
 Every recorded answer can be read on a static page, [docs/demo/index.html](docs/demo/index.html):
 recorded data, with no script, no server and no model call behind it.
@@ -184,15 +194,18 @@ spend, whether the cap was reached and the prices used.
 - **No Arabic-native model in the bench.** Falcon-Arabic was planned for in-Kingdom hosting and
   never built; ALLaM needs a watsonx tenant. See
   [ADR 2](docs/ARCHITECTURE.md#5-adr-2--llm-provider-strategy).
-- **No Hijri calendar arithmetic.** `src/murshid/hijri.py` detects Hijri dates and canonicalises
-  month names (33 tests), but nothing in the pipeline calls it yet, and it does no Hijri ↔
-  Gregorian conversion.
+- **No Hijri date handling in the pipeline.** Its one date rule asks for clarification when a
+  question holds a short date such as `10/09`, or the phrase `الشهر الخامس` ("the fifth month"),
+  and names no calendar. `src/murshid/hijri.py` detects Hijri dates and canonicalises
+  month names (34 tests), but only the tests import it, and it does no Hijri ↔ Gregorian
+  conversion.
 - **A narrow support gate.** Its patterns were written against the two policy-bait cases it was
   tuned on (rt-001, rt-002). On the 93 held-out items it fired on none, including three bait
   questions: one gave no term it extracts, one used the dialect spelling `سمعت إن`, and in one the
   number it extracted appeared in a passage about a different rule.
-- **Answer-call cost only.** The cost column leaves out rewrite, critic, enrichment and judge
-  calls.
+- **Answer-call cost only in the results tables.** Their cost column leaves out rewrite, critic,
+  enrichment and judge calls; a run made with the spend meter logs every paid call in
+  `spend-log.jsonl`.
 
 ## Reading order
 

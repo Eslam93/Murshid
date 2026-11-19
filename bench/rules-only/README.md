@@ -52,5 +52,8 @@ started, the dates and the data files' sha256.
   retrieved passages, not model answers.
 - **The held-out labels were written by an AI agent** (see `data/heldout/README.md`). A second
   AI reading of 20 labels drawn before any result existed agreed with 19 and found one
-  borderline (`h-005`); seven of those 20 are misses here. A miss can still be a wrong label,
-  but the sample found none.
+  borderline (`h-005`); no person has checked them. Eight of those 20 are misses here (`h-002`,
+  `h-005`, `h-012`, `h-064`, `h-066`, `h-068`, `hr-002`, `hr-022`). One of them is the borderline
+  label: `h-005` is labelled `answer`, the rules took `partial_answer_with_escalation`, and the
+  check called that about as defensible. A miss can still be a wrong label; the check found none
+  wrong.

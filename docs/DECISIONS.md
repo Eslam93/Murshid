@@ -8,7 +8,11 @@ while naming the Arabic-native residency path.
 
 Bench numbers come from `bench/results.md` (the recorded run of 2026-05-23) and
 `bench/archive/results-phase3-snapshot.md` (an earlier run of 2026-05-22, kept because the change
-between the two runs is itself evidence).
+between the two runs is itself evidence). The 2026-05-23 run used the system prompt of version
+0.1.0, whose two few-shot examples were scored questions with their answers (q-001's renewal fee
+and q-005's replacement fee), and the 2026-05-22 run an earlier version of it. The examples were
+replaced on 2026-11-18 (`c87f7f0`), so the quality scores quoted here come from the old prompt,
+not the current one.
 
 ---
 
@@ -205,10 +209,11 @@ and rt-004 leans on one. `hijri.py` detects Hijri dates and returns them as stru
   `ربيع الثاني` and `ربيع الآخر` both become `ربيع الآخر`; `ذو القعدة` / `ذي القعدة` (nominative
   vs genitive) both become `ذو القعدة`.
 - `has_hijri_date(text)` is a cheap predicate.
-- 33 tests in `tests/test_hijri.py`.
+- 34 tests in `tests/test_hijri.py`.
 
-**Nothing in the pipeline calls this module yet.** The pipeline's ambiguous-date check
-(`_has_ambiguous_date`) uses a simpler `هـ`-marker test. The module is a typed interface for
+**Nothing in the pipeline calls this module yet; only the tests import it.** The pipeline's one
+date rule (`_has_ambiguous_date`) asks for clarification when a question holds a short date such
+as `10/09`, or the phrase `الشهر الخامس`, and names no calendar (`هـ`, `هجري`, `ميلادي`). The module is a typed interface for
 future deadline arithmetic or entity extraction. It deliberately does not do calendar arithmetic
 across year boundaries or Hijri ↔ Gregorian conversion: both need Umm al-Qura tables and a real
 converter library (`hijri-converter` or `umalqurra`).

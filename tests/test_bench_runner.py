@@ -434,7 +434,9 @@ def test_a_spend_cap_stops_a_paid_run_and_the_run_says_so(
     assert [json.loads(row)["model_id"] for row in rows] == ["gpt-test-fake"]
     results = (out / "results.md").read_text(encoding="utf-8")
     assert "- Model spend: $0.0300 logged over 1 paid calls" in results
-    assert f"The cap was reached: {spend['cases_not_run']} cases did not run" in results
+    assert (
+        f"The cap was reached: {spend['cases_not_run']} cases were cut short or not run" in results
+    )
 
     # The page says the same when it is rendered again from the recording.
     (out / "results.md").unlink()

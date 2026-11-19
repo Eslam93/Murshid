@@ -44,7 +44,8 @@ Outputs, in the run's folder:
 Spend: every call to a paid model goes through one meter (`murshid.bench.spend`), priced from
 the registry's dated price table. `--max-cost-usd` caps it: no call starts once the logged spend
 plus the largest call so far would pass the cap, a case the cap cut short is left out of the
-results, and the manifest and results page say the cap was reached and how many cases did not run.
+results, and the manifest and results page say the cap was reached and how many cases were left
+out.
 """
 
 from __future__ import annotations
@@ -805,8 +806,8 @@ def render_results_md(
         spend_line += f"; cap ${cap:.2f}" if cap is not None else "; no cap"
         if spend.get("cap_reached"):
             spend_line += (
-                f". The cap was reached: {spend.get('cases_not_run', 0)} cases did not run "
-                "and are not in the tables"
+                f". The cap was reached: {spend.get('cases_not_run', 0)} cases were cut short or "
+                "not run, and are not in the tables"
             )
         lines.append(spend_line + ".")
     lines.append("- Run manifest, cost log and refusal log: in this file's folder")
@@ -1503,7 +1504,9 @@ def main(argv: list[str] | None = None) -> int:
         if not meter.stopped:
             return False
         if n_not_run == 0:
-            print(f"[bench] spend cap reached at {case_id}; it and every case after it do not run")
+            print(
+                f"[bench] spend cap reached at {case_id}; it and every case after it are left out"
+            )
         n_not_run += 1
         return True
 

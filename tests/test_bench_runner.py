@@ -425,8 +425,8 @@ def test_a_spend_cap_stops_a_paid_run_and_the_run_says_so(
             "provider": "openai",
             "model_id": "gpt-test-fake",
             "input_usd_per_mtok": 5.0,
-            "output_usd_per_mtok": 15.0,
-            "as_of": "2026-05-23",
+            "output_usd_per_mtok": 30.0,
+            "as_of": "2026-11-20",
             "source": "unknown OpenAI model, priced as gpt-5.5",
         }
     ]

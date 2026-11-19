@@ -47,6 +47,9 @@ All notable changes to Murshid are recorded in this file. The format is based on
   written its results into tracked files.
 - Gemini 2.5 Flash is priced from its price page as read on 2026-11-20 ($0.30 input, $2.50
   output per million tokens; the table had $0.075 and $0.30), and Claude Haiku 5.5 is listed.
+- The OpenAI prices come from OpenAI's price page as read on 2026-11-20, replacing the May
+  estimates: `gpt-5.5` output is $30 per million tokens (estimated at $15), `gpt-5.4-mini` $0.75
+  input and $4.50 output (estimated at $1.00 and $3.00). Recorded costs stay as logged.
 - The system prompt's two few-shot examples no longer hold the answers to scored questions.
 
 ### Removed

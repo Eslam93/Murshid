@@ -105,11 +105,12 @@ _ANTHROPIC_DOCS = "Anthropic models documentation (pricing table)"
 _GOOGLE_DOCS = (
     "Google AI pricing page, as estimated for the 2026-05 bench runs; verify before accounting"
 )
-_OPENAI_ESTIMATE = (
-    "estimate made for the 2026-05 bench runs, a conservative upper bound: no published GPT-5.x "
-    "price table was cited"
+# Read on 2026-11-20 for the capped answer-quality runs, which are logged at these prices. The
+# OpenAI rows replace estimates made for the 2026-05 runs, which put gpt-5.5 output at $15 and
+# gpt-5.4-mini at $1.00 / $3.00; those runs' logged costs stay as they were logged.
+_OPENAI_PAGE_2026_11 = (
+    "developers.openai.com/api/docs/pricing, read 2026-11-20 (rates for prompts under 272K tokens)"
 )
-# Read on 2026-11-20 for the capped answer-quality runs, which are logged at these prices.
 _ANTHROPIC_PAGE_2026_11 = (
     "platform.claude.com/docs/en/about-claude/pricing, read 2026-11-20 (prompts up to 100k tokens)"
 )
@@ -129,10 +130,10 @@ PRICES: dict[ProviderKind, dict[str, ModelPrice]] = {
         "claude-haiku-5-5": ModelPrice(0.10, 0.50, "2026-11-20", _ANTHROPIC_PAGE_2026_11),
     },
     "openai": {
-        "gpt-5.5-2026-04-23": ModelPrice(5.00, 15.00, "2026-05-23", _OPENAI_ESTIMATE),
-        "gpt-5.4-mini-2026-03-17": ModelPrice(1.00, 3.00, "2026-05-23", _OPENAI_ESTIMATE),
-        "gpt-4.1": ModelPrice(2.00, 8.00, "2026-05-23", _OPENAI_ESTIMATE),
-        "gpt-4o": ModelPrice(2.50, 10.00, "2026-05-23", _OPENAI_ESTIMATE),
+        "gpt-5.5-2026-04-23": ModelPrice(5.00, 30.00, "2026-11-20", _OPENAI_PAGE_2026_11),
+        "gpt-5.4-mini-2026-03-17": ModelPrice(0.75, 4.50, "2026-11-20", _OPENAI_PAGE_2026_11),
+        "gpt-4.1": ModelPrice(2.00, 8.00, "2026-11-20", _OPENAI_PAGE_2026_11),
+        "gpt-4o": ModelPrice(2.50, 10.00, "2026-11-20", _OPENAI_PAGE_2026_11),
     },
     "gemini": {
         "gemini-3.1-pro-preview": ModelPrice(2.50, 10.00, "2026-05-22", _GOOGLE_DOCS),
@@ -147,7 +148,7 @@ PRICES: dict[ProviderKind, dict[str, ModelPrice]] = {
 # never logs a cost of zero.
 FALLBACK_PRICES: dict[ProviderKind, ModelPrice] = {
     "claude": ModelPrice(3.00, 15.00, "2026-05-22", "unknown Claude model, priced as Sonnet"),
-    "openai": ModelPrice(5.00, 15.00, "2026-05-23", "unknown OpenAI model, priced as gpt-5.5"),
+    "openai": ModelPrice(5.00, 30.00, "2026-11-20", "unknown OpenAI model, priced as gpt-5.5"),
     "gemini": ModelPrice(2.50, 10.00, "2026-05-22", "unknown Gemini model, priced as 3.1 Pro"),
 }
 

@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "split": "heldout",
+  "mode": "full",
+  "started_at": "2026-11-19T22:11:50Z",
+  "finished_at": "2026-11-19T22:31:43Z",
+  "git_commit": "2822370570a65fde38aa9035973437be9f1b9ebe",
+  "git_dirty": false,
+  "murshid_version": "0.2.0",
+  "python_version": "3.12.13",
+  "providers": [
+    {
+      "name": "claude",
+      "model_id": "claude-haiku-5-5"
+    }
+  ],
+  "critic_modes": [
+    "off"
+  ],
+  "judge_model_id": "gemini-2.5-flash",
+  "sanity_swap_judge_model_id": null,
+  "enrichment": {
+    "provider": "mock",
+    "model_id": null
+  },
+  "embedder_model_id": "BAAI/bge-m3",
+  "question_ids": "all",
+  "red_team_ids": "all",
+  "data_files": {
+    "data/sources.json": "7bca51302fed8df02fb59b868f1ff059b23c62efed8b42681aab2c62522b4a4a",
+    "data/heldout/questions.json": "09e38848d40a572ffb8392b3c24ff8364afd0963ff56a6337f324664c4ae00a4",
+    "data/heldout/gold_answers.json": "83b68ae357a4433b0fdeacdd5ce5fe091e219a86a6f1b37b292a838f75b31193",
+    "data/heldout/red_team.json": "b997dbf567ce9520623db6f2f9a40203236c013df4344643484c5cfd8612e1e3"
+  },
+  "n_cases": 93,
+  "sanity_swap": null,
+  "spend": {
+    "spent_usd": 0.439611,
+    "cap_usd": 1.99,
+    "cap_reached": false,
+    "paid_calls": 212,
+    "cases_not_run": 0,
+    "prices": [
+      {
+        "provider": "claude",
+        "model_id": "claude-haiku-5-5",
+        "input_usd_per_mtok": 0.1,
+        "output_usd_per_mtok": 0.5,
+        "as_of": "2026-11-20",
+        "source": "platform.claude.com/docs/en/about-claude/pricing, read 2026-11-20 (prompts up to 100k tokens)"
+      },
+      {
+        "provider": "gemini",
+        "model_id": "gemini-2.5-flash",
+        "input_usd_per_mtok": 0.3,
+        "output_usd_per_mtok": 2.5,
+        "as_of": "2026-11-20",
+        "source": "aistudio.google.com/docs/pricing, read 2026-11-20; the page marks the model deprecated: from 2026-12-01 its requests go to gemini-3.5-flash-lite, billed at that model's rates"
+      }
+    ]
+  }
+}

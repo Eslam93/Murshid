@@ -1,0 +1,2 @@
+{"ts": "2026-11-19T22:11:29Z", "provider": "claude", "model_id": "claude-haiku-5-5", "input_tokens": 45, "output_tokens": 6, "cost_usd": 7.5e-06, "spent_usd": 7.5e-06}
+{"ts": "2026-11-19T22:11:33Z", "provider": "gemini", "model_id": "gemini-2.5-flash", "input_tokens": 17, "output_tokens": 2, "cost_usd": 1.01e-05, "spent_usd": 1.76e-05}

@@ -227,12 +227,13 @@ def test_every_price_has_a_date_and_a_source() -> None:
 @pytest.mark.parametrize(
     ("kind", "model", "expected_usd"),
     [
-        # USD for 1M input + 1M output tokens, as the bench has always priced them.
+        # USD for 1M input + 1M output tokens, at the registry's dated prices.
         ("claude", "claude-sonnet-4-6", 18.00),
         ("claude", "claude-opus-4-7", 30.00),
+        ("claude", "claude-haiku-5-5", 0.60),
         ("openai", "gpt-5.5-2026-04-23", 20.00),
         ("openai", "gpt-5.4-mini-2026-03-17", 4.00),
-        ("gemini", "gemini-2.5-flash", 0.375),
+        ("gemini", "gemini-2.5-flash", 2.80),
         ("gemini", "gemini-3.1-pro-preview", 12.50),
         # An unknown model is priced like the kind's default tier, never free.
         ("claude", "claude-unknown-model", 18.00),

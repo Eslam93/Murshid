@@ -36,6 +36,8 @@ All notable changes to Murshid are recorded in this file. The format is based on
 - The results page leaves the mock provider out of its tables.
 - A run manifest's commit and dirty flag are read when the run starts, not after the run has
   written its results into tracked files.
+- Gemini 2.5 Flash is priced from its price page as read on 2026-11-20 ($0.30 input, $2.50
+  output per million tokens; the table had $0.075 and $0.30), and Claude Haiku 5.5 is listed.
 - The system prompt's two few-shot examples no longer hold the answers to scored questions.
 
 ### Removed

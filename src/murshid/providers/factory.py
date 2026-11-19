@@ -109,6 +109,14 @@ _OPENAI_ESTIMATE = (
     "estimate made for the 2026-05 bench runs, a conservative upper bound: no published GPT-5.x "
     "price table was cited"
 )
+# Read on 2026-11-20 for the capped answer-quality runs, which are logged at these prices.
+_ANTHROPIC_PAGE_2026_11 = (
+    "platform.claude.com/docs/en/about-claude/pricing, read 2026-11-20 (prompts up to 100k tokens)"
+)
+_GOOGLE_PAGE_2026_11 = (
+    "aistudio.google.com/docs/pricing, read 2026-11-20; the page marks the model deprecated: from "
+    "2026-12-01 its requests go to gemini-3.5-flash-lite, billed at that model's rates"
+)
 
 PRICES: dict[ProviderKind, dict[str, ModelPrice]] = {
     "claude": {
@@ -118,6 +126,7 @@ PRICES: dict[ProviderKind, dict[str, ModelPrice]] = {
         "claude-sonnet-4-5-20250929": ModelPrice(3.00, 15.00, "2026-05-22", _ANTHROPIC_DOCS),
         "claude-haiku-4-5-20251001": ModelPrice(1.00, 5.00, "2026-05-22", _ANTHROPIC_DOCS),
         "claude-haiku-4-5": ModelPrice(1.00, 5.00, "2026-05-22", _ANTHROPIC_DOCS),
+        "claude-haiku-5-5": ModelPrice(0.10, 0.50, "2026-11-20", _ANTHROPIC_PAGE_2026_11),
     },
     "openai": {
         "gpt-5.5-2026-04-23": ModelPrice(5.00, 15.00, "2026-05-23", _OPENAI_ESTIMATE),
@@ -129,7 +138,7 @@ PRICES: dict[ProviderKind, dict[str, ModelPrice]] = {
         "gemini-3.1-pro-preview": ModelPrice(2.50, 10.00, "2026-05-22", _GOOGLE_DOCS),
         "gemini-3-flash-preview": ModelPrice(0.30, 2.50, "2026-05-22", _GOOGLE_DOCS),
         "gemini-2.5-pro": ModelPrice(1.25, 5.00, "2026-05-22", _GOOGLE_DOCS),
-        "gemini-2.5-flash": ModelPrice(0.075, 0.30, "2026-05-22", _GOOGLE_DOCS),
+        "gemini-2.5-flash": ModelPrice(0.30, 2.50, "2026-11-20", _GOOGLE_PAGE_2026_11),
         "gemini-2.5-flash-lite": ModelPrice(0.05, 0.20, "2026-05-22", _GOOGLE_DOCS),
     },
 }

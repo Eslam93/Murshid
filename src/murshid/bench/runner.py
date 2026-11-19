@@ -848,8 +848,9 @@ def render_results_md(
             "> **Answer cost (USD)** is the per-provider differential answer-call cost across the standard set "
             "(critic mode, rewrite calls, enrichment calls, judge calls all run uniformly across providers, so "
             "their cost cancels in any provider-vs-provider comparison and is excluded from this column). Full "
-            "system cost per question is roughly **answer cost + judge calls (~$0.001-0.005 / case at Flash) "
-            "+ critic call when on (~answer cost × 0.4)**. See `bench/cost-log.jsonl` for the unaggregated trace."
+            "system cost per question is roughly **answer cost + judge calls + critic call when on (~answer "
+            "cost × 0.4)**. The cost log in this folder traces the answer calls; a run made with the spend "
+            "meter also logs every paid call, judge calls included, in `spend-log.jsonl`."
         )
         lines.append("")
 

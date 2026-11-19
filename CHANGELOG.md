@@ -16,6 +16,8 @@ All notable changes to Murshid are recorded in this file. The format is based on
   `scripts/compare_splits.py` to report the two side by side.
 - `docs/demo/index.html`: a static page of every recorded answer, built by
   `scripts/build_demo_page.py`; no script, no server, no model call.
+- `--max-cost-usd`: a cap on a bench run's logged spend on paid models. Every paid call is
+  logged to `spend-log.jsonl`, and the run manifest records the spend and the prices used.
 - Typed settings read once, and one provider registry with dated prices.
 - CI: lint, format, strict types, tests with an 80% coverage floor, a lockfile check, a Windows
   run, a REUSE licensing check, and the real-model tests weekly.
@@ -32,6 +34,8 @@ All notable changes to Murshid are recorded in this file. The format is based on
   critic is off by default and only removed correct answers in that run, and the judge's extra
   facts are "facts not in the gold answer", not hallucinations.
 - The results page leaves the mock provider out of its tables.
+- A run manifest's commit and dirty flag are read when the run starts, not after the run has
+  written its results into tracked files.
 - The system prompt's two few-shot examples no longer hold the answers to scored questions.
 
 ### Removed

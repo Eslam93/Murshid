@@ -140,7 +140,14 @@ A run scores one split: `--split tuned` (the default, `data/`) or `--split heldo
 `--out-dir` names another, so the two are never pooled. A run writes `results.md`,
 `case-cache.json`, `cost-log.jsonl`, `refusal-log.jsonl` and `run-manifest.json` (the split, the
 commit, the model ids, the dates and the data files' hashes). It refuses a folder that holds a run
-of the other split, and replaces a recorded run only with `--overwrite`.
+of the other split, and replaces a recorded run only with `--overwrite`. The manifest's commit and
+dirty flag are read when the run starts, before it writes anything.
+
+`--max-cost-usd` caps a run's spend on paid models. Every paid call (answers, the dialect
+rewrite, the critic, the judges) is priced from the registry's dated price table and logged to
+`spend-log.jsonl`; no call starts once the logged spend plus the largest call so far would pass
+the cap; a case the cap cuts short is left out of the results; and the manifest records the
+spend, whether the cap was reached and the prices used.
 
 ## Repository layout
 

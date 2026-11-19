@@ -9,6 +9,8 @@ the judge is `BENCH_JUDGE_MODEL`, the fallback and the sanity swap use
 `BENCH_SANITY_SWAP_JUDGE_MODEL`; bad settings stop the bench naming the variable, never its
 value; and a whole zero-key bench run (extractive provider, no judge, the fake embedder) with
 every output redirected to a temporary folder, so the committed `bench/` files are never written.
+The manifest's commit and dirty flag are read before the run writes anything, and a spend cap
+stops a paid run (a fake paid model, no network) and says so in the manifest and on the page.
 No test here makes a call: a judge with a fake key is built and inspected, never run.
 """
 
@@ -22,7 +24,10 @@ from typing import Any
 import pytest
 
 from murshid.bench import runner
+from murshid.bench.spend import MeteredProvider, SpendMeter
+from murshid.providers.base import LLMProvider, ProviderResponse
 from murshid.providers.claude import ClaudeProvider
+from murshid.providers.extractive import ExtractiveProvider
 from murshid.providers.gemini import GeminiProvider
 from murshid.providers.openai import OpenAIProvider
 from murshid.settings import Settings, load_settings
@@ -182,7 +187,21 @@ def test_a_zero_key_bench_run_completes_and_writes_only_where_told(
     ]
     assert {row["model_id"] for row in costs} == {"extractive-1"}
     assert (bench_out / "refusal-log.jsonl").is_file()
-    assert "extractive (extractive-1)" in (bench_out / "results.md").read_text(encoding="utf-8")
+    results = (bench_out / "results.md").read_text(encoding="utf-8")
+    assert "extractive (extractive-1)" in results
+
+    # No paid call: nothing to log, no spend line, and the manifest says so.
+    assert not (bench_out / "spend-log.jsonl").exists()
+    assert "Model spend" not in results
+    manifest = json.loads((bench_out / "run-manifest.json").read_text("utf-8"))
+    assert manifest["spend"] == {
+        "spent_usd": 0.0,
+        "cap_usd": None,
+        "cap_reached": False,
+        "paid_calls": 0,
+        "cases_not_run": 0,
+        "prices": [],
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -301,3 +320,130 @@ def test_render_only_refuses_a_folder_of_the_other_split(
     assert runner.main(["--render-only", "--split", "heldout", "--out-dir", str(out)]) == 2
     assert "pass --split tuned" in capsys.readouterr().out
     assert not (out / "results.md").exists()
+
+
+def test_the_manifest_records_the_git_state_from_before_the_run_wrote_anything(
+    tmp_path: Path, fake_embedder: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A run writes into tracked files, so a dirty flag read at the end would always be set."""
+    out = tmp_path / "run"
+    monkeypatch.setenv("MURSHID_DATA_DIR", str(ROOT / "data"))
+
+    def fake_git(*args: str) -> str:
+        if args[0] == "rev-parse":
+            return "0" * 40
+        # Once the run has written its outputs, the tree reads dirty.
+        return " M bench/case-cache.json" if (out / "case-cache.json").exists() else ""
+
+    monkeypatch.setattr(runner, "_git", fake_git)
+    args = ["--out-dir", str(out), "--providers", "extractive", "--critic", "off"]
+    assert runner.main([*args, "--question-ids", "q-001", "--red-team-ids", "rt-001"]) == 0
+    manifest = json.loads((out / "run-manifest.json").read_text("utf-8"))
+    assert (manifest["git_commit"], manifest["git_dirty"]) == ("0" * 40, False)
+
+
+# ---------------------------------------------------------------------------
+# Spend
+# ---------------------------------------------------------------------------
+
+
+class _FakePaidModel:
+    """A paid-kind provider that answers anything for a fixed $0.03 a call, with no network."""
+
+    name = "openai"
+    model_id = "gpt-test-fake"
+
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def is_available(self) -> bool:
+        return True
+
+    def cost_estimate_usd(self, response: ProviderResponse) -> float:
+        return 0.03
+
+    def generate(
+        self, system: str, user: str, max_tokens: int = 1024, timeout: float = 30.0
+    ) -> ProviderResponse:
+        self.calls += 1
+        return ProviderResponse(
+            text="وفقاً للمصدر [1]: هذه إجابة اختبار.",
+            input_tokens=1000,
+            output_tokens=100,
+            latency_s=0.0,
+        )
+
+
+def test_only_paid_providers_go_behind_the_spend_meter() -> None:
+    meter = SpendMeter(None)
+    extractive = ExtractiveProvider()
+    assert runner.metered(extractive, meter) is extractive
+    assert isinstance(runner.metered(_FakePaidModel(), meter), MeteredProvider)
+
+
+def test_a_spend_cap_stops_a_paid_run_and_the_run_says_so(
+    tmp_path: Path,
+    fake_embedder: None,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    out = tmp_path / "run"
+    model = _FakePaidModel()
+    monkeypatch.setenv("MURSHID_DATA_DIR", str(ROOT / "data"))
+
+    def fake_providers(names: list[str], settings: Settings) -> list[LLMProvider]:
+        return [model]
+
+    def no_judge(settings: Settings) -> None:
+        return None
+
+    monkeypatch.setattr(runner, "build_providers", fake_providers)
+    monkeypatch.setattr(runner, "select_judge", no_judge)
+    planned = ["q-001", "q-002", "q-003", "q-006", "q-007"]
+    status = runner.main(
+        [
+            *("--out-dir", str(out), "--providers", "openai", "--critic", "off"),
+            *("--mode", "standard", "--no-sanity-swap"),
+            *("--question-ids", ",".join(planned), "--max-cost-usd", "0.05"),
+        ]
+    )
+    assert status == 0
+    assert "spend cap reached" in capsys.readouterr().out
+
+    # $0.03 spent, and a second $0.03 call could pass $0.05: it never reached the model.
+    assert model.calls == 1
+    manifest = json.loads((out / "run-manifest.json").read_text("utf-8"))
+    spend = manifest["spend"]
+    assert spend["spent_usd"] == pytest.approx(0.03)
+    assert (spend["cap_usd"], spend["cap_reached"], spend["paid_calls"]) == (0.05, True, 1)
+    cases = json.loads((out / "case-cache.json").read_text("utf-8"))
+    assert spend["cases_not_run"] >= 1
+    assert len(cases) + spend["cases_not_run"] == len(planned)
+    assert all(c["behavior_taken"] != "error" for c in cases), "a cut-short case is left out"
+    assert spend["prices"] == [
+        {
+            "provider": "openai",
+            "model_id": "gpt-test-fake",
+            "input_usd_per_mtok": 5.0,
+            "output_usd_per_mtok": 15.0,
+            "as_of": "2026-05-23",
+            "source": "unknown OpenAI model, priced as gpt-5.5",
+        }
+    ]
+    rows = (out / "spend-log.jsonl").read_text("utf-8").splitlines()
+    assert [json.loads(row)["model_id"] for row in rows] == ["gpt-test-fake"]
+    results = (out / "results.md").read_text(encoding="utf-8")
+    assert "- Model spend: $0.0300 logged over 1 paid calls" in results
+    assert f"The cap was reached: {spend['cases_not_run']} cases did not run" in results
+
+    # The page says the same when it is rendered again from the recording.
+    (out / "results.md").unlink()
+    assert runner.main(["--render-only", "--out-dir", str(out)]) == 0
+    assert "The cap was reached" in (out / "results.md").read_text(encoding="utf-8")
+
+
+def test_a_spend_cap_must_be_positive(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    out = tmp_path / "run"
+    assert runner.main(["--out-dir", str(out), "--max-cost-usd", "0"]) == 2
+    assert "positive" in capsys.readouterr().out
+    assert not out.exists()

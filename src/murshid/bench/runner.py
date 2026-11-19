@@ -36,8 +36,15 @@ Outputs, in the run's folder:
   - `cost-log.jsonl`     — per-call token usage / cost (answer-call only)
   - `refusal-log.jsonl`  — per refuse/escalate/clarify response trace
   - `case-cache.json`    — per-case results for `--render-only` re-renders
-  - `run-manifest.json`  — the split, the commit, the model ids, the dates and the data files'
-                           sha256, so a reader can tell what produced the numbers
+  - `run-manifest.json`  — the split, the commit, the model ids, the dates, the data files'
+                           sha256 and the spend, so a reader can tell what produced the numbers
+  - `spend-log.jsonl`    — every paid call (answering model, critic, judges) with its cost and
+                           the running total; written only when a paid model is called
+
+Spend: every call to a paid model goes through one meter (`murshid.bench.spend`), priced from
+the registry's dated price table. `--max-cost-usd` caps it: no call starts once the logged spend
+plus the largest call so far would pass the cap, a case the cap cut short is left out of the
+results, and the manifest and results page say the cap was reached and how many cases did not run.
 """
 
 from __future__ import annotations
@@ -74,16 +81,19 @@ from murshid.bench.metrics import (  # noqa: E402
     judge_correctness,
     load_cases,
 )
+from murshid.bench.spend import MeteredProvider, SpendMeter  # noqa: E402
 from murshid.ingest import Index, build_index  # noqa: E402
 from murshid.pipeline import Answer, answer_question  # noqa: E402
 from murshid.providers.base import LLMProvider, ProviderResponse  # noqa: E402
 from murshid.providers.factory import (  # noqa: E402
+    PAID_KINDS,
     PROVIDER_KINDS,
     as_kind,
     availability_hint,
     build_enrichment_provider,
     build_judge,
     build_provider,
+    price_for,
 )
 from murshid.retrieve import BM25Index, build_bm25_index  # noqa: E402
 from murshid.settings import Settings, SettingsError, get_settings  # noqa: E402
@@ -94,6 +104,7 @@ REFUSAL_LOG_PATH = BENCH_DIR / "refusal-log.jsonl"
 RESULTS_MD_PATH = BENCH_DIR / "results.md"
 CASE_CACHE_PATH = BENCH_DIR / "case-cache.json"
 MANIFEST_NAME = "run-manifest.json"
+SPEND_LOG_NAME = "spend-log.jsonl"
 
 # The question sets a run can score: the folder under the data directory that holds each.
 SPLITS: dict[str, str] = {"tuned": "", "heldout": "heldout"}
@@ -116,6 +127,7 @@ class RunPaths:
     cost_log: Path
     refusal_log: Path
     manifest: Path
+    spend_log: Path
 
 
 def run_paths(split: str, out_dir: Path | None = None) -> RunPaths:
@@ -128,6 +140,7 @@ def run_paths(split: str, out_dir: Path | None = None) -> RunPaths:
             cost_log=COST_LOG_PATH,
             refusal_log=REFUSAL_LOG_PATH,
             manifest=BENCH_DIR / MANIFEST_NAME,
+            spend_log=BENCH_DIR / SPEND_LOG_NAME,
         )
     base = out_dir if out_dir is not None else BENCH_DIR / SPLITS[split]
     return RunPaths(
@@ -137,6 +150,7 @@ def run_paths(split: str, out_dir: Path | None = None) -> RunPaths:
         cost_log=base / "cost-log.jsonl",
         refusal_log=base / "refusal-log.jsonl",
         manifest=base / MANIFEST_NAME,
+        spend_log=base / SPEND_LOG_NAME,
     )
 
 
@@ -202,6 +216,37 @@ def select_swap_judge(settings: Settings) -> LLMProvider | None:
         return swap_judge
     print(f"[bench] {swap_judge.model_id} not available for sanity swap; skipping")
     return None
+
+
+def metered(provider: LLMProvider, meter: SpendMeter) -> LLMProvider:
+    """A paid provider behind the run's spend meter; a zero-key provider exactly as it is."""
+    if provider.name not in PAID_KINDS:
+        return provider
+    return MeteredProvider(provider, meter)
+
+
+def price_rows(providers: Sequence[LLMProvider | None]) -> list[dict[str, Any]]:
+    """The price each paid model was costed at, with its date and source, once per model."""
+    rows: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    for provider in providers:
+        if provider is None or provider.name not in PAID_KINDS:
+            continue
+        if (provider.name, provider.model_id) in seen:
+            continue
+        seen.add((provider.name, provider.model_id))
+        price = price_for(as_kind(provider.name), provider.model_id)
+        rows.append(
+            {
+                "provider": provider.name,
+                "model_id": provider.model_id,
+                "input_usd_per_mtok": price.input_usd_per_mtok,
+                "output_usd_per_mtok": price.output_usd_per_mtok,
+                "as_of": price.as_of,
+                "source": price.source,
+            }
+        )
+    return rows
 
 
 # ---------------------------------------------------------------------------
@@ -702,9 +747,11 @@ def render_results_md(
     recorded_at: str | None = None,
     judge_model_id: str | None = None,
     rendered_from_cache: bool = False,
+    spend: dict[str, Any] | None = None,
 ) -> str:
     """The results page of one run. `judge_model_id` names the judge when `judge` is None,
-    as when `--render-only` rebuilds the page from the case cache and the run manifest."""
+    as when `--render-only` rebuilds the page from the case cache and the run manifest.
+    `spend` is the manifest's spend record; a run with no paid call and no cap shows none."""
     # Mock answers are a fixed placeholder, so mock rows would read as a provider's results.
     # The tables leave them out; one line reports what the rules alone did with mock.
     mock_cases = [c for c in per_case_standard + per_case_red_team if c.provider_name == "mock"]
@@ -749,6 +796,19 @@ def render_results_md(
             f"placeholder. With it, the rules alone took the expected behavior in {matched} of "
             f"{len(mock_cases)} cells."
         )
+    if spend and (spend.get("paid_calls") or spend.get("cap_usd") is not None):
+        cap = spend.get("cap_usd")
+        spend_line = (
+            f"- Model spend: ${spend.get('spent_usd', 0.0):.4f} logged over "
+            f"{spend.get('paid_calls', 0)} paid calls, priced as `run-manifest.json` lists"
+        )
+        spend_line += f"; cap ${cap:.2f}" if cap is not None else "; no cap"
+        if spend.get("cap_reached"):
+            spend_line += (
+                f". The cap was reached: {spend.get('cases_not_run', 0)} cases did not run "
+                "and are not in the tables"
+            )
+        lines.append(spend_line + ".")
     lines.append("- Run manifest, cost log and refusal log: in this file's folder")
     lines.append("")
     if mode == "red_team":
@@ -1073,6 +1133,17 @@ def _git(*args: str) -> str | None:
     return done.stdout.strip()
 
 
+def git_state() -> tuple[str | None, bool | None]:
+    """The checked-out commit and whether tracked files differ from it (None without git).
+
+    The bench reads it when a run starts: a run writes its results into tracked files, so read at
+    the end it would call every re-run into a committed folder dirty.
+    """
+    commit = _git("rev-parse", "HEAD")
+    status = _git("status", "--porcelain", "--untracked-files=no") if commit else None
+    return commit, (None if status is None else status != "")
+
+
 def _murshid_version() -> str | None:
     try:
         return importlib.metadata.version("murshid")
@@ -1102,6 +1173,8 @@ def build_manifest(
     mode: str,
     started_at: str,
     finished_at: str,
+    git_commit: str | None,
+    git_dirty: bool | None,
     providers: Sequence[_ProviderLabel],
     critic_modes: list[str],
     judge: LLMProvider | None,
@@ -1112,18 +1185,21 @@ def build_manifest(
     red_team_ids: set[str],
     n_cases: int,
     sanity_swap: SanitySwapReport | None,
+    spend: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """What produced a run's numbers: the split, the code, the models, the dates, the data."""
-    commit = _git("rev-parse", "HEAD")
-    status = _git("status", "--porcelain", "--untracked-files=no") if commit else None
+    """What produced a run's numbers: the split, the code, the models, the dates, the data.
+
+    `git_commit` and `git_dirty` are the state when the run started (`git_state`); `spend` is
+    the meter's summary with the prices it used.
+    """
     return {
         "schema_version": 1,
         "split": split,
         "mode": mode,
         "started_at": started_at,
         "finished_at": finished_at,
-        "git_commit": commit,
-        "git_dirty": None if status is None else status != "",
+        "git_commit": git_commit,
+        "git_dirty": git_dirty,
         "murshid_version": _murshid_version(),
         "python_version": platform.python_version(),
         "providers": [{"name": p.name, "model_id": p.model_id} for p in providers],
@@ -1142,6 +1218,7 @@ def build_manifest(
         },
         "n_cases": n_cases,
         "sanity_swap": sanity_swap,
+        "spend": spend,
     }
 
 
@@ -1224,7 +1301,20 @@ def main(argv: list[str] | None = None) -> int:
         default="",
         help=("Comma-separated red-team case IDs to filter the split's red-team set. Empty = all."),
     )
+    parser.add_argument(
+        "--max-cost-usd",
+        type=float,
+        default=None,
+        help=(
+            "Cap the run's logged spend on paid models (answers, critic, judges), in USD. No call "
+            "starts once the spend plus the largest call so far would pass it; a case the cap cut "
+            "short is left out, and the manifest says the cap was reached. Default: no cap."
+        ),
+    )
     args = parser.parse_args(argv)
+    if args.max_cost_usd is not None and args.max_cost_usd <= 0:
+        print("[bench] --max-cost-usd must be a positive number of USD")
+        return 2
 
     try:
         settings = get_settings()
@@ -1304,6 +1394,7 @@ def main(argv: list[str] | None = None) -> int:
             split=split,
             recorded_at=manifest.get("started_at"),
             rendered_from_cache=True,
+            spend=manifest.get("spend"),
         )
         paths.results_md.write_text(md, encoding="utf-8", newline="\n")
         print(f"[bench] re-rendered {paths.results_md} (no LLM calls made)")
@@ -1329,13 +1420,19 @@ def main(argv: list[str] | None = None) -> int:
             "a new run, or --overwrite to replace this one."
         )
         return 2
+    # The code that runs is the code checked out now, before the run writes into tracked files.
+    git_commit, git_dirty = git_state()
     started_at = _utc_now()
 
     # Reset the run's logs.
     paths.out_dir.mkdir(parents=True, exist_ok=True)
-    for p in (paths.cost_log, paths.refusal_log):
+    for p in (paths.cost_log, paths.refusal_log, paths.spend_log):
         if p.exists():
             p.unlink()
+    # Every paid call of the run, answers and judges alike, is metered against one cap.
+    meter = SpendMeter(args.max_cost_usd, paths.spend_log)
+    if args.max_cost_usd is not None:
+        print(f"[bench] spend cap: ${args.max_cost_usd:.2f} of logged spend on paid models")
 
     # Red-team-only mode: snapshot the existing results.md so the standard
     # tables are preserved verbatim while the new red-team + sanity-swap data
@@ -1354,11 +1451,13 @@ def main(argv: list[str] | None = None) -> int:
 
     # Build providers + judge.
     print(f"[bench] requested providers: {provider_names}")
-    providers = build_providers(provider_names, settings)
+    providers = [metered(p, meter) for p in build_providers(provider_names, settings)]
     if not providers:
         print("[bench] no providers available — aborting")
         return 1
-    judge = select_judge(settings)
+    selected_judge = select_judge(settings)
+    judge = metered(selected_judge, meter) if selected_judge is not None else None
+    enrichment = metered(build_enrichment_provider(settings), meter)
 
     # Build index + bm25 once. Enrichment uses METADATA_ENRICHMENT_PROVIDER (mock by default, to
     # keep cost at zero; a cheap real model is one setting away).
@@ -1367,7 +1466,7 @@ def main(argv: list[str] | None = None) -> int:
     sets_dir = split_data_dir(data_dir, split)
     print(f"[bench] split: {split} (question sets from {sets_dir})")
     print("[bench] building dense + BM25 indices...")
-    index = build_index(data_dir, build_enrichment_provider(settings))
+    index = build_index(data_dir, enrichment)
     bm25_index = build_bm25_index(index)
     print(f"[bench] index ready ({len(index)} chunks)")
 
@@ -1394,6 +1493,19 @@ def main(argv: list[str] | None = None) -> int:
     # ---------------------------------------------------------------
     # Standard loop
     # ---------------------------------------------------------------
+    # Cases the spend cap kept from running, or cut short and left out.
+    n_not_run = 0
+
+    def capped(case_id: str) -> bool:
+        """True when the cap has stopped the run: this case is not run, or its result is dropped."""
+        nonlocal n_not_run
+        if not meter.stopped:
+            return False
+        if n_not_run == 0:
+            print(f"[bench] spend cap reached at {case_id}; it and every case after it do not run")
+        n_not_run += 1
+        return True
+
     standard_cases: list[CaseResult] = []
     if mode in {"full", "standard"}:
         n_standard = len(providers) * len(critic_modes) * len(questions)
@@ -1402,6 +1514,8 @@ def main(argv: list[str] | None = None) -> int:
             for critic_mode in critic_modes:
                 for q in questions:
                     cell += 1
+                    if capped(q["question_id"]):
+                        continue
                     gold = golds_by_id.get(q["question_id"])
                     print(
                         f"[bench std {cell}/{n_standard}]  {provider.name}/{critic_mode}/{q['question_id']}",
@@ -1417,6 +1531,8 @@ def main(argv: list[str] | None = None) -> int:
                         critic_mode=critic_mode,
                         paths=paths,
                     )
+                    if capped(q["question_id"]):
+                        continue
                     standard_cases.append(case)
     elif mode == "red_team" and not args.no_sanity_swap:
         # Red-team-only mode: run a minimal pre-loop on the 3 sanity-swap
@@ -1435,6 +1551,8 @@ def main(argv: list[str] | None = None) -> int:
             ]
             n_swap = len(swap_questions)
             for i, q in enumerate(swap_questions, 1):
+                if capped(q["question_id"]):
+                    continue
                 gold = golds_by_id.get(q["question_id"])
                 print(
                     f"[bench swap-pre {i}/{n_swap}]  {preferred.name}/off/{q['question_id']}",
@@ -1450,6 +1568,8 @@ def main(argv: list[str] | None = None) -> int:
                     critic_mode=SANITY_SWAP_CRITIC_MODE,
                     paths=paths,
                 )
+                if capped(q["question_id"]):
+                    continue
                 standard_cases.append(case)
         else:
             print(
@@ -1467,6 +1587,8 @@ def main(argv: list[str] | None = None) -> int:
             for critic_mode in critic_modes:
                 for case_data in red_team:
                     cell += 1
+                    if capped(case_data["case_id"]):
+                        continue
                     print(
                         f"[bench rt  {cell}/{n_red}]  {provider.name}/{critic_mode}/{case_data['case_id']}",
                         flush=True,
@@ -1480,6 +1602,8 @@ def main(argv: list[str] | None = None) -> int:
                         critic_mode=critic_mode,
                         paths=paths,
                     )
+                    if capped(case_data["case_id"]):
+                        continue
                     red_team_cases.append(case)
 
     all_cases = standard_cases + red_team_cases
@@ -1499,7 +1623,8 @@ def main(argv: list[str] | None = None) -> int:
                     for c in standard_cases
                     if c.provider_name == provider.name and c.critic_mode == critic_mode
                 ]
-                aggregates_standard.append(aggregate(std_subset))
+                if std_subset:  # empty only when the spend cap stopped the run first
+                    aggregates_standard.append(aggregate(std_subset))
     if mode in {"full", "red_team"}:
         for provider in providers:
             for critic_mode in critic_modes:
@@ -1508,15 +1633,18 @@ def main(argv: list[str] | None = None) -> int:
                     for c in red_team_cases
                     if c.provider_name == provider.name and c.critic_mode == critic_mode
                 ]
-                aggregates_red_team.append(aggregate(rt_subset))
+                if rt_subset:
+                    aggregates_red_team.append(aggregate(rt_subset))
 
     # Sanity swap: scores the SAME predicted answer with two
     # judges. Uses only standard cases (which have gold answers).
     sanity_swap: SanitySwapReport | None = None
     swap_judge_model_id: str | None = None
-    if not args.no_sanity_swap and judge is not None:
-        swap_judge = select_swap_judge(settings)
-        if swap_judge is not None:
+    swap_judge: LLMProvider | None = None
+    if not args.no_sanity_swap and judge is not None and not meter.stopped:
+        selected_swap_judge = select_swap_judge(settings)
+        if selected_swap_judge is not None:
+            swap_judge = metered(selected_swap_judge, meter)
             swap_judge_model_id = swap_judge.model_id
             print(f"[bench] running judge sanity swap ({swap_judge.model_id})...")
             sanity_swap = run_judge_sanity_swap(
@@ -1532,6 +1660,16 @@ def main(argv: list[str] | None = None) -> int:
     dump_cases(paths.case_cache, all_cases)
     print(f"[bench] case cache:         {paths.case_cache}")
 
+    spend: dict[str, Any] = {
+        **meter.summary(),
+        "cases_not_run": n_not_run,
+        "prices": price_rows([*providers, judge, swap_judge, enrichment]),
+    }
+    print(
+        f"[bench] spend: ${meter.spent_usd:.4f} over {meter.paid_calls} paid calls"
+        + (f" (cap ${meter.cap_usd:.2f}, reached)" if meter.stopped else "")
+    )
+
     # Render + write.
     md = render_results_md(
         providers=providers,
@@ -1544,6 +1682,7 @@ def main(argv: list[str] | None = None) -> int:
         mode=mode,
         split=split,
         recorded_at=started_at,
+        spend=spend,
     )
     paths.results_md.write_text(md, encoding="utf-8", newline="\n")
 
@@ -1552,6 +1691,8 @@ def main(argv: list[str] | None = None) -> int:
         mode=mode,
         started_at=started_at,
         finished_at=_utc_now(),
+        git_commit=git_commit,
+        git_dirty=git_dirty,
         providers=providers,
         critic_modes=critic_modes,
         judge=judge,
@@ -1563,6 +1704,7 @@ def main(argv: list[str] | None = None) -> int:
         red_team_ids=rt_filter,
         n_cases=len(all_cases),
         sanity_swap=sanity_swap,
+        spend=spend,
     )
     paths.manifest.write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n"

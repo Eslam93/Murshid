@@ -51,61 +51,18 @@ class Core:
 
 
 CORES: tuple[Core, ...] = (
-    Core(
-        "retrieval-rag",
-        "quote_matching",
-        "W03",
-        "Arabic folding with a map back to the original text; quote alignment for citations",
-    ),
-    Core(
-        "retrieval-rag",
-        "lexical_retrieval",
-        "C56",
-        "BM25 tokenizer with Arabic folding and light stemming",
-    ),
-    Core(
-        "retrieval-rag", "hybrid_retrieval", "W106", "fake, cached and OpenAI-compatible embedders"
-    ),
-    Core(
-        "llm-agent-core",
-        "number_text",
-        "W09",
-        "numbers, dates and codes in Arabic and English text, for figure grounding",
-    ),
-    Core("llm-agent-core", "versioned_prompts", "C59", "named, versioned, fingerprinted prompts"),
-    Core(
-        "llm-agent-core",
-        "assistant_guidance",
-        "W29",
-        "greetings and 'what can you do' answered without a model call",
-    ),
-    Core(
-        "security-hardening",
-        "injection_sanitizer",
-        "C39",
-        "invisible-character removal and prompt-injection report mode",
-    ),
-    Core(
-        "security-hardening",
-        "pii_masking",
-        "C37",
-        "masking of IBANs, card and account numbers before egress and logs",
-    ),
-    Core(
-        "security-hardening", "tamper_evident", "C29", "canonical JSON digests for bench run stamps"
-    ),
-    Core(
-        "security-hardening",
-        "fault_scripts",
-        "C64",
-        "real-client fault scripts and ablation checks (tests)",
-    ),
-    Core("llm-evals", "golden_tests", "C65", "golden-file, determinism and invariant tests"),
+    # Imported by Murshid's own code (src/murshid/settings.py and the tests).
     Core(
         "fastapi-foundation",
         "fail_fast_settings",
         "C02",
         "settings that stop the app at start when a value is missing or out of range",
+    ),
+    Core(
+        "retrieval-rag",
+        "hybrid_retrieval",
+        "W106",
+        "the fake embedder the tests use instead of BGE-M3",
     ),
     Core(
         "delivery-tooling",
@@ -119,11 +76,18 @@ CORES: tuple[Core, ...] = (
         "C71",
         "check that the CI workflow is safe for a stranger's pull request",
     ),
+    # Imported by hybrid_retrieval; lexical_retrieval imports quote_matching as well.
     Core(
-        "delivery-tooling",
-        "container_image",
-        "C69",
-        "check that the Dockerfile keeps secrets out and runs as non-root",
+        "retrieval-rag",
+        "lexical_retrieval",
+        "C56",
+        "BM25 index, tokenizer and rank fusion that hybrid_retrieval imports",
+    ),
+    Core(
+        "retrieval-rag",
+        "quote_matching",
+        "W03",
+        "Arabic folding that lexical_retrieval and hybrid_retrieval import",
     ),
 )
 
@@ -239,10 +203,9 @@ uv run python tools/vendor_toolkit.py --toolkit ../ToolKit --commit <new-commit>
 |---|---|---|---|
 {rows}
 
-Murshid's own code imports four of them today: `fail_fast_settings` (src/murshid/settings.py),
-and `hybrid_retrieval`, `python_tooling` and `ci_workflow` (tests only). The other eleven are
-copied for planned work and nothing calls them yet; keep this paragraph in step when that
-changes.
+Murshid's own code imports four of them: `fail_fast_settings` (src/murshid/settings.py), and
+`hybrid_retrieval`, `python_tooling` and `ci_workflow` (tests only). The other two,
+`lexical_retrieval` and `quote_matching`, are here because `hybrid_retrieval` imports them.
 
 Each core's own README (`<name>/core/README.md`) documents its API, its limits and the
 measurements it was released with.

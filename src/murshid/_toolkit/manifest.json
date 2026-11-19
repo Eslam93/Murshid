@@ -3,76 +3,16 @@
   "toolkit_commit": "74b6ff10ecdef69328d2fe91ab969f3329e1af25",
   "cores": [
     {
-      "name": "quote_matching",
-      "catalog_id": "W03",
-      "project": "retrieval-rag",
-      "why": "Arabic folding with a map back to the original text; quote alignment for citations"
-    },
-    {
-      "name": "lexical_retrieval",
-      "catalog_id": "C56",
-      "project": "retrieval-rag",
-      "why": "BM25 tokenizer with Arabic folding and light stemming"
+      "name": "fail_fast_settings",
+      "catalog_id": "C02",
+      "project": "fastapi-foundation",
+      "why": "settings that stop the app at start when a value is missing or out of range"
     },
     {
       "name": "hybrid_retrieval",
       "catalog_id": "W106",
       "project": "retrieval-rag",
-      "why": "fake, cached and OpenAI-compatible embedders"
-    },
-    {
-      "name": "number_text",
-      "catalog_id": "W09",
-      "project": "llm-agent-core",
-      "why": "numbers, dates and codes in Arabic and English text, for figure grounding"
-    },
-    {
-      "name": "versioned_prompts",
-      "catalog_id": "C59",
-      "project": "llm-agent-core",
-      "why": "named, versioned, fingerprinted prompts"
-    },
-    {
-      "name": "assistant_guidance",
-      "catalog_id": "W29",
-      "project": "llm-agent-core",
-      "why": "greetings and 'what can you do' answered without a model call"
-    },
-    {
-      "name": "injection_sanitizer",
-      "catalog_id": "C39",
-      "project": "security-hardening",
-      "why": "invisible-character removal and prompt-injection report mode"
-    },
-    {
-      "name": "pii_masking",
-      "catalog_id": "C37",
-      "project": "security-hardening",
-      "why": "masking of IBANs, card and account numbers before egress and logs"
-    },
-    {
-      "name": "tamper_evident",
-      "catalog_id": "C29",
-      "project": "security-hardening",
-      "why": "canonical JSON digests for bench run stamps"
-    },
-    {
-      "name": "fault_scripts",
-      "catalog_id": "C64",
-      "project": "security-hardening",
-      "why": "real-client fault scripts and ablation checks (tests)"
-    },
-    {
-      "name": "golden_tests",
-      "catalog_id": "C65",
-      "project": "llm-evals",
-      "why": "golden-file, determinism and invariant tests"
-    },
-    {
-      "name": "fail_fast_settings",
-      "catalog_id": "C02",
-      "project": "fastapi-foundation",
-      "why": "settings that stop the app at start when a value is missing or out of range"
+      "why": "the fake embedder the tests use instead of BGE-M3"
     },
     {
       "name": "python_tooling",
@@ -87,10 +27,16 @@
       "why": "check that the CI workflow is safe for a stranger's pull request"
     },
     {
-      "name": "container_image",
-      "catalog_id": "C69",
-      "project": "delivery-tooling",
-      "why": "check that the Dockerfile keeps secrets out and runs as non-root"
+      "name": "lexical_retrieval",
+      "catalog_id": "C56",
+      "project": "retrieval-rag",
+      "why": "BM25 index, tokenizer and rank fusion that hybrid_retrieval imports"
+    },
+    {
+      "name": "quote_matching",
+      "catalog_id": "W03",
+      "project": "retrieval-rag",
+      "why": "Arabic folding that lexical_retrieval and hybrid_retrieval import"
     }
   ],
   "files": [
@@ -239,294 +185,6 @@
       "sha256": "f51df21d49a11ced6d1e041810db3b837dbda16845d764d78e5789f20d692fa7"
     },
     {
-      "path": "number_text/core/README.md",
-      "toolkit_path": "llm-agent-core/toolkit/number_text/core/README.md",
-      "toolkit_sha256": "bd0afb2d8fe8ec8ce0298ae75f40babd3dea1032eb821e053590e6cb6100444e",
-      "sha256": "bd0afb2d8fe8ec8ce0298ae75f40babd3dea1032eb821e053590e6cb6100444e"
-    },
-    {
-      "path": "number_text/core/__init__.py",
-      "toolkit_path": "llm-agent-core/toolkit/number_text/core/__init__.py",
-      "toolkit_sha256": "7774e84ce2b6e7feb0a6631d83ead28847947eac9fc36f9a58a42840f8a39c7c",
-      "sha256": "7774e84ce2b6e7feb0a6631d83ead28847947eac9fc36f9a58a42840f8a39c7c"
-    },
-    {
-      "path": "number_text/core/currencies.py",
-      "toolkit_path": "llm-agent-core/toolkit/number_text/core/currencies.py",
-      "toolkit_sha256": "35fbf07cf0bbe79741526d407c2316d1e8bc26432e8a89ab7f020f5fb6a8ba45",
-      "sha256": "35fbf07cf0bbe79741526d407c2316d1e8bc26432e8a89ab7f020f5fb6a8ba45"
-    },
-    {
-      "path": "number_text/core/figures.py",
-      "toolkit_path": "llm-agent-core/toolkit/number_text/core/figures.py",
-      "toolkit_sha256": "910cb6375353beac5e93bd5bc2795df467ed37cdc322da8b89fcd36effd90bb8",
-      "sha256": "910cb6375353beac5e93bd5bc2795df467ed37cdc322da8b89fcd36effd90bb8"
-    },
-    {
-      "path": "number_text/core/reading.py",
-      "toolkit_path": "llm-agent-core/toolkit/number_text/core/reading.py",
-      "toolkit_sha256": "6e9cd78c5ceef4cff65fdb010c76d7a2d9482d5feca48986f44b720025ced86c",
-      "sha256": "6e9cd78c5ceef4cff65fdb010c76d7a2d9482d5feca48986f44b720025ced86c"
-    },
-    {
-      "path": "number_text/core/scanning.py",
-      "toolkit_path": "llm-agent-core/toolkit/number_text/core/scanning.py",
-      "toolkit_sha256": "7638d4e2b1faaf8ba546f254a4a6c9effe4c51c354035937687143cf45cae1b0",
-      "sha256": "7638d4e2b1faaf8ba546f254a4a6c9effe4c51c354035937687143cf45cae1b0"
-    },
-    {
-      "path": "number_text/core/words.py",
-      "toolkit_path": "llm-agent-core/toolkit/number_text/core/words.py",
-      "toolkit_sha256": "ffdfdef9b0720ce432f7068ddec48e725e8370a214d37c19eaec74673ed16270",
-      "sha256": "ffdfdef9b0720ce432f7068ddec48e725e8370a214d37c19eaec74673ed16270"
-    },
-    {
-      "path": "number_text/tests/test_codes.py",
-      "toolkit_path": "llm-agent-core/toolkit/number_text/tests/test_codes.py",
-      "toolkit_sha256": "427cbb3f96db8630912ae7158f8f5c3deb9e18199421dd9ee3ce206d8b5ce289",
-      "sha256": "bf6eadc47a812443955fc46f88da5c34a0b3182c90dee540816c095f3ef4f76c"
-    },
-    {
-      "path": "number_text/tests/test_currencies.py",
-      "toolkit_path": "llm-agent-core/toolkit/number_text/tests/test_currencies.py",
-      "toolkit_sha256": "ad5a60be434a0d37ebfd0a61b3742f66f5ce60a6cd91b5a905870ae3a4268d1a",
-      "sha256": "bed7e54d2631c48142827054a0c901747bc6f89ee27b62b545914e357de1596e"
-    },
-    {
-      "path": "number_text/tests/test_figures.py",
-      "toolkit_path": "llm-agent-core/toolkit/number_text/tests/test_figures.py",
-      "toolkit_sha256": "18ebdd2ce2ae5d36355aa04e2480365264df20be45ab4a6cd08a5b3d4f21945d",
-      "sha256": "30704a70a580b691e47ac162f76bb6b3a1b7dc8b2067a6f467f5b276d7876c56"
-    },
-    {
-      "path": "number_text/tests/test_properties.py",
-      "toolkit_path": "llm-agent-core/toolkit/number_text/tests/test_properties.py",
-      "toolkit_sha256": "dd324ba6daba9f5e45bb3d36cff9b4faac9693e16678896ae566e7a0ab64d3dc",
-      "sha256": "22cc64a722b7c435cf2067b02f00b8c92007479245ff0b08612e8050a7da9abd"
-    },
-    {
-      "path": "number_text/tests/test_reading.py",
-      "toolkit_path": "llm-agent-core/toolkit/number_text/tests/test_reading.py",
-      "toolkit_sha256": "1bb2a93671d8eadfd1e4097fbd0600de6947fe9e09f720fb631421eb33bdb948",
-      "sha256": "35414125c6d25c92ae63dae7639dcb976d0e40b3ee7698f60e6303f3d69c4234"
-    },
-    {
-      "path": "number_text/tests/test_scanning.py",
-      "toolkit_path": "llm-agent-core/toolkit/number_text/tests/test_scanning.py",
-      "toolkit_sha256": "57828b699dffb4ea0a12931a666af3f64f80144d48f5d119d6c510d2b5e6c543",
-      "sha256": "96f4708fbb7299d9c4b954328da1989570c87d0ccfe8448b9274824b4cb190ea"
-    },
-    {
-      "path": "number_text/tests/test_words.py",
-      "toolkit_path": "llm-agent-core/toolkit/number_text/tests/test_words.py",
-      "toolkit_sha256": "cee3722695a0544ae6883eb652772ba9702536cfbe2da9212534e9351f475b02",
-      "sha256": "1a83eef8a970271d8b381a5d95d43324abff0a6c18633b7a932ce0f89d632340"
-    },
-    {
-      "path": "versioned_prompts/core/README.md",
-      "toolkit_path": "llm-agent-core/toolkit/versioned_prompts/core/README.md",
-      "toolkit_sha256": "52de157c91a85aaa6f3ba1d483b8a1a85c2a9fa9aa76b795409ae9471157c2a0",
-      "sha256": "52de157c91a85aaa6f3ba1d483b8a1a85c2a9fa9aa76b795409ae9471157c2a0"
-    },
-    {
-      "path": "versioned_prompts/core/__init__.py",
-      "toolkit_path": "llm-agent-core/toolkit/versioned_prompts/core/__init__.py",
-      "toolkit_sha256": "a0342fc91775e08447f3561d8404c21fcc6abaddba0b5f0a4c3bd3bb5ef180c2",
-      "sha256": "a0342fc91775e08447f3561d8404c21fcc6abaddba0b5f0a4c3bd3bb5ef180c2"
-    },
-    {
-      "path": "versioned_prompts/core/prompts.py",
-      "toolkit_path": "llm-agent-core/toolkit/versioned_prompts/core/prompts.py",
-      "toolkit_sha256": "a4255a8df70cf7913ff87f1ef4067d36b455912bf1a7932784ece377ae2de9ff",
-      "sha256": "a4255a8df70cf7913ff87f1ef4067d36b455912bf1a7932784ece377ae2de9ff"
-    },
-    {
-      "path": "versioned_prompts/tests/test_prompts.py",
-      "toolkit_path": "llm-agent-core/toolkit/versioned_prompts/tests/test_prompts.py",
-      "toolkit_sha256": "fd5a63aec02e75ec2e31cc26a881beea6ac1080502f9755ed34eafa7bc9f2e63",
-      "sha256": "99bce727186ed278434124a59e5a2740862b2632f0e18a4df6af79ad981a5f46"
-    },
-    {
-      "path": "assistant_guidance/core/README.md",
-      "toolkit_path": "llm-agent-core/toolkit/assistant_guidance/core/README.md",
-      "toolkit_sha256": "491187c888c42b1b425c1966a53d632c865c7d9d4d115019f0c70aa8d5489d59",
-      "sha256": "491187c888c42b1b425c1966a53d632c865c7d9d4d115019f0c70aa8d5489d59"
-    },
-    {
-      "path": "assistant_guidance/core/__init__.py",
-      "toolkit_path": "llm-agent-core/toolkit/assistant_guidance/core/__init__.py",
-      "toolkit_sha256": "a54af800f101f14ca7411307b45321b8b84eec891f4b96ea32ccec5698ada447",
-      "sha256": "a54af800f101f14ca7411307b45321b8b84eec891f4b96ea32ccec5698ada447"
-    },
-    {
-      "path": "assistant_guidance/core/front_door.py",
-      "toolkit_path": "llm-agent-core/toolkit/assistant_guidance/core/front_door.py",
-      "toolkit_sha256": "854ac280b6e9e97744929eb682f2d687aebba81d69d01d67b29c063714a656aa",
-      "sha256": "854ac280b6e9e97744929eb682f2d687aebba81d69d01d67b29c063714a656aa"
-    },
-    {
-      "path": "assistant_guidance/core/guide.py",
-      "toolkit_path": "llm-agent-core/toolkit/assistant_guidance/core/guide.py",
-      "toolkit_sha256": "7e1a8713f25703c48db13a24e1d0b9e854c77fd4963234eeb546ede567299989",
-      "sha256": "7e1a8713f25703c48db13a24e1d0b9e854c77fd4963234eeb546ede567299989"
-    },
-    {
-      "path": "assistant_guidance/core/wording.py",
-      "toolkit_path": "llm-agent-core/toolkit/assistant_guidance/core/wording.py",
-      "toolkit_sha256": "a49484426c360b0e3eb57cedb8060ebbc98b3cd4fb7e1fd201b299d55a52e57d",
-      "sha256": "a49484426c360b0e3eb57cedb8060ebbc98b3cd4fb7e1fd201b299d55a52e57d"
-    },
-    {
-      "path": "assistant_guidance/tests/__init__.py",
-      "toolkit_path": "llm-agent-core/toolkit/assistant_guidance/tests/__init__.py",
-      "toolkit_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
-    {
-      "path": "assistant_guidance/tests/library.py",
-      "toolkit_path": "llm-agent-core/toolkit/assistant_guidance/tests/library.py",
-      "toolkit_sha256": "1c03460c8ed9f1616ba0e50ca011188129178f6263b59601a6dca6b27c26bfba",
-      "sha256": "307e19e8259636880f57978e7a2b237653bf26bc70d0dbfcd25da256c6e0b765"
-    },
-    {
-      "path": "assistant_guidance/tests/test_front_door.py",
-      "toolkit_path": "llm-agent-core/toolkit/assistant_guidance/tests/test_front_door.py",
-      "toolkit_sha256": "7f5499800bfdf518e0bd7ca48c9cd71e7c0a21aa0e6f95a384c2ed1e9b128826",
-      "sha256": "7df4fb8dc3113b3bc657b4459f16adbaf9c46201f359c8ccf3d2d218d28d5dcf"
-    },
-    {
-      "path": "assistant_guidance/tests/test_guide.py",
-      "toolkit_path": "llm-agent-core/toolkit/assistant_guidance/tests/test_guide.py",
-      "toolkit_sha256": "b48716d055c1529262c21826662b5ea32dcc3da7b853145ed60610ec95aea460",
-      "sha256": "643be31dcdeaceb71ebb377d17618168c3437580da811092b76e2ed7c7da68e8"
-    },
-    {
-      "path": "assistant_guidance/tests/test_wording.py",
-      "toolkit_path": "llm-agent-core/toolkit/assistant_guidance/tests/test_wording.py",
-      "toolkit_sha256": "9a551247ae07290efcd036e94da8d0db7fb1486336e60a38aa4a410aee5e70ad",
-      "sha256": "ad3dcf430af8b804675d2afab09b387b144f11502f37f840ac19588511430ced"
-    },
-    {
-      "path": "injection_sanitizer/core/README.md",
-      "toolkit_path": "security-hardening/toolkit/injection_sanitizer/core/README.md",
-      "toolkit_sha256": "2330acedb7542d6c4a16cac2df167f526189741426173bb678267c511bc375f4",
-      "sha256": "2330acedb7542d6c4a16cac2df167f526189741426173bb678267c511bc375f4"
-    },
-    {
-      "path": "injection_sanitizer/core/__init__.py",
-      "toolkit_path": "security-hardening/toolkit/injection_sanitizer/core/__init__.py",
-      "toolkit_sha256": "38dfd40be12400701c2d6a8cc3609875f6b237dc442f17561430e279907c76bc",
-      "sha256": "38dfd40be12400701c2d6a8cc3609875f6b237dc442f17561430e279907c76bc"
-    },
-    {
-      "path": "injection_sanitizer/core/sanitizer.py",
-      "toolkit_path": "security-hardening/toolkit/injection_sanitizer/core/sanitizer.py",
-      "toolkit_sha256": "8a94da8758053363a5921363fe56f2d6e10554787f1bc8d0e36026ea111b683f",
-      "sha256": "8a94da8758053363a5921363fe56f2d6e10554787f1bc8d0e36026ea111b683f"
-    },
-    {
-      "path": "injection_sanitizer/tests/test_sanitizer.py",
-      "toolkit_path": "security-hardening/toolkit/injection_sanitizer/tests/test_sanitizer.py",
-      "toolkit_sha256": "33415735541a4bb8359542435a3c6f6e44ba5ad090fb879a941cce9fdb950ce7",
-      "sha256": "87cef79b6ac989f9d9e53257641b7042df8d5d81f43dde755a64955b5b29a84e"
-    },
-    {
-      "path": "pii_masking/core/README.md",
-      "toolkit_path": "security-hardening/toolkit/pii_masking/core/README.md",
-      "toolkit_sha256": "fa98114576aaebab006454af64e4bb069050100f1769c8cada7c12eb6c749af0",
-      "sha256": "fa98114576aaebab006454af64e4bb069050100f1769c8cada7c12eb6c749af0"
-    },
-    {
-      "path": "pii_masking/core/__init__.py",
-      "toolkit_path": "security-hardening/toolkit/pii_masking/core/__init__.py",
-      "toolkit_sha256": "e1d2e4049c63de177f37417f5289ea888cb3300f1f69fc3340b51f435408c792",
-      "sha256": "e1d2e4049c63de177f37417f5289ea888cb3300f1f69fc3340b51f435408c792"
-    },
-    {
-      "path": "pii_masking/core/masking.py",
-      "toolkit_path": "security-hardening/toolkit/pii_masking/core/masking.py",
-      "toolkit_sha256": "5023ada71c625aaca738a1fc0b30ed408f773a1497d3d29823cc1641af55e0b6",
-      "sha256": "5023ada71c625aaca738a1fc0b30ed408f773a1497d3d29823cc1641af55e0b6"
-    },
-    {
-      "path": "pii_masking/tests/test_masking.py",
-      "toolkit_path": "security-hardening/toolkit/pii_masking/tests/test_masking.py",
-      "toolkit_sha256": "9b880f830306f73f774a653e37d110fdf19fff89220e92b3f31d6477b1a5dadd",
-      "sha256": "e8b706e3e213417a8545c99d5577e368478aba4a8d0e88898a8d9ea5b962346c"
-    },
-    {
-      "path": "tamper_evident/core/README.md",
-      "toolkit_path": "security-hardening/toolkit/tamper_evident/core/README.md",
-      "toolkit_sha256": "0e890c26db6c063847cb48a62838692b4639b35af834db29c5d2a1972daab9e6",
-      "sha256": "0e890c26db6c063847cb48a62838692b4639b35af834db29c5d2a1972daab9e6"
-    },
-    {
-      "path": "tamper_evident/core/__init__.py",
-      "toolkit_path": "security-hardening/toolkit/tamper_evident/core/__init__.py",
-      "toolkit_sha256": "4c652d1142125aa72f1c02cbccfbf2a482f8ce8e6126de8448d323694d839ec8",
-      "sha256": "4c652d1142125aa72f1c02cbccfbf2a482f8ce8e6126de8448d323694d839ec8"
-    },
-    {
-      "path": "tamper_evident/core/digest.py",
-      "toolkit_path": "security-hardening/toolkit/tamper_evident/core/digest.py",
-      "toolkit_sha256": "c89859f33b55f416918896d6378b67c56fefebd52ff52304f293aeaf884c9657",
-      "sha256": "c89859f33b55f416918896d6378b67c56fefebd52ff52304f293aeaf884c9657"
-    },
-    {
-      "path": "tamper_evident/tests/test_digest.py",
-      "toolkit_path": "security-hardening/toolkit/tamper_evident/tests/test_digest.py",
-      "toolkit_sha256": "7889f4efc9c9cb06930df4cac1f45d3255ee2d013057f2def6642a65c6c5669a",
-      "sha256": "c36ef3503d439fb7d1defd10220fe5015ed68ecc80c44ab831a9e2e1ba74cfac"
-    },
-    {
-      "path": "fault_scripts/core/README.md",
-      "toolkit_path": "security-hardening/toolkit/fault_scripts/core/README.md",
-      "toolkit_sha256": "109df3f31b1b4ee796e20ec9d9573311ad9478979eb89cb1dbe18e4bb909a85a",
-      "sha256": "109df3f31b1b4ee796e20ec9d9573311ad9478979eb89cb1dbe18e4bb909a85a"
-    },
-    {
-      "path": "fault_scripts/core/__init__.py",
-      "toolkit_path": "security-hardening/toolkit/fault_scripts/core/__init__.py",
-      "toolkit_sha256": "a32ab74bafe43b71e4b3c81fba5171ae947c117e071b7866de364be57acdb5d4",
-      "sha256": "a32ab74bafe43b71e4b3c81fba5171ae947c117e071b7866de364be57acdb5d4"
-    },
-    {
-      "path": "fault_scripts/core/faults.py",
-      "toolkit_path": "security-hardening/toolkit/fault_scripts/core/faults.py",
-      "toolkit_sha256": "c1fb00536f9ac2a9d6bbaae556c8f541b04604093bce459b5c8a234b9650988b",
-      "sha256": "c1fb00536f9ac2a9d6bbaae556c8f541b04604093bce459b5c8a234b9650988b"
-    },
-    {
-      "path": "fault_scripts/tests/test_faults.py",
-      "toolkit_path": "security-hardening/toolkit/fault_scripts/tests/test_faults.py",
-      "toolkit_sha256": "ce882ee1c97f57d51a26483894b557925b39e1d041eaa941f473d9358726dafd",
-      "sha256": "0691188083bc042c987b41a8d370eb6c58cd00c90084ed5454c63cfc7b9eacde"
-    },
-    {
-      "path": "golden_tests/core/README.md",
-      "toolkit_path": "llm-evals/toolkit/golden_tests/core/README.md",
-      "toolkit_sha256": "ed56e8b9bef0ab254822fca0394d72e726df544922ee99f72998c831f8aba6ea",
-      "sha256": "ed56e8b9bef0ab254822fca0394d72e726df544922ee99f72998c831f8aba6ea"
-    },
-    {
-      "path": "golden_tests/core/__init__.py",
-      "toolkit_path": "llm-evals/toolkit/golden_tests/core/__init__.py",
-      "toolkit_sha256": "45d8fc2982fe5744ddcac87aa490ac024dfba6f62d0e8ef0f42e6d4dda675570",
-      "sha256": "45d8fc2982fe5744ddcac87aa490ac024dfba6f62d0e8ef0f42e6d4dda675570"
-    },
-    {
-      "path": "golden_tests/core/golden.py",
-      "toolkit_path": "llm-evals/toolkit/golden_tests/core/golden.py",
-      "toolkit_sha256": "e6b0b1b3bd53d2a9714898a36f731ddeea54aaf01c0df90e34108d3fd12afbe6",
-      "sha256": "e6b0b1b3bd53d2a9714898a36f731ddeea54aaf01c0df90e34108d3fd12afbe6"
-    },
-    {
-      "path": "golden_tests/tests/test_golden.py",
-      "toolkit_path": "llm-evals/toolkit/golden_tests/tests/test_golden.py",
-      "toolkit_sha256": "127f352f38afc458d6fe738fd798bf3df68ddee051495407115f439a6a5a3ea8",
-      "sha256": "de124ec3947673526ef8aec273543f908ae6d705c4bf0c422fb88eef4d5b8657"
-    },
-    {
       "path": "fail_fast_settings/core/README.md",
       "toolkit_path": "fastapi-foundation/toolkit/fail_fast_settings/core/README.md",
       "toolkit_sha256": "5529987da47c366d48e7de482be11e7f2f5027e0b36ca786e03ffbb934fd7a0c",
@@ -621,42 +279,6 @@
       "toolkit_path": "delivery-tooling/toolkit/ci_workflow/tests/test_check_workflow.py",
       "toolkit_sha256": "c705404cf3095c7ab2cc7c1ffccd02fee784e324bc3cf889a35236c860999148",
       "sha256": "e65f3c08009d6e5b6a97c65be97543dccce2f683d41892a970219b08c617276a"
-    },
-    {
-      "path": "container_image/core/Dockerfile.template",
-      "toolkit_path": "delivery-tooling/toolkit/container_image/core/Dockerfile.template",
-      "toolkit_sha256": "6a11a0499fd243b98a29bb4dc2333b11a6c31b8123c732648305be60fcbe4a30",
-      "sha256": "6a11a0499fd243b98a29bb4dc2333b11a6c31b8123c732648305be60fcbe4a30"
-    },
-    {
-      "path": "container_image/core/README.md",
-      "toolkit_path": "delivery-tooling/toolkit/container_image/core/README.md",
-      "toolkit_sha256": "c63ae3a22db902ff6aa3782800ca75c5fc74a63a49cdbaede25143923f1b29cd",
-      "sha256": "c63ae3a22db902ff6aa3782800ca75c5fc74a63a49cdbaede25143923f1b29cd"
-    },
-    {
-      "path": "container_image/core/__init__.py",
-      "toolkit_path": "delivery-tooling/toolkit/container_image/core/__init__.py",
-      "toolkit_sha256": "c338f08063eac68ac5cb9e420dc9ca0dab5f0f50c3f84a344cc383d3dfcc7a42",
-      "sha256": "c338f08063eac68ac5cb9e420dc9ca0dab5f0f50c3f84a344cc383d3dfcc7a42"
-    },
-    {
-      "path": "container_image/core/__main__.py",
-      "toolkit_path": "delivery-tooling/toolkit/container_image/core/__main__.py",
-      "toolkit_sha256": "c0d6faba7f9148841da9f6e5e07101842f6fb77cf6e0f4746f9761d81fa25bed",
-      "sha256": "c0d6faba7f9148841da9f6e5e07101842f6fb77cf6e0f4746f9761d81fa25bed"
-    },
-    {
-      "path": "container_image/core/check_dockerfile.py",
-      "toolkit_path": "delivery-tooling/toolkit/container_image/core/check_dockerfile.py",
-      "toolkit_sha256": "f890c1049d66f800fc4dffcf0ae0b44c02f38b4e17e7fab5d706a43625489953",
-      "sha256": "f890c1049d66f800fc4dffcf0ae0b44c02f38b4e17e7fab5d706a43625489953"
-    },
-    {
-      "path": "container_image/tests/test_check_dockerfile.py",
-      "toolkit_path": "delivery-tooling/toolkit/container_image/tests/test_check_dockerfile.py",
-      "toolkit_sha256": "a8d5e323efffc94f3ecde1a285c425a131eb7563ae0cd8096e18b7d63610c024",
-      "sha256": "bd9e30d6ae003a906a79b5ee142b31f3190fa92eb4c6d44d1cdd2490f97def39"
     }
   ]
 }

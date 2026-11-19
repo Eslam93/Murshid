@@ -157,7 +157,7 @@ ignore_missing_imports = true
 testpaths = ["tests", "src/murshid/_toolkit"]
 # Vendored core tests reuse file names, so each test file is imported by its path.
 addopts = ["--strict-markers", "-ra", "--import-mode=importlib"]
-# Some vendored core tests (C64 fault scripts) are async.
+# pytest-asyncio runs async tests; none of the vendored cores kept here has any today.
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 markers = [

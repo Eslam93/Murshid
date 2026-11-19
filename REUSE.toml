@@ -30,10 +30,19 @@ precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Eslam Hamed"
 SPDX-License-Identifier = "MIT"
 
+# The ToolKit cores under src/murshid/_toolkit, copied byte for byte from his ToolKit repository
+# (src/murshid/_toolkit/README.md names the commit): his code, published here under MIT with his
+# approval of 2026-11-19. Their files carry no header, so the copies stay identical.
+[[annotations]]
+path = "src/murshid/_toolkit/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Eslam Hamed"
+SPDX-License-Identifier = "MIT"
+
 # His Python files carry the same notice in their header. reuse guesses a file's encoding from
 # its first 2048 bytes, and when that slice ends inside an Arabic character it treats the file as
 # binary and skips the header (src/murshid/critic.py did). Listing the files here keeps them
-# covered whatever their bytes. The vendored cores under src/murshid/_toolkit are not listed.
+# covered whatever their bytes.
 [[annotations]]
 path = [
     "conftest.py",

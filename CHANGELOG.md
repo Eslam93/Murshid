@@ -38,6 +38,8 @@ All notable changes to Murshid are recorded in this file. The format is based on
 
 - `requirements.txt`, the Falcon-Arabic provider stub, the empty `scripts/seed_bench.py`, and the
   committed `demo_output.txt` (the demo writes to `out/`).
+- Nine vendored ToolKit cores that nothing used. Six remain: the four Murshid's code imports and
+  the two that `hybrid_retrieval` imports.
 
 ## [0.1.0] - 2026-05-23
 

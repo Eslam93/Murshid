@@ -154,6 +154,8 @@ def test_judged_runs_get_their_scores_side_by_side(compare: ModuleType, tmp_path
         },
     ]
     for name, cases in (("tuned", tuned), ("heldout", held)):
+        for case in cases:
+            case.update(provider_name="claude", critic_mode="off")
         _write_run(tmp_path / name, cases, {})
         (tmp_path / name / "run-manifest.json").write_text(
             json.dumps(
@@ -165,6 +167,22 @@ def test_judged_runs_get_their_scores_side_by_side(compare: ModuleType, tmp_path
             ),
             encoding="utf-8",
         )
+    # The held-out cost log: h-1's answer used 500 tokens, h-2's all 1,024 the pipeline allows.
+    (tmp_path / "heldout" / "cost-log.jsonl").write_text(
+        "".join(
+            json.dumps(
+                {
+                    "provider": "claude",
+                    "question_id": q,
+                    "kind": "answer_critic_off",
+                    "output_tokens": t,
+                }
+            )
+            + "\n"
+            for q, t in (("h-1", 500), ("h-2", 1024))
+        ),
+        encoding="utf-8",
+    )
     report = compare.build_report(
         tmp_path / "tuned", tmp_path / "heldout", tmp_path / "tuned-data", tmp_path / "heldout-data"
     )
@@ -173,10 +191,11 @@ def test_judged_runs_get_their_scores_side_by_side(compare: ModuleType, tmp_path
     # Correctness 3 and 1: mean 2.00, sd 1.41, half-width 1.96 * 1.41 / sqrt(2) = 1.96.
     assert "| 2.00 ± 1.96 (n=2) |" in rows["| held-out"]
     assert "| 3.00 (n=1) |" in rows["| held-out"], "faithfulness rests on the one scored cell"
-    assert "| 1 | $0.25 over 40 calls |" in rows["| held-out"], "one judge error, the spend"
+    assert "| 1 of 2 | 1 | $0.25 over 40 calls |" in rows["| held-out"], "cut off, errors, spend"
+    assert "| — | 0 | $0.25 over 40 calls |" in rows["| tuned"], "no cost log, no cut-off count"
     assert "1 / 1 (100%" in rows["| tuned"], "the tuned red-team case passed its rubric"
     assert "## Held-out: the 1 cells scored 1 or 0 for correctness" in report
-    assert "| h-2 | answer | answer | 1 | — | س3 |" in report
+    assert "| h-2 | answer | answer | 1 | — | 1024 (cut off) | س3 |" in report
 
 
 def test_wilson_interval_bounds(compare: ModuleType) -> None:

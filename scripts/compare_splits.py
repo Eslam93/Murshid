@@ -54,6 +54,9 @@ JUDGE_ERRORS = (
     "judge_refusal_tone_error",
     "judge_red_team_error",
 )
+# The output tokens the pipeline allows an answer (`provider.generate`'s default `max_tokens`).
+# An answer call that used them all was cut off.
+ANSWER_TOKEN_LIMIT = 1024
 
 
 def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
@@ -91,7 +94,31 @@ def was_judged(cases: list[dict[str, Any]]) -> bool:
     )
 
 
-def section_quality(name: str, cases: list[dict[str, Any]], manifest: dict[str, Any]) -> list[str]:
+def load_answer_tokens(folder: Path) -> dict[tuple[str, str, str], int]:
+    """Output tokens of each answer call in the run's cost log, by (provider, item, critic mode)."""
+    log = folder / "cost-log.jsonl"
+    tokens: dict[tuple[str, str, str], int] = {}
+    if not log.exists():
+        return tokens
+    for line in log.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            row = json.loads(line)
+            mode = "on" if str(row.get("kind", "")).endswith("critic_on") else "off"
+            tokens[(row["provider"], row["question_id"], mode)] = int(row.get("output_tokens") or 0)
+    return tokens
+
+
+def answer_tokens(case: dict[str, Any], tokens: dict[tuple[str, str, str], int]) -> int:
+    """The cell's answer-call output tokens; 0 when no model answered (a rule decided)."""
+    return tokens.get((case["provider_name"], case["question_id"], case["critic_mode"]), 0)
+
+
+def section_quality(
+    name: str,
+    cases: list[dict[str, Any]],
+    manifest: dict[str, Any],
+    tokens: dict[tuple[str, str, str], int],
+) -> list[str]:
     scores = [
         mean_interval([float(c[k]) for c in cases if c.get(k) is not None]) for k, _ in SCORES
     ]
@@ -99,6 +126,8 @@ def section_quality(name: str, cases: list[dict[str, Any]], manifest: dict[str, 
     passed = (
         rate(sum(bool(c["red_team_rubric_pass"]) for c in rubric), len(rubric)) if rubric else "—"
     )
+    made = [t for t in (answer_tokens(c, tokens) for c in cases) if t > 0]
+    cut = f"{sum(t >= ANSWER_TOKEN_LIMIT for t in made)} of {len(made)}" if made else "—"
     errors = sum(1 for c in cases for key in JUDGE_ERRORS if c.get(key))
     spend = manifest.get("spend") or {}
     spent = (
@@ -108,7 +137,7 @@ def section_quality(name: str, cases: list[dict[str, Any]], manifest: dict[str, 
     )
     return [
         f"| {name} | {manifest.get('judge_model_id') or '—'} | {' | '.join(scores)} | {passed} | "
-        f"{errors} | {spent} |"
+        f"{cut} | {errors} | {spent} |"
     ]
 
 
@@ -201,15 +230,19 @@ def build_report(tuned_dir: Path, heldout_dir: Path, tuned_data: Path, heldout_d
             "interval, and the number of cells scored. Correctness and register match need a gold",
             "answer; faithfulness is scored against the retrieved passages for the same cells;",
             "refusal tone scores every cell that did not answer. A red-team case passes its rubric",
-            "at a score of 2 or more. Spend is what the run logged for every paid call.",
+            "at a score of 2 or more. Cut off counts the answers that used all "
+            f"{ANSWER_TOKEN_LIMIT:,}",
+            "output tokens the pipeline allows an answer, so they stop mid-answer; the pipeline",
+            "ships them as they are. Spend is what the run logged for every paid call.",
             "",
             "| Split | Judge | "
             + " | ".join(label for _, label in SCORES)
-            + " | Red-team rubric passed | Judge errors | Spend |",
-            "| --- | --- | " + " | ".join("---" for _ in SCORES) + " | --- | ---: | --- |",
+            + " | Red-team rubric passed | Cut off | Judge errors | Spend |",
+            "| --- | --- | " + " | ".join("---" for _ in SCORES) + " | --- | --- | ---: | --- |",
         ]
-        lines += section_quality("tuned", tuned, tuned_manifest)
-        lines += section_quality("held-out", held, held_manifest)
+        lines += section_quality("tuned", tuned, tuned_manifest, load_answer_tokens(tuned_dir))
+        held_tokens = load_answer_tokens(heldout_dir)
+        lines += section_quality("held-out", held, held_manifest, held_tokens)
         lines.append("")
         low = [
             c
@@ -219,17 +252,25 @@ def build_report(tuned_dir: Path, heldout_dir: Path, tuned_data: Path, heldout_d
         lines += [
             f"## Held-out: the {len(low)} cells scored 1 or 0 for correctness",
             "",
-            "| Item | Expected | Taken | Correctness | Faithfulness | Question |",
-            "| --- | --- | --- | ---: | ---: | --- |",
+            "| Item | Expected | Taken | Correctness | Faithfulness | Answer tokens | Question |",
+            "| --- | --- | --- | ---: | ---: | ---: | --- |",
         ]
         for c in sorted(low, key=lambda c: (float(c["correctness_score"]), c["question_id"])):
             text = items.get(c["question_id"], {}).get("text", "").replace("|", "\\|")
             faith = c.get("faithfulness_score")
+            spent_tokens = answer_tokens(c, held_tokens)
+            shown = (
+                "—"
+                if spent_tokens == 0
+                else f"{spent_tokens} (cut off)"
+                if spent_tokens >= ANSWER_TOKEN_LIMIT
+                else str(spent_tokens)
+            )
             lines.append(
                 f"| {c['question_id']} | {SHORT[c['expected_behavior']]} | "
                 f"{SHORT.get(c['behavior_taken'], c['behavior_taken'])} | "
                 f"{float(c['correctness_score']):g} | {'—' if faith is None else f'{float(faith):g}'} | "
-                f"{text.replace(chr(10), ' ')} |"
+                f"{shown} | {text.replace(chr(10), ' ')} |"
             )
         lines.append("")
 

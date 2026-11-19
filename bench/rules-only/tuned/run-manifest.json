@@ -2,9 +2,9 @@
   "schema_version": 1,
   "split": "tuned",
   "mode": "full",
-  "started_at": "2026-11-18T20:42:29Z",
-  "finished_at": "2026-11-18T20:43:45Z",
-  "git_commit": "c77fdb2d6888bad98809a33c05df9b4c49c71ded",
+  "started_at": "2026-11-19T22:00:22Z",
+  "finished_at": "2026-11-19T22:03:48Z",
+  "git_commit": "2ba2034ab342d2bdf75b27895abf105f2ece1b7a",
   "git_dirty": false,
   "murshid_version": "0.2.0",
   "python_version": "3.12.13",
@@ -33,5 +33,13 @@
     "data/red_team.json": "7bfbe6120fdc58a28e9946842f70ae3b25e8ebde0d59f803f3fa0f1105127fda"
   },
   "n_cases": 26,
-  "sanity_swap": null
+  "sanity_swap": null,
+  "spend": {
+    "spent_usd": 0.0,
+    "cap_usd": null,
+    "cap_reached": false,
+    "paid_calls": 0,
+    "cases_not_run": 0,
+    "prices": []
+  }
 }

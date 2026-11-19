@@ -1,6 +1,6 @@
 # Murshid — bench results
 
-Recorded: 2026-11-18T20:42:29Z. Rendered again from the case cache, with no model call.
+Recorded: 2026-11-19T22:00:22Z
 
 ## Configuration
 

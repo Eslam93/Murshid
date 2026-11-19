@@ -70,3 +70,36 @@ def test_every_real_provider_cell_is_on_the_page() -> None:
     assert page.count('<article class="cell">') == len(real) == 104
     assert page.count("<details ") == 26
     assert "[MOCK ANSWER]" not in page, "the mock provider's placeholder answers stay off the page"
+
+
+def test_answers_render_their_markdown_instead_of_showing_it() -> None:
+    page = _build()
+    assert "**" not in page
+    assert not re.search(r"(?m)^\s*-{3,}\s*$", page), "a rule line left as text"
+    assert "<strong>" in page and "<hr>" in page and "<blockquote>" in page
+
+
+def test_the_markdown_renderer_escapes_before_it_formats() -> None:
+    markdown = _builder()._markdown
+    html = markdown("<script>alert(1)</script> **bold** <b>x</b>\n---\n> quoted\n- item")
+    assert "<script>" not in html and "<b>x</b>" not in html
+    assert "&lt;script&gt;" in html and "<strong>bold</strong>" in html
+    assert "<hr>" in html and "<blockquote>quoted</blockquote>" in html
+    assert "<ul><li>item</li></ul>" in html
+
+
+def test_fact_lists_run_right_to_left_so_their_bullets_stay_in_the_card() -> None:
+    page = _build()
+    lists = re.findall(r'<div class="facts"><h5>[^<]*</h5>(<ul[^>]*>)', page)
+    assert lists, "the page has fact lists"
+    assert all('dir="' in tag for tag in lists)
+
+
+def test_each_retrieved_source_is_listed_once() -> None:
+    page = _build()
+    lines = re.findall(r"Sources retrieved: ([^<]*)</p>", page)
+    assert lines
+    for line in lines:
+        ids = [part.split(" (")[0].strip() for part in line.split(",")]
+        assert len(ids) == len(set(ids)), line
+    assert "(2 chunks)" in page

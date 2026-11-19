@@ -22,6 +22,7 @@ import argparse
 import hashlib
 import html
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -61,11 +62,98 @@ def _ar(text: str, tag: str = "p", cls: str = "") -> str:
     return f'<{tag} dir="rtl" lang="ar"{class_attr}>{_e(text)}</{tag}>'
 
 
+_HR = re.compile(r"^\s*(?:-{3,}|\*{3,}|_{3,})\s*$")
+_HEADING = re.compile(r"^\s*#{1,6}\s+(.*)$")
+_QUOTE = re.compile(r"^\s*>\s?(.*)$")
+_BULLET = re.compile(r"^\s*[-*•]\s+(.*)$")
+_NUMBERED = re.compile(r"^\s*(\d+)[.)]\s+(.*)$")
+_BOLD = re.compile(r"\*\*(.+?)\*\*")
+
+
+def _inline(text: str) -> str:
+    """One line of answer text: escaped first, then **bold** made bold."""
+    return _BOLD.sub(r"<strong>\1</strong>", _e(text))
+
+
+def _markdown(text: str) -> str:
+    """The Markdown the recorded answers use, as HTML: paragraphs, **bold**, rules, headings,
+    block quotes and lists. Everything is escaped before any tag is added, so answer text can
+    never become markup."""
+    out: list[str] = []
+    para: list[str] = []
+    block: tuple[str, list[str]] | None = None  # ("ul" | "ol" | "quote", items)
+    ol_start = 1
+
+    def flush_para() -> None:
+        if para:
+            out.append("<p>" + "<br>".join(_inline(line) for line in para) + "</p>")
+            para.clear()
+
+    def flush_block() -> None:
+        nonlocal block
+        if block is None:
+            return
+        kind, items = block
+        if kind == "quote":
+            out.append("<blockquote>" + "<br>".join(_inline(i) for i in items) + "</blockquote>")
+        else:
+            start = f' start="{ol_start}"' if kind == "ol" and ol_start != 1 else ""
+            out.append(
+                f"<{kind}{start}>" + "".join(f"<li>{_inline(i)}</li>" for i in items) + f"</{kind}>"
+            )
+        block = None
+
+    for raw in text.splitlines():
+        if not raw.strip():
+            flush_para()
+            flush_block()
+            continue
+        if _HR.match(raw):
+            flush_para()
+            flush_block()
+            out.append("<hr>")
+            continue
+        if m := _HEADING.match(raw):
+            flush_para()
+            flush_block()
+            out.append(f'<p class="md-h"><strong>{_inline(m.group(1))}</strong></p>')
+            continue
+        for kind, rx in (("quote", _QUOTE), ("ul", _BULLET), ("ol", _NUMBERED)):
+            m = rx.match(raw)
+            if m:
+                flush_para()
+                item = m.group(m.lastindex or 1)
+                if block is None or block[0] != kind:
+                    flush_block()
+                    block = (kind, [])
+                    if kind == "ol":
+                        ol_start = int(m.group(1))
+                block[1].append(item)
+                break
+        else:
+            flush_block()
+            para.append(raw)
+    flush_para()
+    flush_block()
+    return "".join(out)
+
+
 def _fact_list(title: str, facts: list[str]) -> str:
     if not facts:
         return ""
-    items = "".join(f'<li dir="rtl" lang="ar">{_e(f)}</li>' for f in facts)
-    return f'<div class="facts"><h5>{_e(title)} ({len(facts)})</h5><ul>{items}</ul></div>'
+    items = "".join(f"<li>{_e(f)}</li>" for f in facts)
+    return (
+        f'<div class="facts"><h5>{_e(title)} ({len(facts)})</h5>'
+        f'<ul dir="rtl" lang="ar">{items}</ul></div>'
+    )
+
+
+def _sources(ids: list[str]) -> str:
+    """Retrieved source ids, each once, with how many of its chunks came back."""
+    counts: dict[str, int] = {}
+    for source_id in ids:
+        counts[source_id] = counts.get(source_id, 0) + 1
+    return ", ".join(f"{_e(sid)} ({n} chunks)" if n > 1 else _e(sid) for sid, n in counts.items())
 
 
 def _cell(case: dict[str, Any]) -> str:
@@ -84,7 +172,9 @@ def _cell(case: dict[str, Any]) -> str:
     if case["answer_error"]:
         parts.append(f'<p class="error">{_e(case["answer_error"][:300])}</p>')
     elif case["predicted_answer_text"]:
-        parts.append(_ar(case["predicted_answer_text"], "div", "answer"))
+        parts.append(
+            f'<div dir="rtl" lang="ar" class="answer">{_markdown(case["predicted_answer_text"])}</div>'
+        )
     scores = []
     if case["is_red_team"]:
         rubric = case["red_team_rubric_pass"]
@@ -109,13 +199,13 @@ def _cell(case: dict[str, Any]) -> str:
     issues = [i for i in case["critic_issues"] if i != "critic_skipped_for_critic_off_mode"]
     if issues:
         parts.append(
-            '<div class="facts"><h5>Critic and gate notes</h5><ul>'
-            + "".join(f'<li dir="auto">{_e(i)}</li>' for i in issues)
+            '<div class="facts"><h5>Critic and gate notes</h5><ul dir="auto">'
+            + "".join(f"<li>{_e(i)}</li>" for i in issues)
             + "</ul></div>"
         )
     if case["retrieved_source_ids"]:
         parts.append(
-            f'<p class="sources">Sources retrieved: {_e(", ".join(case["retrieved_source_ids"]))}</p>'
+            f'<p class="sources">Sources retrieved: {_sources(case["retrieved_source_ids"])}</p>'
         )
     parts.append("</article>")
     return "".join(parts)
@@ -309,13 +399,17 @@ details > :not(summary) {{ margin-left: 14px; margin-right: 14px; }}
 .cell header {{ font-size: 0.9rem; }}
 .who {{ font-weight: 600; }}
 .behavior {{ font-size: 0.9rem; padding: 4px 8px; border-radius: 6px; }}
-.answer {{ white-space: pre-wrap; overflow-wrap: anywhere; }}
+.answer {{ overflow-wrap: anywhere; }}
+.answer p {{ margin: 6px 0; }}
+.answer hr {{ border: 0; border-top: 1px solid var(--line); margin: 10px 0; }}
+.answer blockquote {{ margin: 6px 0; padding-inline-start: 10px; border-inline-start: 3px solid var(--line); color: var(--muted); }}
+.answer ul, .answer ol {{ margin: 4px 0; padding-inline-start: 22px; }}
 .error {{ color: var(--bad); font-family: ui-monospace, Consolas, monospace; font-size: 0.85rem; overflow-wrap: anywhere; }}
 .scores {{ display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 8px 0; font-size: 0.9rem; }}
 .scores div {{ display: flex; gap: 6px; }}
 .scores dt {{ color: var(--muted); }}
 .scores dd {{ margin: 0; font-weight: 600; }}
-.facts ul {{ margin: 2px 0; padding-inline-start: 20px; }}
+.facts ul {{ margin: 2px 0; padding-inline-start: 20px; list-style-position: outside; }}
 .facts li {{ font-size: 0.95rem; }}
 footer {{ color: var(--muted); font-size: 0.85rem; margin-top: 40px; border-top: 1px solid var(--line); padding-top: 12px; }}
 </style>

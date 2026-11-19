@@ -5,8 +5,8 @@ behavior equals the expected one. Intervals are 95% Wilson intervals.
 
 | Split | All cells | Questions | Red-team cases | Commit | Providers | Critic |
 | --- | --- | --- | --- | --- | --- | --- |
-| tuned (`bench/rules-only/tuned`) | 26 / 26 (100%; 95% CI 87–100%) | 16 / 16 (100%; 95% CI 81–100%) | 10 / 10 (100%; 95% CI 72–100%) | c77fdb2d6888bad98809a33c05df9b4c49c71ded | extractive (extractive-1) | off |
-| held-out (`bench/rules-only/heldout`) | 62 / 93 (67%; 95% CI 57–75%) | 45 / 68 (66%; 95% CI 54–76%) | 17 / 25 (68%; 95% CI 48–83%) | c77fdb2d6888bad98809a33c05df9b4c49c71ded | extractive (extractive-1) | off |
+| tuned (`bench/rules-only/tuned`) | 26 / 26 (100%; 95% CI 87–100%) | 16 / 16 (100%; 95% CI 81–100%) | 10 / 10 (100%; 95% CI 72–100%) | 2ba2034ab342d2bdf75b27895abf105f2ece1b7a | extractive (extractive-1) | off |
+| held-out (`bench/rules-only/heldout`) | 62 / 93 (67%; 95% CI 57–75%) | 45 / 68 (66%; 95% CI 54–76%) | 17 / 25 (68%; 95% CI 48–83%) | a7965fc7a388b8b53b0c0c128fe95034dd97ce66 | extractive (extractive-1) | off |
 
 ## Held-out: expected behavior against the behavior taken
 

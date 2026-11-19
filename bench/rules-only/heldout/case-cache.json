@@ -55,7 +55,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.0003145000000586151,
+    "latency_s": 0.00019520000205375254,
     "judge_correctness_error": "judge_correctness_provider_error: RuntimeError: no judge configured",
     "judge_faithfulness_error": "judge_faithfulness_provider_error: RuntimeError: no judge configured",
     "answer_error": ""
@@ -166,7 +166,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.00016039999991335208,
+    "latency_s": 0.00026529999740887433,
     "judge_correctness_error": "judge_correctness_provider_error: RuntimeError: no judge configured",
     "judge_faithfulness_error": "judge_faithfulness_provider_error: RuntimeError: no judge configured",
     "answer_error": ""
@@ -227,7 +227,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.0001731000002109795,
+    "latency_s": 0.0002798000059556216,
     "judge_correctness_error": "judge_correctness_provider_error: RuntimeError: no judge configured",
     "judge_faithfulness_error": "judge_faithfulness_provider_error: RuntimeError: no judge configured",
     "answer_error": ""
@@ -282,7 +282,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.00016429999959655106,
+    "latency_s": 0.00026220000290777534,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -341,7 +341,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.00028079999992769444,
+    "latency_s": 0.0001984999980777502,
     "judge_correctness_error": "judge_correctness_provider_error: RuntimeError: no judge configured",
     "judge_faithfulness_error": "judge_faithfulness_provider_error: RuntimeError: no judge configured",
     "answer_error": ""
@@ -396,7 +396,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.00017750000006344635,
+    "latency_s": 0.00019640001119114459,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -457,7 +457,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.0001716999995551305,
+    "latency_s": 0.00017659999139141291,
     "judge_correctness_error": "judge_correctness_provider_error: RuntimeError: no judge configured",
     "judge_faithfulness_error": "judge_faithfulness_provider_error: RuntimeError: no judge configured",
     "answer_error": ""
@@ -512,7 +512,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.0002554000002419343,
+    "latency_s": 0.00027540000155568123,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -573,7 +573,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.0001742999993439298,
+    "latency_s": 0.0003330000035930425,
     "judge_correctness_error": "judge_correctness_provider_error: RuntimeError: no judge configured",
     "judge_faithfulness_error": "judge_faithfulness_provider_error: RuntimeError: no judge configured",
     "answer_error": ""
@@ -635,7 +635,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.00017149999985122122,
+    "latency_s": 0.00025660000392235816,
     "judge_correctness_error": "judge_correctness_provider_error: RuntimeError: no judge configured",
     "judge_faithfulness_error": "judge_faithfulness_provider_error: RuntimeError: no judge configured",
     "answer_error": ""
@@ -841,7 +841,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.00017360000038024737,
+    "latency_s": 0.0002505000011296943,
     "judge_correctness_error": "judge_correctness_provider_error: RuntimeError: no judge configured",
     "judge_faithfulness_error": "judge_faithfulness_provider_error: RuntimeError: no judge configured",
     "answer_error": ""
@@ -904,7 +904,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.00019810000048892107,
+    "latency_s": 0.00025179999647662044,
     "judge_correctness_error": "judge_correctness_provider_error: RuntimeError: no judge configured",
     "judge_faithfulness_error": "judge_faithfulness_provider_error: RuntimeError: no judge configured",
     "answer_error": ""
@@ -959,7 +959,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.0001863999996203347,
+    "latency_s": 0.0003341999981785193,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -1022,7 +1022,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.00030470000001514563,
+    "latency_s": 0.0003133999998681247,
     "judge_correctness_error": "judge_correctness_provider_error: RuntimeError: no judge configured",
     "judge_faithfulness_error": "judge_faithfulness_provider_error: RuntimeError: no judge configured",
     "answer_error": ""
@@ -1081,7 +1081,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.0002866000004360103,
+    "latency_s": 0.00029660000291187316,
     "judge_correctness_error": "judge_correctness_provider_error: RuntimeError: no judge configured",
     "judge_faithfulness_error": "judge_faithfulness_provider_error: RuntimeError: no judge configured",
     "answer_error": ""
@@ -1189,7 +1189,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.00016510000023117755,
+    "latency_s": 0.00015609999536536634,
     "judge_correctness_error": "judge_correctness_provider_error: RuntimeError: no judge configured",
     "judge_faithfulness_error": "judge_faithfulness_provider_error: RuntimeError: no judge configured",
     "answer_error": ""
@@ -1244,7 +1244,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.00016969999978755368,
+    "latency_s": 0.00026270000671502203,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -1304,7 +1304,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.00033989999974437524,
+    "latency_s": 0.00034240000240970403,
     "judge_correctness_error": "judge_correctness_provider_error: RuntimeError: no judge configured",
     "judge_faithfulness_error": "judge_faithfulness_provider_error: RuntimeError: no judge configured",
     "answer_error": ""
@@ -1411,7 +1411,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.0001646999999138643,
+    "latency_s": 0.00025040000036824495,
     "judge_correctness_error": "judge_correctness_provider_error: RuntimeError: no judge configured",
     "judge_faithfulness_error": "judge_faithfulness_provider_error: RuntimeError: no judge configured",
     "answer_error": ""
@@ -1466,7 +1466,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.00017320000006293412,
+    "latency_s": 0.0005835999909322709,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -1527,7 +1527,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.00020530000074359123,
+    "latency_s": 0.00032869999995455146,
     "judge_correctness_error": "judge_correctness_provider_error: RuntimeError: no judge configured",
     "judge_faithfulness_error": "judge_faithfulness_provider_error: RuntimeError: no judge configured",
     "answer_error": ""
@@ -1586,7 +1586,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.0002922000003309222,
+    "latency_s": 0.0003096000000368804,
     "judge_correctness_error": "judge_correctness_provider_error: RuntimeError: no judge configured",
     "judge_faithfulness_error": "judge_faithfulness_provider_error: RuntimeError: no judge configured",
     "answer_error": ""
@@ -1641,7 +1641,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.00017359999947075266,
+    "latency_s": 0.0003594999870983884,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -1702,7 +1702,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.00027460000001156004,
+    "latency_s": 0.00020199999562464654,
     "judge_correctness_error": "judge_correctness_provider_error: RuntimeError: no judge configured",
     "judge_faithfulness_error": "judge_faithfulness_provider_error: RuntimeError: no judge configured",
     "answer_error": ""
@@ -1758,7 +1758,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.00023910000072646653,
+    "latency_s": 0.00015490000077988952,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -1863,7 +1863,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.00017840000055002747,
+    "latency_s": 0.00031380000291392207,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -1970,7 +1970,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.00015380000058939913,
+    "latency_s": 0.00029910000739619136,
     "judge_correctness_error": "judge_correctness_provider_error: RuntimeError: no judge configured",
     "judge_faithfulness_error": "judge_faithfulness_provider_error: RuntimeError: no judge configured",
     "answer_error": ""
@@ -2028,7 +2028,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.0002449999992677476,
+    "latency_s": 0.0002921999985119328,
     "judge_correctness_error": "judge_correctness_provider_error: RuntimeError: no judge configured",
     "judge_faithfulness_error": "judge_faithfulness_provider_error: RuntimeError: no judge configured",
     "answer_error": ""
@@ -2083,7 +2083,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.00024260000009235227,
+    "latency_s": 0.0003127000090898946,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -2191,7 +2191,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.00022429999989981297,
+    "latency_s": 0.0002514999941922724,
     "judge_correctness_error": "judge_correctness_provider_error: RuntimeError: no judge configured",
     "judge_faithfulness_error": "judge_faithfulness_provider_error: RuntimeError: no judge configured",
     "answer_error": ""
@@ -2246,7 +2246,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.000294200000098499,
+    "latency_s": 0.00018230000569019467,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -2307,7 +2307,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.0002702000001590932,
+    "latency_s": 0.0002965000021504238,
     "judge_correctness_error": "judge_correctness_provider_error: RuntimeError: no judge configured",
     "judge_faithfulness_error": "judge_faithfulness_provider_error: RuntimeError: no judge configured",
     "answer_error": ""
@@ -2418,7 +2418,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.0001609999999345746,
+    "latency_s": 0.0003150999982608482,
     "judge_correctness_error": "judge_correctness_provider_error: RuntimeError: no judge configured",
     "judge_faithfulness_error": "judge_faithfulness_provider_error: RuntimeError: no judge configured",
     "answer_error": ""
@@ -2477,7 +2477,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.00015359999997599516,
+    "latency_s": 0.0001677999971434474,
     "judge_correctness_error": "judge_correctness_provider_error: RuntimeError: no judge configured",
     "judge_faithfulness_error": "judge_faithfulness_provider_error: RuntimeError: no judge configured",
     "answer_error": ""
@@ -2535,7 +2535,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.00026640000032784883,
+    "latency_s": 0.0002893000055337325,
     "judge_correctness_error": "judge_correctness_provider_error: RuntimeError: no judge configured",
     "judge_faithfulness_error": "judge_faithfulness_provider_error: RuntimeError: no judge configured",
     "answer_error": ""
@@ -2590,7 +2590,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.0003068999994866317,
+    "latency_s": 0.0001745000045048073,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -2645,7 +2645,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.0001712000002953573,
+    "latency_s": 0.000338400001055561,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -2706,7 +2706,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.0002764999999271822,
+    "latency_s": 0.00016830000095069408,
     "judge_correctness_error": "judge_correctness_provider_error: RuntimeError: no judge configured",
     "judge_faithfulness_error": "judge_faithfulness_provider_error: RuntimeError: no judge configured",
     "answer_error": ""
@@ -2767,7 +2767,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.00026190000062342733,
+    "latency_s": 0.0002705999941099435,
     "judge_correctness_error": "judge_correctness_provider_error: RuntimeError: no judge configured",
     "judge_faithfulness_error": "judge_faithfulness_provider_error: RuntimeError: no judge configured",
     "answer_error": ""
@@ -2822,7 +2822,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.00015940000048431102,
+    "latency_s": 0.0003338000096846372,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -2885,7 +2885,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.00016040000082284678,
+    "latency_s": 0.0003066000062972307,
     "judge_correctness_error": "judge_correctness_provider_error: RuntimeError: no judge configured",
     "judge_faithfulness_error": "judge_faithfulness_provider_error: RuntimeError: no judge configured",
     "answer_error": ""
@@ -2940,7 +2940,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.0002758999999059597,
+    "latency_s": 0.00033830000029411167,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -3038,7 +3038,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.00024790000043140026,
+    "latency_s": 0.0002725000085774809,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -3451,7 +3451,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.00016799999957584077,
+    "latency_s": 0.0002803999959724024,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -3504,7 +3504,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.00017329999991488876,
+    "latency_s": 0.00023920000239741057,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -3602,7 +3602,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.0001447000004191068,
+    "latency_s": 0.00025630000163801014,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -3700,7 +3700,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "",
     "cost_usd": 0.0,
-    "latency_s": 0.00016119999963848386,
+    "latency_s": 0.0001627000019652769,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -3755,7 +3755,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "judge_red_team_provider_error: RuntimeError: no judge configured",
     "cost_usd": 0.0,
-    "latency_s": 0.0002310999998371699,
+    "latency_s": 0.00029290000384207815,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -3853,7 +3853,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "judge_red_team_provider_error: RuntimeError: no judge configured",
     "cost_usd": 0.0,
-    "latency_s": 0.000265699999545177,
+    "latency_s": 0.00034579999919515103,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -3908,7 +3908,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "judge_red_team_provider_error: RuntimeError: no judge configured",
     "cost_usd": 0.0,
-    "latency_s": 0.0002069000001938548,
+    "latency_s": 0.00017109999316744506,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -3963,7 +3963,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "judge_red_team_provider_error: RuntimeError: no judge configured",
     "cost_usd": 0.0,
-    "latency_s": 0.0002542000001994893,
+    "latency_s": 0.0002690999972401187,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -4018,7 +4018,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "judge_red_team_provider_error: RuntimeError: no judge configured",
     "cost_usd": 0.0,
-    "latency_s": 0.00021980000019539148,
+    "latency_s": 0.00028310000197961926,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -4073,7 +4073,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "judge_red_team_provider_error: RuntimeError: no judge configured",
     "cost_usd": 0.0,
-    "latency_s": 0.00016930000037973514,
+    "latency_s": 0.00030980000155977905,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -4128,7 +4128,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "judge_red_team_provider_error: RuntimeError: no judge configured",
     "cost_usd": 0.0,
-    "latency_s": 0.00015190000067377696,
+    "latency_s": 0.0003108999953838065,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -4183,7 +4183,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "judge_red_team_provider_error: RuntimeError: no judge configured",
     "cost_usd": 0.0,
-    "latency_s": 0.0001399000002493267,
+    "latency_s": 0.00023099999816622585,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -4236,7 +4236,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "judge_red_team_provider_error: RuntimeError: no judge configured",
     "cost_usd": 0.0,
-    "latency_s": 0.00015279999934136868,
+    "latency_s": 0.0002702000056160614,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -4336,7 +4336,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "judge_red_team_provider_error: RuntimeError: no judge configured",
     "cost_usd": 0.0,
-    "latency_s": 0.00014680000003863825,
+    "latency_s": 0.00024339999072253704,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -4391,7 +4391,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "judge_red_team_provider_error: RuntimeError: no judge configured",
     "cost_usd": 0.0,
-    "latency_s": 0.00016340000001946464,
+    "latency_s": 0.00030449999030679464,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -4446,7 +4446,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "judge_red_team_provider_error: RuntimeError: no judge configured",
     "cost_usd": 0.0,
-    "latency_s": 0.00015780000012455275,
+    "latency_s": 0.0002165000041713938,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -4502,7 +4502,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "judge_red_team_provider_error: RuntimeError: no judge configured",
     "cost_usd": 0.0,
-    "latency_s": 0.0002464000008330913,
+    "latency_s": 0.00018149999959859997,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -4557,7 +4557,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "judge_red_team_provider_error: RuntimeError: no judge configured",
     "cost_usd": 0.0,
-    "latency_s": 0.00028279999969527125,
+    "latency_s": 0.00030100000731181353,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -4657,7 +4657,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "judge_red_team_provider_error: RuntimeError: no judge configured",
     "cost_usd": 0.0,
-    "latency_s": 0.0002590000003692694,
+    "latency_s": 0.00037120000342838466,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -4757,7 +4757,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "judge_red_team_provider_error: RuntimeError: no judge configured",
     "cost_usd": 0.0,
-    "latency_s": 0.00027460000001156004,
+    "latency_s": 0.00027720000070985407,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -4812,7 +4812,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "judge_red_team_provider_error: RuntimeError: no judge configured",
     "cost_usd": 0.0,
-    "latency_s": 0.0001793000001271139,
+    "latency_s": 0.0003760999970836565,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -4867,7 +4867,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "judge_red_team_provider_error: RuntimeError: no judge configured",
     "cost_usd": 0.0,
-    "latency_s": 0.0002756000003500958,
+    "latency_s": 0.000375000003259629,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""
@@ -4967,7 +4967,7 @@
     "red_team_rationale": "",
     "judge_red_team_error": "judge_red_team_provider_error: RuntimeError: no judge configured",
     "cost_usd": 0.0,
-    "latency_s": 0.0002544999997553532,
+    "latency_s": 0.00016490000416524708,
     "judge_correctness_error": "",
     "judge_faithfulness_error": "",
     "answer_error": ""

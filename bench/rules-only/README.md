@@ -15,15 +15,26 @@ which rule decided each cell, and every cell that missed.
 
 ## What was run
 
-At the commit tagged `rules-frozen-2026-11-18` (`c77fdb2`), on a machine with no API key:
+The rules were frozen at the commit tagged `rules-frozen-2026-11-18` (`c87f7f0`), and both splits
+were first scored there on 2026-11-18 (commit `642fb1b` holds those runs). The runs in these
+folders are the same commands run again on 2026-11-19 on a clean tree, on a machine with no API
+key: the tuned split at `2ba2034`, the held-out split at `a7965fc` (the commit that records the
+tuned run). Every case, retrieval, behavior and log row came out as in the first runs; only the
+timings and the dates differ.
 
 ```bash
-uv run python -m murshid.bench --split tuned --providers extractive --critic off --no-sanity-swap --out-dir bench/rules-only/tuned
-uv run python -m murshid.bench --split heldout --providers extractive --critic off --no-sanity-swap --out-dir bench/rules-only/heldout
+uv run python -m murshid.bench --split tuned --providers extractive --critic off --no-sanity-swap --out-dir bench/rules-only/tuned --overwrite
+uv run python -m murshid.bench --split heldout --providers extractive --critic off --no-sanity-swap --out-dir bench/rules-only/heldout --overwrite
 uv run python scripts/compare_splits.py --tuned bench/rules-only/tuned --heldout bench/rules-only/heldout --out bench/rules-only/REPORT.md
 ```
 
-Each folder's `run-manifest.json` records the commit, the dates and the data files' sha256.
+Nothing that decides behavior changed between the tag and those commits: under `src/`, only the
+bench runner and its spend meter (`src/murshid/bench/`) and the vendored ToolKit, where nine cores
+nothing imported were removed; under `data/`, only the two READMEs. `git diff --stat
+rules-frozen-2026-11-18 a7965fc -- src data` lists them.
+
+Each folder's `run-manifest.json` records the commit, whether the tree was clean when the run
+started, the dates and the data files' sha256.
 
 ## What "rules only" measures, and what it does not
 

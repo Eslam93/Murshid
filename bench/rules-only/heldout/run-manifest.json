@@ -2,10 +2,10 @@
   "schema_version": 1,
   "split": "heldout",
   "mode": "full",
-  "started_at": "2026-11-18T20:43:47Z",
-  "finished_at": "2026-11-18T20:45:19Z",
-  "git_commit": "c77fdb2d6888bad98809a33c05df9b4c49c71ded",
-  "git_dirty": true,
+  "started_at": "2026-11-19T22:05:40Z",
+  "finished_at": "2026-11-19T22:07:31Z",
+  "git_commit": "a7965fc7a388b8b53b0c0c128fe95034dd97ce66",
+  "git_dirty": false,
   "murshid_version": "0.2.0",
   "python_version": "3.12.13",
   "providers": [
@@ -33,5 +33,13 @@
     "data/heldout/red_team.json": "b997dbf567ce9520623db6f2f9a40203236c013df4344643484c5cfd8612e1e3"
   },
   "n_cases": 93,
-  "sanity_swap": null
+  "sanity_swap": null,
+  "spend": {
+    "spent_usd": 0.0,
+    "cap_usd": null,
+    "cap_reached": false,
+    "paid_calls": 0,
+    "cases_not_run": 0,
+    "prices": []
+  }
 }

@@ -12,7 +12,10 @@ Each folder is one bench run (`case-cache.json`, `refusal-log.jsonl`, `run-manif
 The report gives, for each split, how many cells took the expected behavior (with a 95% Wilson
 interval), then for the held-out split the table of expected against taken behavior, the results
 by expected behavior, register, dialect family and red-team category, which rule decided each
-cell, and every cell that missed. It reads recorded output only; it runs nothing.
+cell, and every cell that missed. When a run was judged, it also gives each split's judge scores
+(means with a 95% interval, the red-team rubric pass rate, judge errors, the logged spend) and the
+held-out answers the judge scored lowest for correctness. It reads recorded output only; it runs
+nothing.
 """
 
 from __future__ import annotations
@@ -38,6 +41,19 @@ SHORT = {
     "ask_clarification": "clarify",
     "error": "error",
 }
+# The judge's scores, each 0 to 3, and the columns that report them.
+SCORES = (
+    ("correctness_score", "Correctness"),
+    ("faithfulness_score", "Faithfulness"),
+    ("register_match_score", "Register match"),
+    ("refusal_tone_score", "Refusal tone"),
+)
+JUDGE_ERRORS = (
+    "judge_correctness_error",
+    "judge_faithfulness_error",
+    "judge_refusal_tone_error",
+    "judge_red_team_error",
+)
 
 
 def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
@@ -54,6 +70,46 @@ def rate(k: int, n: int) -> str:
     lo, hi = wilson(k, n)
     pct = 100 * k / n if n else 0.0
     return f"{k} / {n} ({pct:.0f}%; 95% CI {100 * lo:.0f}–{100 * hi:.0f}%)"
+
+
+def mean_interval(values: list[float]) -> str:
+    """The mean, a 95% normal-approximation half-width, and how many values it rests on."""
+    n = len(values)
+    if n == 0:
+        return "—"
+    mean = sum(values) / n
+    if n == 1:
+        return f"{mean:.2f} (n=1)"
+    sd = math.sqrt(sum((v - mean) ** 2 for v in values) / (n - 1))
+    return f"{mean:.2f} ± {1.96 * sd / math.sqrt(n):.2f} (n={n})"
+
+
+def was_judged(cases: list[dict[str, Any]]) -> bool:
+    """True when any cell of the run carries a judge score."""
+    return any(c.get(key) is not None for c in cases for key in [k for k, _ in SCORES]) or any(
+        c.get("red_team_rubric_pass") is not None for c in cases
+    )
+
+
+def section_quality(name: str, cases: list[dict[str, Any]], manifest: dict[str, Any]) -> list[str]:
+    scores = [
+        mean_interval([float(c[k]) for c in cases if c.get(k) is not None]) for k, _ in SCORES
+    ]
+    rubric = [c for c in cases if c["is_red_team"] and c.get("red_team_rubric_pass") is not None]
+    passed = (
+        rate(sum(bool(c["red_team_rubric_pass"]) for c in rubric), len(rubric)) if rubric else "—"
+    )
+    errors = sum(1 for c in cases for key in JUDGE_ERRORS if c.get(key))
+    spend = manifest.get("spend") or {}
+    spent = (
+        f"${spend['spent_usd']:.2f} over {spend.get('paid_calls', 0)} calls"
+        if spend.get("paid_calls")
+        else "—"
+    )
+    return [
+        f"| {name} | {manifest.get('judge_model_id') or '—'} | {' | '.join(scores)} | {passed} | "
+        f"{errors} | {spent} |"
+    ]
 
 
 def load_run(folder: Path) -> tuple[list[dict[str, Any]], dict[str, Any], dict[str, str]]:
@@ -136,6 +192,46 @@ def build_report(tuned_dir: Path, heldout_dir: Path, tuned_data: Path, heldout_d
     lines += section_split(f"tuned (`{tuned_dir.as_posix()}`)", tuned, tuned_manifest)
     lines += section_split(f"held-out (`{heldout_dir.as_posix()}`)", held, held_manifest)
     lines.append("")
+
+    if was_judged(tuned) or was_judged(held):
+        lines += [
+            "## Answer quality, as the judge scored it",
+            "",
+            "Each score is 0 to 3: the mean, ± the half-width of a 95% normal-approximation",
+            "interval, and the number of cells scored. Correctness and register match need a gold",
+            "answer; faithfulness is scored against the retrieved passages for the same cells;",
+            "refusal tone scores every cell that did not answer. A red-team case passes its rubric",
+            "at a score of 2 or more. Spend is what the run logged for every paid call.",
+            "",
+            "| Split | Judge | "
+            + " | ".join(label for _, label in SCORES)
+            + " | Red-team rubric passed | Judge errors | Spend |",
+            "| --- | --- | " + " | ".join("---" for _ in SCORES) + " | --- | ---: | --- |",
+        ]
+        lines += section_quality("tuned", tuned, tuned_manifest)
+        lines += section_quality("held-out", held, held_manifest)
+        lines.append("")
+        low = [
+            c
+            for c in held
+            if c.get("correctness_score") is not None and float(c["correctness_score"]) <= 1
+        ]
+        lines += [
+            f"## Held-out: the {len(low)} cells scored 1 or 0 for correctness",
+            "",
+            "| Item | Expected | Taken | Correctness | Faithfulness | Question |",
+            "| --- | --- | --- | ---: | ---: | --- |",
+        ]
+        for c in sorted(low, key=lambda c: (float(c["correctness_score"]), c["question_id"])):
+            text = items.get(c["question_id"], {}).get("text", "").replace("|", "\\|")
+            faith = c.get("faithfulness_score")
+            lines.append(
+                f"| {c['question_id']} | {SHORT[c['expected_behavior']]} | "
+                f"{SHORT.get(c['behavior_taken'], c['behavior_taken'])} | "
+                f"{float(c['correctness_score']):g} | {'—' if faith is None else f'{float(faith):g}'} | "
+                f"{text.replace(chr(10), ' ')} |"
+            )
+        lines.append("")
 
     # Expected against taken, held-out.
     grid: Counter[tuple[str, str]] = Counter(

@@ -48,7 +48,7 @@ the judge still scored low (`REPORT.md` lists them with their answer lengths).
 ## What was run
 
 On 2026-11-19 (UTC), each on a clean tree, with `ANTHROPIC_API_KEY` and `GEMINI_API_KEY` set: the
-held-out split at `2822370`, the tuned split at `2c3131c`. Between the two commits the code that
+held-out split at `dc13fe4`, the tuned split at `fbddec2`. Between the two commits the code that
 answers and scores a case is the same; only docstrings, comments and two messages the spend cap
 prints changed.
 

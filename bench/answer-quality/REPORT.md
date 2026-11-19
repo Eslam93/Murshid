@@ -5,8 +5,8 @@ behavior equals the expected one. Intervals are 95% Wilson intervals.
 
 | Split | All cells | Questions | Red-team cases | Commit | Providers | Critic |
 | --- | --- | --- | --- | --- | --- | --- |
-| tuned (`bench/answer-quality/tuned`) | 26 / 26 (100%; 95% CI 87–100%) | 16 / 16 (100%; 95% CI 81–100%) | 10 / 10 (100%; 95% CI 72–100%) | 2c3131c00ed203a1307b8d3dd306798772fe6e40 | claude (claude-haiku-5-5) | off |
-| held-out (`bench/answer-quality/heldout`) | 62 / 93 (67%; 95% CI 57–75%) | 45 / 68 (66%; 95% CI 54–76%) | 17 / 25 (68%; 95% CI 48–83%) | 2822370570a65fde38aa9035973437be9f1b9ebe | claude (claude-haiku-5-5) | off |
+| tuned (`bench/answer-quality/tuned`) | 26 / 26 (100%; 95% CI 87–100%) | 16 / 16 (100%; 95% CI 81–100%) | 10 / 10 (100%; 95% CI 72–100%) | fbddec26f8c2a2cc5d904a666e3ad9b3cecfa394 | claude (claude-haiku-5-5) | off |
+| held-out (`bench/answer-quality/heldout`) | 62 / 93 (67%; 95% CI 57–75%) | 45 / 68 (66%; 95% CI 54–76%) | 17 / 25 (68%; 95% CI 48–83%) | dc13fe4ca01a6f4ec4235bdc5d47d508d87a23a4 | claude (claude-haiku-5-5) | off |
 
 ## Answer quality, as the judge scored it
 

@@ -11,7 +11,7 @@ Bench numbers come from `bench/results.md` (the recorded run of 2026-05-23) and
 between the two runs is itself evidence). The 2026-05-23 run used the system prompt of version
 0.1.0, whose two few-shot examples were scored questions with their answers (q-001's renewal fee
 and q-005's replacement fee), and the 2026-05-22 run an earlier version of it. The examples were
-replaced on 2026-11-18 (`c87f7f0`), so the quality scores quoted here come from the old prompt,
+replaced on 2026-11-18 (`164147e`), so the quality scores quoted here come from the old prompt,
 not the current one.
 
 ---

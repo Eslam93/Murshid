@@ -289,12 +289,12 @@ answer only what was asked, both measure 1.09.
 
 The run measured the system prompt of version 0.1.0. Its two few-shot examples were scored
 questions with their answers: q-005's opening question with the replacement-iqama fee, and q-001's
-one-year renewal fee. They were replaced on 2026-11-18 (`c87f7f0`), so the scores above are that
+one-year renewal fee. They were replaced on 2026-11-18 (`164147e`), so the scores above are that
 prompt's, and on those two questions a model could score by copying its example. The answer costs
 are estimates at the registry's prices of May 2026; OpenAI's price page, read 2026-11-20, lists
 `gpt-5.5` output at $30 per million tokens, twice the estimate. After the run, one recorded field
 changed: q-005's gold passage, which the bench copies into each case, moved to the reserved
-`.example` domain (`7514476`); no recorded answer and no score changed.
+`.example` domain (`3b0f4cd`); no recorded answer and no score changed.
 
 `bench/answer-quality/` measures answer quality on both splits with the current prompt, Claude
 Haiku 5.5 answering and Gemini 2.5 Flash judging. There the pipeline's answer limit of 1,024

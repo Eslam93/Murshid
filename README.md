@@ -72,8 +72,8 @@ found one borderline.
 The quality scores rest on 11 gold answers, so differences under 0.3 are directional. They are
 scores for the system prompt of version 0.1.0, whose two examples were scored questions with
 their answers (q-001's renewal fee and q-005's replacement fee); the examples were replaced on
-2026-11-18 (`c87f7f0`). After the run, one recorded field changed: q-005's gold passage, which
-the bench copies into each case, moved to the reserved `.example` domain (`7514476`); no answer
+2026-11-18 (`164147e`). After the run, one recorded field changed: q-005's gold passage, which
+the bench copies into each case, moved to the reserved `.example` domain (`3b0f4cd`); no answer
 and no score changed.
 
 **Answer quality on both splits, with a small model.** Claude Haiku 5.5 answered both splits and

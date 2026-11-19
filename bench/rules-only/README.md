@@ -44,12 +44,14 @@ started, the dates and the data files' sha256.
 - **The zero-key path differs from a paid run in one place:** it does not rewrite a dialect
   question to MSA (the rewrite is the identity), so retrieval sees the question as typed. The
   support gate reads the retrieved passages, so on dialect and mixed questions a paid run could
-  take a different behavior. The index is built with BGE-M3 and mock enrichment, as in the
-  recorded run of 2026-05-23.
+  take a different behavior. In the paid runs of `bench/answer-quality/` (Claude Haiku 5.5) it
+  took the same behavior on all 119 cells. The index is built with BGE-M3 and mock enrichment,
+  as in the recorded run of 2026-05-23.
 - **Answer quality is not measured here:** there is no judge without a key, so correctness,
   faithfulness and refusal tone are empty. Recall and citation accuracy are rule-based and are
   in each folder's `results.md`; the extractive provider's answers are verbatim quotes of the
-  retrieved passages, not model answers.
+  retrieved passages, not model answers. `bench/answer-quality/` measures answer quality on
+  both splits with a small paid model and a small judge.
 - **The held-out labels were written by an AI agent** (see `data/heldout/README.md`). A second
   AI reading of 20 labels drawn before any result existed agreed with 19 and found one
   borderline (`h-005`); no person has checked them. Eight of those 20 are misses here (`h-002`,

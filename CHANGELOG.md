@@ -18,6 +18,9 @@ All notable changes to Murshid are recorded in this file. The format is based on
   `scripts/build_demo_page.py`; no script, no server, no model call.
 - `--max-cost-usd`: a cap on a bench run's logged spend on paid models. Every paid call is
   logged to `spend-log.jsonl`, and the run manifest records the spend and the prices used.
+- `bench/answer-quality/`: answer quality on both splits, Claude Haiku 5.5 answering and Gemini
+  2.5 Flash judging, capped at $2 ($0.60 spent). `scripts/compare_splits.py` reports judge
+  scores side by side, with the answers cut off at the answer limit.
 - Typed settings read once, and one provider registry with dated prices.
 - CI: lint, format, strict types, tests with an 80% coverage floor, a lockfile check, a Windows
   run, a REUSE licensing check, and the real-model tests weekly.

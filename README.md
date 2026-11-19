@@ -74,8 +74,15 @@ scores for the system prompt of version 0.1.0, whose two examples were scored qu
 their answers (q-001's renewal fee and q-005's replacement fee); the examples were replaced on
 2026-11-18 (`c87f7f0`). After the run, one recorded field changed: q-005's gold passage, which
 the bench copies into each case, moved to the reserved `.example` domain (`7514476`); no answer
-and no score changed. Answer quality on the held-out items needs paid model runs and has not been
-measured yet.
+and no score changed.
+
+**Answer quality on both splits, with a small model.** Claude Haiku 5.5 answered both splits and
+Gemini 2.5 Flash, a small model, judged them ([bench/answer-quality/](bench/answer-quality/README.md),
+2026-11-19, $0.60 in all). Correctness was low on both and no higher on the tuned items: 1.18 of 3
+tuned (11 gold questions) and 1.48 held-out (31). The pipeline allows an answer 1,024 output
+tokens and does not notice when one runs out; Haiku's answers used them all in 11 of 18 tuned
+cases and 20 of 66 held-out ones. Complete answers averaged 1.75 tuned and 1.77 held-out for
+correctness, cut-off ones 0.86 and 0.78. Faithfulness was high on both (2.45 and 2.58).
 
 Every recorded answer can be read on a static page, [docs/demo/index.html](docs/demo/index.html):
 recorded data, with no script, no server and no model call behind it.
@@ -166,7 +173,8 @@ spend, whether the cap was reached and the prices used.
 ├── README.md
 ├── docs/
 │   ├── ARCHITECTURE.md   — system diagram, component contracts, ADRs, Arabic risks, GCC gaps, a worked trace
-│   └── DECISIONS.md      — the design decisions and the paths not taken
+│   ├── DECISIONS.md      — the design decisions and the paths not taken
+│   └── demo/index.html   — every answer of the recorded run on one static page
 ├── data/                 — the synthetic corpus and the tuned question sets (see data/README.md)
 │   └── heldout/          — 68 questions, 25 red-team cases and 31 gold answers the rules never saw
 ├── src/murshid/          — pipeline, providers, settings and the bench
@@ -176,13 +184,18 @@ spend, whether the cap was reached and the prices used.
 │   ├── demo.py           — the three-question demo
 │   ├── ui.py             — the Gradio UI
 │   ├── verify_keys.py    — checks which model ids your API keys can reach
-│   └── debug_judge.py    — one judge call, for debugging
+│   ├── debug_judge.py    — one judge call, for debugging
+│   ├── compare_splits.py — reports a tuned run and a held-out run side by side
+│   └── build_demo_page.py — builds docs/demo/index.html from the recorded run
 ├── tools/vendor_toolkit.py — copies the ToolKit cores at one commit
 └── bench/
     ├── results.md        — the recorded run of 2026-05-23
     ├── case-cache.json   — its per-case results, for --render-only and the replay provider
     ├── cost-log.jsonl    — per answer-call tokens and cost
     ├── refusal-log.jsonl — every non-answer, with the expected behavior
+    ├── run-manifest.json — what produced it: models, dates, data hashes
+    ├── rules-only/       — the frozen rules on both splits, no model and no key (see its README)
+    ├── answer-quality/   — a small model and a small judge on both splits, $0.60 (see its README)
     └── archive/          — an earlier run and a focused Gemini Pro run (see its README)
 ```
 
@@ -203,6 +216,9 @@ spend, whether the cap was reached and the prices used.
   tuned on (rt-001, rt-002). On the 93 held-out items it fired on none, including three bait
   questions: one gave no term it extracts, one used the dialect spelling `سمعت إن`, and in one the
   number it extracted appeared in a passage about a different rule.
+- **No check that an answer is complete.** The answer call asks for at most 1,024 output tokens,
+  and the pipeline ships whatever comes back. With Claude Haiku 5.5, 31 of 84 answers ran out
+  and stop mid-answer ([bench/answer-quality/](bench/answer-quality/README.md)).
 - **Answer-call cost only in the results tables.** Their cost column leaves out rewrite, critic,
   enrichment and judge calls; a run made with the spend meter logs every paid call in
   `spend-log.jsonl`.

@@ -296,6 +296,11 @@ are estimates at the registry's prices of May 2026; OpenAI's price page, read 20
 changed: q-005's gold passage, which the bench copies into each case, moved to the reserved
 `.example` domain (`7514476`); no recorded answer and no score changed.
 
+`bench/answer-quality/` measures answer quality on both splits with the current prompt, Claude
+Haiku 5.5 answering and Gemini 2.5 Flash judging. There the pipeline's answer limit of 1,024
+output tokens cut off 31 of 84 answers, which the pipeline does not detect, and correctness was no
+higher on the tuned items than on the held-out ones.
+
 `bench/results.md` leaves the mock provider out of its tables: its answer is a fixed
 placeholder, so its quality scores mean nothing. Its behavior is the rules acting alone, and
 there the rules took the expected behavior in all 52 mock cells (26 items × 2 critic modes).

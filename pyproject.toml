@@ -153,6 +153,13 @@ follow_imports = "silent"
 module = ["rank_bm25"]
 ignore_missing_imports = true
 
+# sentence-transformers comes with the optional local-embed extra, which CI's type check does not
+# install; ingest.py imports it only under TYPE_CHECKING. Where the extra is installed, mypy still
+# reads its types.
+[[tool.mypy.overrides]]
+module = ["sentence_transformers"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests", "src/murshid/_toolkit"]
 # Vendored core tests reuse file names, so each test file is imported by its path.
